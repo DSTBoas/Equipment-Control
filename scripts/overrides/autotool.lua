@@ -87,8 +87,6 @@ local function Init()
 
         return PlayerActionPickerDoGetMouseActions(self, ...)
     end
-
-    print("AutoActions init")
 end
 
 return Init

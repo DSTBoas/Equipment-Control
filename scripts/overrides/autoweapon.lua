@@ -118,8 +118,6 @@ local function Init()
 
         OldDoAttackButton(self, retarget)
     end
-
-    print("AutoWeapon init")
 end
 
 KeybindService:AddKey("TOGGLE_AUTO_EQUIP", function()

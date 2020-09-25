@@ -93,8 +93,6 @@ local function Init()
             return self.RMBaction
         end
     end
-
-    print("Telepoof init")
 end
 
 KeybindService:AddKey("TOGGLE_TELEPOOF", function()

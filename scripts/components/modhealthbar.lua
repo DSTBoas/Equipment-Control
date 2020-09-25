@@ -71,8 +71,8 @@ local HealthBar = Class(function(self, inst)
     self.bg_colour = { .075, .07, .07, 1 }
 
     self.bar_world_offset = Vector3(0, 3, 0)
-    self.bar_ui_offset = Vector3(12, 0, 0)
-    self.label_ui_offset = Vector3(10, 0, 0)
+    self.bar_ui_offset = Vector3(0, 0, 0)
+    self.label_ui_offset = Vector3(0, 0, 0)
 
     ----------------------------------
 

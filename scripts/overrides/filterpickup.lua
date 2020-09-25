@@ -361,8 +361,6 @@ local function Init()
             end
         end
     end
-
-    print("FilterPickup init")
 end
 
 local function CanBePickedUp(ent)

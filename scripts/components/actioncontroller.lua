@@ -29,8 +29,6 @@ local ActionController = Class(function(self, inst)
     if GetModConfigData("AUTO_EQUIP_GLASSCUTTER", MOD_EQUIPMENT_CONTROL.MODNAME) then
         Preferences.Static.glasscutter = TUNING.SPEAR_DAMAGE - 1
     end
-
-    print("ActionController init")
 end)
 
 local function GetPreference(category, item)

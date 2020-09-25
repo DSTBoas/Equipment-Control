@@ -138,8 +138,6 @@ local function Init()
         return IsAttackFiltered(self, guy)
             or OldIsAlly(self, guy, ...)
     end
-
-    print("FilterAttack init")
 end
 
 -- 

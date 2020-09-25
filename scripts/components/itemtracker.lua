@@ -457,8 +457,6 @@ local ItemTracker = Class(function(self, inst)
             fn(item)
         end
     end
-
-    print("ItemTracker init")
 end)
 
 return ItemTracker

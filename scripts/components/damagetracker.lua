@@ -434,8 +434,6 @@ local DamageTracker = Class(function(self, inst)
         OnHungerDelta(self.inst)
         self.inst:ListenForEvent("hungerdelta", OnHungerDelta)
     end
-
-    print("DamageTracker init")
 end)
 
 return DamageTracker

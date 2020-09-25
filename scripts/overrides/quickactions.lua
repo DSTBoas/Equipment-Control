@@ -159,10 +159,9 @@ end
 
 local function IsCompatibleFuel(target, item)
     return item:HasTag("BURNABLE_fuel")
-       and not (item:HasTag("deployedplant")
-                and item.prefab ~= "pinecone")
+       and not (item:HasTag("deployedplant") and item.prefab ~= "pinecone")
         or target:HasTag("blueflame")
-        and item:HasTag("CHEMICAL_fuel")
+       and item:HasTag("CHEMICAL_fuel")
 end
 
 local function GetFuelAction(target)
@@ -705,8 +704,6 @@ local function Init()
 
         return OldDoGetMouseActions(self, position, target)
     end
-
-    print("QuickActions init")
 end
 
 return Init

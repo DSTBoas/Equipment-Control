@@ -50,7 +50,7 @@ local function IsFullMoon(cycle)
 end
 
 local function Init()
-    if not ThePlayer or not ThePlayer:HasTag("werehuman") or not TheWorld:HasTag("forest") then
+    if not ThePlayer or not ThePlayer:HasTag("werehuman") then
         return
     end
 
@@ -69,22 +69,22 @@ local function Init()
         OldUseItemFromInvTile(self, item)
     end
 
-    TheWorld:ListenForEvent("phasechanged", function(inst, phase)
-        if IsFullMoon(inst.state.cycles + 1) and phase == "dusk" then
-            local timeUntilPhase = inst.net.components.clock:GetTimeUntilPhase("night")
-            ThePlayer:DoTaskInTime(timeUntilPhase - FRAMES, function()
-                if IsFullMoon(inst.state.cycles + 1) then
-                    UnEquip()
-                end
-            end)
-        end
-    end)
+    if TheWorld:HasTag("forest") then
+        TheWorld:ListenForEvent("phasechanged", function(inst, phase)
+            if IsFullMoon(inst.state.cycles + 1) and phase == "dusk" then
+                local timeUntilPhase = inst.net.components.clock:GetTimeUntilPhase("night")
+                ThePlayer:DoTaskInTime(timeUntilPhase - FRAMES, function()
+                    if IsFullMoon(inst.state.cycles + 1) then
+                        UnEquip()
+                    end
+                end)
+            end
+        end)
+    end
 
     ThePlayer:ListenForEvent("weremodedirty", function(inst)
         Equip(inst)
     end)
-
-    print("WoodieRegear init")
 end
 
 return Init

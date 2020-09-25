@@ -67,7 +67,7 @@ local function Init()
         if self:IsDoingOrWorking() then
             self.inst:DoTaskInTime(0, function()
                 if TheInput:IsControlPressed(CONTROL_PRIMARY) then
-                    PlayerControllerOnLeftClick(self, down)
+                    PlayerControllerOnLeftClick(self, true)
                 end
             end)
             return
@@ -83,8 +83,6 @@ local function Init()
             end
         end)
     end
-
-    print("AutoCane init")
 end
 
 KeybindService:AddKey("TOGGLE_AUTO_EQUIP_CANE", function()

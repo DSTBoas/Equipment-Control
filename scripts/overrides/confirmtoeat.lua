@@ -72,8 +72,6 @@ local function Init()
 
         OldUseItemFromInvTile(self, item)
     end
-
-    print("ConfirmToEat init")
 end
 
 return Init
