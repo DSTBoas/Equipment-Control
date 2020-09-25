@@ -271,7 +271,8 @@ end
 
 function ItemFunctions:IsTerraformer(item)
     local cachedItem = self:GetCachedItem(item)
-    return cachedItem and cachedItem.components.terraformer
+    return cachedItem
+       and cachedItem.components.terraformer
 end
 
 function ItemFunctions:IsCane(item)
@@ -286,17 +287,35 @@ function ItemFunctions:IsLightSource(item)
            or item:HasTag("lighter"))
 end
 
+function ItemFunctions:IsProjectile(item)
+    local cachedItem = self:GetCachedItem(item)
+    return cachedItem
+       and (cachedItem.components.projectile
+           or cachedItem.components.complexprojectile)
+end
+
+function ItemFunctions:IsTool(item)
+    local cachedItem = self:GetCachedItem(item)
+    return cachedItem
+       and cachedItem.components.tool
+end
+
+function ItemFunctions:IsWeapon(item)
+    local cachedItem = self:GetCachedItem(item)
+    return cachedItem
+       and cachedItem.components.weapon
+end
+
 function ItemFunctions:IsMeleeWeapon(item)
-    return item:HasTag("weapon")
-       and not self:IsCane(item)
-       and not item:HasTag("tool")
+    return self:IsWeapon(item)
+       and not self:IsTool(item)
        and not self:IsTerraformer(item)
-       and self:GetAttackRange(item) == 0
+       and not self:IsCane(item)
+       and not self:IsProjectile(item)
 end
 
 function ItemFunctions:IsRangedWeapon(item)
-    return not self:IsStaff(item)
-       and self:GetAttackRange(item) > 0
+    return self:IsProjectile(item)
 end
 
 function ItemFunctions:IsArmor(item)

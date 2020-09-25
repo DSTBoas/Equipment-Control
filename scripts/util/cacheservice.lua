@@ -12,6 +12,8 @@ local ComponentsUsed =
     "fueled",
     "tool",
     "terraformer",
+    "projectile",
+    "complexprojectile",
 }
 
 local function CacheItem(item)
