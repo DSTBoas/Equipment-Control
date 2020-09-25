@@ -5,7 +5,7 @@ icon_atlas = "modicon.xml"
 icon = "modicon.tex"
 
 author = "Boas"
-version = "1.1"
+version = "1.3"
 forumthread = ""
 
 dont_starve_compatible = false

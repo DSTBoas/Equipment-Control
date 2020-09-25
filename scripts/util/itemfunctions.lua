@@ -304,6 +304,7 @@ function ItemFunctions:IsWeapon(item)
     local cachedItem = self:GetCachedItem(item)
     return cachedItem
        and cachedItem.components.weapon
+       and not cachedItem.components.weapon:CanRangedAttack()
 end
 
 function ItemFunctions:IsMeleeWeapon(item)
@@ -312,6 +313,7 @@ function ItemFunctions:IsMeleeWeapon(item)
        and not self:IsTerraformer(item)
        and not self:IsCane(item)
        and not self:IsProjectile(item)
+       and not self:IsStaff(item)
 end
 
 function ItemFunctions:IsRangedWeapon(item)
