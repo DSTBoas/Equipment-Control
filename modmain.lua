@@ -182,6 +182,10 @@ local Overrides =
     {
         "AUTO_EQUIP_CANE",
     },
+    autolight =
+    {
+        "AUTO_EQUIP_LIGHTSOURCE",
+    },
     autoweapon =
     {
         "AUTO_EQUIP_WEAPON",

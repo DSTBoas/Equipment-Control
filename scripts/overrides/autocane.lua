@@ -9,19 +9,32 @@ local Compatible =
     [ACTIONS.MIGRATE] = true,
 }
 
-local function InCompatibleActions()
+local function CompatibleAction()
     local buffaction = ThePlayer.components.playercontroller:GetLeftMouseAction()
-    return buffaction and not Compatible[buffaction.action]
+
+    return not buffaction
+        or buffaction
+       and Compatible[buffaction.action]
 end
 
 local AUTO_EQUIP_CANE = GetModConfigData("AUTO_EQUIP_CANE", MOD_EQUIPMENT_CONTROL.MODNAME)
 
-local function ShouldEquipCane()
+local function ValidateCaneClick()
+    return CompatibleAction()
+       and InventoryFunctions:GetActiveItem() == nil
+       and TheInput:GetHUDEntityUnderMouse() == nil
+end
+
+local function IsLightSourceEquipped()
+    local handItem = InventoryFunctions:GetEquippedItem(EQUIPSLOTS.HANDS)
+    return handItem
+       and Categories.LIGHTSOURCE.fn(handItem)
+end
+
+local function CanEquipCane()
     return AUTO_EQUIP_CANE
-       and not (TheInput:GetHUDEntityUnderMouse()
-            or InventoryFunctions:IsHeavyLifting()
-            or InventoryFunctions:GetActiveItem()
-            or InCompatibleActions())
+       and not IsLightSourceEquipped()
+       and not InventoryFunctions:IsHeavyLifting()
 end
 
 local function IsEquipped(item)
@@ -36,6 +49,7 @@ end
 
 local function EquipCane()
     local item = ThePlayer.components.actioncontroller:GetItemFromCategory("CANE")
+
     if not item or IsEquipped(item) then
         return
     end
@@ -45,10 +59,10 @@ end
 
 local MoveControls =
 {
-    [CONTROL_MOVE_UP] = true;
-    [CONTROL_MOVE_DOWN] = true;
-    [CONTROL_MOVE_LEFT] = true;
-    [CONTROL_MOVE_RIGHT] = true;
+    [CONTROL_MOVE_UP] = true,
+    [CONTROL_MOVE_DOWN] = true,
+    [CONTROL_MOVE_LEFT] = true,
+    [CONTROL_MOVE_RIGHT] = true,
 }
 
 local function Init()
@@ -60,17 +74,17 @@ local function Init()
 
     local PlayerControllerOnLeftClick = PlayerController.OnLeftClick
     function PlayerController:OnLeftClick(down)
-        if KeybindService:ValidateKeybind() and ThePlayer.components.actioncontroller and ShouldEquipCane() then
+        if ThePlayer.components.actioncontroller
+        and CanEquipCane()
+        and ValidateCaneClick() then
             EquipCane()
-        end
 
-        if self:IsDoingOrWorking() then
-            self.inst:DoTaskInTime(0, function()
-                if TheInput:IsControlPressed(CONTROL_PRIMARY) then
+            if self:IsDoingOrWorking() then
+                self.inst:DoTaskInTime(0, function()
                     PlayerControllerOnLeftClick(self, true)
-                end
-            end)
-            return
+                end)
+                return
+            end
         end
 
         PlayerControllerOnLeftClick(self, down)
@@ -78,7 +92,9 @@ local function Init()
 
     for control in pairs(MoveControls) do
         TheInput:AddControlHandler(control, function()
-            if KeybindService:ValidateKeybind() and ThePlayer.components.actioncontroller and AUTO_EQUIP_CANE and not InventoryFunctions:IsHeavyLifting() then
+            if KeybindService:ValidateKeybind()
+            and ThePlayer.components.actioncontroller
+            and CanEquipCane() then
                 EquipCane()
             end
         end)

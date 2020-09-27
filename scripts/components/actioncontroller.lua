@@ -7,13 +7,13 @@ local AUTO_UNEQUIP_REPAIRABLES = GetModConfigData("AUTO_UNEQUIP_REPAIRABLES", MO
 
 local Preferences =
 {
+    AutoEquipCategory = "WEAPON",
+    User = {},
     Static =
     {
         glasscutter = TUNING.GLASSCUTTER.DAMAGE - .5,
         molehat = .5,
     },
-    User = {},
-    AutoEquipCategory = "WEAPON",
 }
 
 local ActionController = Class(function(self, inst)
@@ -169,6 +169,16 @@ end
 
 function ActionController:GetItemFromCategory(category)
     return GetBestItem(category)
+end
+
+function ActionController:GetItemsFromCategory(category)
+    local ret = {}
+    
+    for _, t in pairs(GetItemPriorityTable(category)) do
+        ret[#ret + 1] = t.item
+    end
+
+    return ret
 end
 
 KeybindService:AddKey("DROPKEY", function()

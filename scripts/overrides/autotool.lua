@@ -26,7 +26,15 @@ local function Init()
             if act and act.MOD_AUTO_EQUIP then
                 SendRPCToServer(RPC.ControllerUseItemOnSelfFromInvTile, ACTIONS.EQUIP.code, act.MOD_AUTO_EQUIP)
             end
+
         end
+
+        -- Automagic control repeat
+        if self:IsDoingOrWorking() then
+            PlayerControllerOnLeftClick(self, true)
+            return
+        end
+
         PlayerControllerOnLeftClick(self, down)
     end
 
@@ -68,7 +76,7 @@ local function Init()
     local PlayerActionPickerDoGetMouseActions = PlayerActionPicker.DoGetMouseActions
     function PlayerActionPicker:DoGetMouseActions(...)
         local ent = TheInput:GetWorldEntityUnderMouse()
-        if ent and not InventoryFunctions:GetActiveItem() then
+        if ent and CanEntitySeeTarget(self.inst, ent) and not InventoryFunctions:GetActiveItem() then
             local tools = GetTools(ent)
             for _, tool in pairs(tools) do
                 if not IsEquipped(tool) then

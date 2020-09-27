@@ -40,8 +40,15 @@ end
 
 function InventoryFunctions:GetEquips()
     local inventory = self:GetInventory()
-    return inventory and inventory:GetEquips()
+    return inventory
+       and inventory:GetEquips()
         or {}
+end
+
+function InventoryFunctions:GetEquippedItem(eslot)
+    local inventory = self:GetInventory()
+    return inventory
+       and inventory:GetEquippedItem(eslot)
 end
 
 function InventoryFunctions:GetBackpack()

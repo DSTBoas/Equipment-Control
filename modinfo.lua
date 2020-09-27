@@ -5,7 +5,7 @@ icon_atlas = "modicon.xml"
 icon = "modicon.tex"
 
 author = "Boas"
-version = "1.4"
+version = "1.5"
 forumthread = ""
 
 dont_starve_compatible = false
@@ -58,11 +58,11 @@ local Languages =
             PreferenceMessage = "Select your preference",
             SettingMessage = "Set to your liking",
             BetaSettingMessage = "(beta) ",
-            DamageEstimationOptions = "Disable 'Auto-equip cane' when kiting for better estimations",
             ButtonPreferenceOptions = "Right click to change preference",
             ButtonAutoEquipOptions = "Shift + Right click to change Auto-equip",
             BetaSettingOptions = "Use this feature at your own discretion",
             AutoEquipCaneOptions = "Auto-equip your cane when using the movement keys",
+            AutoEquipLightSourceOptions = "Auto-equip a light source when using the movement keys at night",
             AutoEquipWeaponOptions = "Auto-equip your best weapon in combat",
             AutoEquipGlasscutterOptions = "Auto-equip your glass cutter against nightmare creatures",
             AutoRefillSlingshotOptions = "Auto-refill your slingshot when out of ammo",
@@ -298,6 +298,7 @@ local Languages =
             AUTO_RE_EQUIP_ARMOR = "Auto-re-equip armor",
             AUTO_EQUIP_WEAPON = "Auto-equip weapon",
             AUTO_EQUIP_CANE = "Auto-equip cane",
+            AUTO_EQUIP_LIGHTSOURCE = "Auto-equip light source",
             AUTO_EQUIP_TOOL = "Auto-equip tools",
             AUTO_EQUIP_GLASSCUTTER = "Auto-equip glass cutter",
             WOODIE_WEREITEM_UNEQUIP = "Auto-regear woodie",
@@ -356,11 +357,11 @@ local Languages =
             PreferenceMessage = "Kies je voorkeur",
             SettingMessage = "Pas aan naar je voorkeur",
             BetaSettingMessage = "(beta) ",
-            DamageEstimationOptions = "Disable 'Auto-equip cane' when kiting for better estimations",
             ButtonPreferenceOptions = "Right click to change preference",
             ButtonAutoEquipOptions = "Shift + Right click to change Auto-equip",
             BetaSettingOptions = "Deze feature kan nog onstabiel zijn",
             AutoEquipCaneOptions = "Auto-aandoen je cane als je loopt",
+            AutoEquipLightSourceOptions = "Auto-aandoen een lamp als je loopt",
             AutoEquipWeaponOptions = "Auto-aandoen je beste wapen in gevecht",
             AutoEquipGlasscutterOptions = "Auto-aandoen je glass cutter tegen schaduw monsters",
             AutoRefillSlingshotOptions = "Auto-herlaad je slingshot",
@@ -569,6 +570,7 @@ local Languages =
             TOGGLE_SORTING_CONTAINER = "Toggle Sorting container",
             TOGGLE_AUTO_EQUIP = "Toggle Auto-equip weapon",
             TOGGLE_AUTO_EQUIP_CANE = "Toggle Auto-equip cane",
+            AUTO_EQUIP_LIGHTSOURCE = "Auto-equip light source",
             TOGGLE_TELEPOOF_MODE = "Toggle Telepoof mouse through",
             BUTTON_SHOW = "Buttons",
             BUTTON_ANIMATIONS = "Animations",
@@ -790,6 +792,7 @@ local SettingOptions = GetDefaultOptions()
 local BetaSettingOptions = GetDefaultOptions(CurrentLanguage.option_messages.BetaSettingOptions)
 
 local AutoEquipCaneOptions = GetDefaultOptions(CurrentLanguage.option_messages.AutoEquipCaneOptions)
+local AutoEquipLightSourceOptions = GetDefaultOptions(CurrentLanguage.option_messages.AutoEquipLightSourceOptions)
 local AutoEquipWeaponOptions = GetDefaultOptions(CurrentLanguage.option_messages.AutoEquipWeaponOptions)
 local AutoEquipGlasscutterOptions = GetDefaultOptions(CurrentLanguage.option_messages.AutoEquipGlasscutterOptions)
 local AutoRefillSlingshotOptions = GetDefaultOptions(CurrentLanguage.option_messages.AutoRefillSlingshotOptions)
@@ -822,7 +825,6 @@ local EstimationOptions =
     AddConfigOption(CurrentLanguage.option_config.EstimationOptions[1][1], 0, CurrentLanguage.option_config.EstimationOptions[1][2]),
     AddConfigOption(CurrentLanguage.option_config.EstimationOptions[2][1], 1, CurrentLanguage.option_config.EstimationOptions[2][2]),
 }
-local DamageEstimationOptions = GetDefaultOptions(CurrentLanguage.option_messages.DamageEstimationOptions)
 
 local LightsourcePreferenceOptions =
 {
@@ -1502,6 +1504,13 @@ configuration_options =
         SettingMessage
     ),
     AddConfig(
+        CurrentLanguage.option_names.AUTO_EQUIP_LIGHTSOURCE,
+        "AUTO_EQUIP_LIGHTSOURCE",
+        AutoEquipLightSourceOptions,
+        true,
+        SettingMessage
+    ),
+    AddConfig(
         CurrentLanguage.option_names.AUTO_EQUIP_TOOL,
         "AUTO_EQUIP_TOOL",
         SettingOptions,
@@ -1542,7 +1551,7 @@ configuration_options =
     AddConfig(
         CurrentLanguage.option_names.DAMAGE_ESTIMATION,
         "DAMAGE_ESTIMATION",
-        DamageEstimationOptions,
+        SettingOptions,
         true,
         SettingMessage
     ),
