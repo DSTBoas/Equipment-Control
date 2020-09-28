@@ -32,6 +32,11 @@ function ItemFunctions:GetPercentUsed(item)
         or 0
 end
 
+local function IsCharacterIgnoresSpoilage()
+    return ThePlayer
+       and ThePlayer.prefab == "wx78"
+end
+
 local function IsSpoilingFood(cachedItem, v)
     return not (cachedItem.components.edible.degrades_with_spoilage
        and v < 0
@@ -61,6 +66,11 @@ function ItemFunctions:GetFoodMultiplier()
     return TUNING[ThePlayer.prefab:upper() .. "_FOOD_MULT"] or 1
 end
 
+local function IsPickyEeater()
+    return ThePlayer
+       and ThePlayer.prefab == "wickerbottom"
+end
+
 function ItemFunctions:GetHunger(item)
     local hunger = 0
 
@@ -82,16 +92,6 @@ function ItemFunctions:GetHunger(item)
     end
 
     return hunger
-end
-
-local function IsCharacterIgnoresSpoilage()
-    return ThePlayer
-       and ThePlayer.prefab == "wx78"
-end
-
-local function IsPickyEeater()
-    return ThePlayer
-       and ThePlayer.prefab == "wickerbottom"
 end
 
 function ItemFunctions:GetHealth(item)
