@@ -258,6 +258,11 @@ function ItemFunctions:GetFuelTime(item)
     return priority
 end
 
+function ItemFunctions:IsLightSource(item)
+    return self:GetFuelTime(item) > 0
+       and not item:HasTag("fueldepleted")
+end
+
 function ItemFunctions:IsRepairable(item)
     local cachedItem = self:GetCachedItem(item)
     return item.prefab == "staff_tornado"
@@ -278,13 +283,6 @@ end
 function ItemFunctions:IsCane(item)
     return self:GetWalkspeedMult(item) > 1
        and self:GetEquipSlot(item) == EQUIPSLOTS.HANDS
-end
-
-function ItemFunctions:IsLightSource(item)
-    return not item:HasTag("fueldepleted")
-       and (item:HasTag(FUELTYPE.CAVE .. "_fueled")
-           or item:HasTag(FUELTYPE.WORMLIGHT .. "_fueled")
-           or item:HasTag("lighter"))
 end
 
 function ItemFunctions:IsProjectile(item)
@@ -309,6 +307,7 @@ end
 
 function ItemFunctions:IsMeleeWeapon(item)
     return self:IsWeapon(item)
+       and not self:IsLightSource(item)
        and not self:IsTool(item)
        and not self:IsTerraformer(item)
        and not self:IsCane(item)

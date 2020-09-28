@@ -347,6 +347,7 @@ local function CanHitNightmare(target)
     end
 
     return IsInAttackRange(target)
+       and target.replica.combat
        and target.replica.combat:CanBeAttacked(ThePlayer)
 end
 
@@ -356,6 +357,7 @@ local function ValidateRange(target)
     end
 
     return IsInAttackRange(target)
+       and target.replica.combat
        and target.replica.combat:CanBeAttacked(ThePlayer)
 end
 
