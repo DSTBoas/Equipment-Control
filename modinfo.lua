@@ -5,7 +5,7 @@ icon_atlas = "modicon.xml"
 icon = "modicon.tex"
 
 author = "Boas"
-version = "1.7"
+version = "1.8"
 forumthread = ""
 
 dont_starve_compatible = false
@@ -62,7 +62,7 @@ local Languages =
             ButtonAutoEquipOptions = "Shift + Right click to change Auto-equip",
             BetaSettingOptions = "Use this feature at your own discretion",
             AutoEquipCaneOptions = "Auto-equip your cane when using the movement keys",
-            AutoEquipLightSourceOptions = "Auto-equip a light source when using the movement keys at night",
+            AutoEquipLightSourceOptions = "Auto-equip your light source in the dark!",
             AutoEquipWeaponOptions = "Auto-equip your best weapon in combat",
             AutoEquipGlasscutterOptions = "Auto-equip your glass cutter against nightmare creatures",
             AutoRefillSlingshotOptions = "Auto-refill your slingshot when out of ammo",
@@ -293,6 +293,7 @@ local Languages =
             BUTTON_14_CATEGORY = "Button 14 category",
             BUTTON_15_CATEGORY = "Button 15 category",
             PREFERRED = "Preferred ",
+            PREFERRED_AUTO_LIGHT = "Preferred Auto-equip light",
             AUTO_UNEQUIP_REPAIRABLES = "Auto-unequip repairables",
             AUTO_RE_EQUIP_WEAPON = "Auto-re-equip weapon",
             AUTO_RE_EQUIP_ARMOR = "Auto-re-equip armor",
@@ -361,7 +362,7 @@ local Languages =
             ButtonAutoEquipOptions = "Shift + Right click to change Auto-equip",
             BetaSettingOptions = "Deze feature kan nog onstabiel zijn",
             AutoEquipCaneOptions = "Auto-aandoen je cane als je loopt",
-            AutoEquipLightSourceOptions = "Auto-aandoen een lamp als je loopt",
+            AutoEquipLightSourceOptions = "Auto-equip your light source in the dark!",
             AutoEquipWeaponOptions = "Auto-aandoen je beste wapen in gevecht",
             AutoEquipGlasscutterOptions = "Auto-aandoen je glass cutter tegen schaduw monsters",
             AutoRefillSlingshotOptions = "Auto-herlaad je slingshot",
@@ -593,6 +594,7 @@ local Languages =
             BUTTON_14_CATEGORY = "Button 14 category",
             BUTTON_15_CATEGORY = "Button 15 category",
             PREFERRED = "Preferred ",
+            PREFERRED_AUTO_LIGHT = "Preferred Auto-equip light",
             AUTO_UNEQUIP_REPAIRABLES = "Auto-unequip repairables",
             AUTO_RE_EQUIP_WEAPON = "Auto-re-equip weapon",
             AUTO_RE_EQUIP_ARMOR = "Auto-re-equip armor",
@@ -1465,6 +1467,13 @@ configuration_options =
         false,
         PreferenceMessage
     ),
+    AddConfig(
+        CurrentLanguage.option_names.PREFERRED_AUTO_LIGHT,
+        "PREFERRED_AUTO_LIGHT",
+        LightsourcePreferenceOptions,
+        false,
+        PreferenceMessage
+    ),
 
 
     AddSectionTitle(CurrentLanguage.option_titles.Automation),
@@ -1507,14 +1516,14 @@ configuration_options =
         CurrentLanguage.option_names.AUTO_EQUIP_LIGHTSOURCE,
         "AUTO_EQUIP_LIGHTSOURCE",
         AutoEquipLightSourceOptions,
-        true,
+        false,
         SettingMessage
     ),
     AddConfig(
         CurrentLanguage.option_names.AUTO_EQUIP_TOOL,
         "AUTO_EQUIP_TOOL",
         SettingOptions,
-        1,
+        true,
         SettingMessage
     ),
     AddConfig(

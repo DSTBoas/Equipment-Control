@@ -26,7 +26,6 @@ local function Init()
             if act and act.MOD_AUTO_EQUIP then
                 SendRPCToServer(RPC.ControllerUseItemOnSelfFromInvTile, ACTIONS.EQUIP.code, act.MOD_AUTO_EQUIP)
             end
-
         end
 
         -- Automagic control repeat

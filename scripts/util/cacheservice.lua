@@ -14,6 +14,7 @@ local ComponentsUsed =
     "terraformer",
     "projectile",
     "complexprojectile",
+    "perishable",
 }
 
 local function CacheItem(item)

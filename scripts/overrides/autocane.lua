@@ -26,9 +26,9 @@ local function ValidateCaneClick()
 end
 
 local function IsLightSourceEquipped()
-    local handItem = InventoryFunctions:GetEquippedItem(EQUIPSLOTS.HANDS)
-    return handItem
-       and Categories.LIGHTSOURCE.fn(handItem)
+    local equipped = InventoryFunctions:GetEquippedItem(EQUIPSLOTS.HANDS)
+    return equipped
+       and Categories.LIGHTSOURCE.fn(equipped)
 end
 
 local function CanEquipCane()
@@ -74,9 +74,7 @@ local function Init()
 
     local PlayerControllerOnLeftClick = PlayerController.OnLeftClick
     function PlayerController:OnLeftClick(down)
-        if ThePlayer.components.actioncontroller
-        and CanEquipCane()
-        and ValidateCaneClick() then
+        if CanEquipCane() and ValidateCaneClick() then
             EquipCane()
 
             if self:IsDoingOrWorking() then
@@ -92,9 +90,7 @@ local function Init()
 
     for control in pairs(MoveControls) do
         TheInput:AddControlHandler(control, function()
-            if KeybindService:ValidateKeybind()
-            and ThePlayer.components.actioncontroller
-            and CanEquipCane() then
+            if KeybindService:ValidateKeybind() and CanEquipCane() then
                 EquipCane()
             end
         end)

@@ -1,6 +1,6 @@
 local ItemFunctions = require "util/itemfunctions"
 local KeybindService = MOD_EQUIPMENT_CONTROL.KEYBINDSERVICE
-local SPECIALFOOD = MOD_EQUIPMENT_CONTROL.SPECIALFOOD
+local SpecialFood = MOD_EQUIPMENT_CONTROL.SPECIALFOOD
 
 local Category = Class(function(self, image, autoequip, imagepath)
     self.priority = function() return 0 end
@@ -122,7 +122,7 @@ end
 Categories.RANGED.priority = Categories.WEAPON.priority
 
 Categories.FOOD.fn = function(item)
-    return not SPECIALFOOD[item.prefab]
+    return not SpecialFood[item.prefab]
        and ItemFunctions:CanEat(item)
        and (ItemFunctions:GetHunger(item) >= 0
             and ItemFunctions:GetHealth(item) >= 0
@@ -140,7 +140,7 @@ Categories.FOOD.priority = function(item)
 end
 
 Categories.HEALINGFOOD.fn = function(item)
-    return not SPECIALFOOD[item.prefab]
+    return not SpecialFood[item.prefab]
        and (ItemFunctions:CanEat(item)
            and ItemFunctions:GetHealth(item) > 0
             or ItemFunctions:IsHealingItem(item))

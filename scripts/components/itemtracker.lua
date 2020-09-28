@@ -3,8 +3,8 @@ local ItemFunctions = require "util/itemfunctions"
 local Say = require "util/say"
 
 -- 
--- Config 
---
+-- Config
+-- 
 
 local AUTO_RE_EQUIP_WEAPON = GetModConfigData("AUTO_RE_EQUIP_WEAPON", MOD_EQUIPMENT_CONTROL.MODNAME)
 local AUTO_RE_EQUIP_ARMOR = GetModConfigData("AUTO_RE_EQUIP_ARMOR", MOD_EQUIPMENT_CONTROL.MODNAME)
@@ -268,7 +268,7 @@ end
 
 -- 
 -- Triggers
---
+-- 
 
 local function IsHambat(item)
     return item.prefab == "hambat"
@@ -300,9 +300,9 @@ local function IsRepairable(item)
     return ItemFunctions:IsRepairable(item)
 end
 
----
+--- 
 --- Tracker system
----
+--- 
 
 local function AddTracker(triggerFn, event, eventFn, classified, initFn)
     TrackerFunctions[#TrackerFunctions + 1] =

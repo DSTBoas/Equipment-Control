@@ -37,29 +37,23 @@ local function IsCharacterIgnoresSpoilage()
        and ThePlayer.prefab == "wx78"
 end
 
-local function IsSpoilingFood(cachedItem, v)
-    return not (cachedItem.components.edible.degrades_with_spoilage
-       and v < 0
-       and IsCharacterIgnoresSpoilage())
+local function IsSpoilingFood(cachedItem, val)
+    return not IsCharacterIgnoresSpoilage()
+       and cachedItem.components.edible.degrades_with_spoilage
+       and val > 0
 end
 
 local FOODSTATES =
 {
     FRESH = 1,
     STALE = 2,
-    SPOILED = 3
+    SPOILED = 3,
 }
 
-local function GetFoodState(perish)
-    local state = FOODSTATES.SPOILED
-
-    if perish >= 0.5 then
-        state = FOODSTATES.FRESH
-    elseif perish > 0.2 then
-        state = FOODSTATES.STALE
-    end
-
-    return state
+local function GetFoodState(item)
+    return item:HasTag("stale") and FOODSTATES.STALE
+        or item:HasTag("spoiled") and FOODSTATES.SPOILED
+        or FOODSTATES.FRESH
 end
 
 function ItemFunctions:GetFoodMultiplier()
@@ -76,11 +70,11 @@ function ItemFunctions:GetHunger(item)
 
     local cachedItem = self:GetCachedItem(item)
     if cachedItem and cachedItem.components.edible then
-        local foodState = GetFoodState(self:GetPerish(item))
-        local foodMult = self:GetFoodMultiplier()
         hunger = cachedItem.components.edible.hungervalue
 
         if IsSpoilingFood(cachedItem, hunger) then
+            local foodState = GetFoodState(item)
+
             if foodState == FOODSTATES.STALE then
                 hunger = hunger * (IsPickyEeater() and TUNING.WICKERBOTTOM_STALE_FOOD_HUNGER or TUNING.STALE_FOOD_HUNGER)
             elseif foodState == FOODSTATES.SPOILED then
@@ -88,7 +82,7 @@ function ItemFunctions:GetHunger(item)
             end
         end
 
-        hunger = math.ceil(hunger * foodMult)
+        hunger = math.ceil(hunger * self:GetFoodMultiplier())
     end
 
     return hunger
@@ -99,11 +93,10 @@ function ItemFunctions:GetHealth(item)
 
     local cachedItem = self:GetCachedItem(item)
     if cachedItem and cachedItem.components.edible then
-        local foodState = GetFoodState(self:GetPerish(item))
-        local foodMult = self:GetFoodMultiplier()
         health = cachedItem.components.edible.healthvalue
 
         if IsSpoilingFood(cachedItem, health) then
+            local foodState = GetFoodState(item)
             if foodState == FOODSTATES.STALE then
                 health = health * (IsPickyEeater() and TUNING.WICKERBOTTOM_STALE_FOOD_HEALTH or TUNING.STALE_FOOD_HEALTH)
             elseif foodState == FOODSTATES.SPOILED then
@@ -111,7 +104,7 @@ function ItemFunctions:GetHealth(item)
             end
         end
 
-        health = math.ceil(health * foodMult)
+        health = math.ceil(health * self:GetFoodMultiplier())
     elseif cachedItem and cachedItem.components.healer then
         health = cachedItem.components.healer.health
     end
@@ -145,14 +138,12 @@ function ItemFunctions:GetUses(item)
 end
 
 function ItemFunctions:GetWalkspeedMult(item)
-    local walkspeedMult = 0
-
     local cachedItem = self:GetCachedItem(item)
-    if cachedItem and cachedItem.components.equippable and cachedItem.components.equippable.walkspeedmult then
-        walkspeedMult = cachedItem.components.equippable.walkspeedmult
-    end
 
-    return walkspeedMult
+    return cachedItem
+       and cachedItem.components.equippable
+       and cachedItem.components.equippable.walkspeedmult
+        or 0
 end
 
 local function GetHambatDamage(item)
