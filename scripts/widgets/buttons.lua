@@ -53,9 +53,8 @@ local Buttons = Class(Widget, function(self, owner, inventorybar)
 end)
 
 function Buttons:Build()
-    local btnCategory
     for i = 1, 15 do
-        btnCategory = GetModConfigData("BUTTON_" .. i .. "_CATEGORY", MOD_EQUIPMENT_CONTROL.MODNAME)
+        local btnCategory = GetModConfigData("BUTTON_" .. i .. "_CATEGORY", MOD_EQUIPMENT_CONTROL.MODNAME)
         if btnCategory then
             self.buttons[i] = self:AddChild(ItemButton("inv_slot_spoiled.tex", self.owner, btnCategory))
         end

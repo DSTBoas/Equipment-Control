@@ -5,7 +5,7 @@ icon_atlas = "modicon.xml"
 icon = "modicon.tex"
 
 author = "Boas"
-version = "1.9"
+version = "2.0"
 forumthread = ""
 
 dont_starve_compatible = false
@@ -48,6 +48,7 @@ local Languages =
             Pickup = "Pickup",
             Telepoof = "Telepoof",
             Estimation = "Estimation",
+            Mousethrough = "Improved mousethrough",
             Sorting = "Sorting",
         },
         option_messages =
@@ -62,7 +63,7 @@ local Languages =
             ButtonAutoEquipOptions = "Shift + Right click to change Auto-equip",
             BetaSettingOptions = "Use this feature at your own discretion",
             AutoEquipCaneOptions = "Auto-equip your cane when using the movement keys",
-            AutoEquipLightSourceOptions = "Auto-equip your light source in the dark!",
+            AutoEquipLightSourceOptions = "Auto-equip your light in the dark!",
             AutoEquipWeaponOptions = "Auto-equip your best weapon in combat",
             AutoEquipGlasscutterOptions = "Auto-equip your glass cutter against nightmare creatures",
             AutoRefillSlingshotOptions = "Auto-refill your slingshot when out of ammo",
@@ -293,13 +294,12 @@ local Languages =
             BUTTON_14_CATEGORY = "Button 14 category",
             BUTTON_15_CATEGORY = "Button 15 category",
             PREFERRED = "Preferred ",
-            PREFERRED_AUTO_LIGHT = "Preferred Auto-equip light",
             AUTO_UNEQUIP_REPAIRABLES = "Auto-unequip repairables",
             AUTO_RE_EQUIP_WEAPON = "Auto-re-equip weapon",
             AUTO_RE_EQUIP_ARMOR = "Auto-re-equip armor",
             AUTO_EQUIP_WEAPON = "Auto-equip weapon",
             AUTO_EQUIP_CANE = "Auto-equip cane",
-            AUTO_EQUIP_LIGHTSOURCE = "Auto-equip light source",
+            AUTO_EQUIP_LIGHTSOURCE = "Auto-equip light",
             AUTO_EQUIP_TOOL = "Auto-equip tools",
             AUTO_EQUIP_GLASSCUTTER = "Auto-equip glass cutter",
             WOODIE_WEREITEM_UNEQUIP = "Auto-regear woodie",
@@ -319,9 +319,10 @@ local Languages =
             PICKUP_IGNORE_FERNS = "Ignore Ferns",
             PICKUP_IGNORE_MARSH_BUSH = "Ignore Spiky Bush",
             TELEPOOF_ENABLED = "Enabled by default",
-            TELEPOOF_MOUSETHROUGH = "Improved mousethrough",
             TELEPOOF_DOUBLECLICK = "Doubleclick",
             TELEPOOF_HOVER = "Hovertext",
+            ORANGESTAFF_MOUSETHROUGH = "Star Caller Staff",
+            YELLOWSTAFF_MOUSETHROUGH = "The Lazy Explorer",
             LANTERN_ESTIMATION = "Lantern fuel estimation",
             CONTAINER_SORT = "Sorting container",
             ARMOR_SORT_PRIORITY = "Armor priority",
@@ -348,6 +349,7 @@ local Languages =
             Pickup = "Pickup",
             Telepoof = "Telepoof",
             Estimation = "Estimation",
+            Mousethrough = "Improved mousethrough",
             Sorting = "Sorting",
         },
         option_messages =
@@ -362,7 +364,7 @@ local Languages =
             ButtonAutoEquipOptions = "Shift + Right click to change Auto-equip",
             BetaSettingOptions = "Deze feature kan nog onstabiel zijn",
             AutoEquipCaneOptions = "Auto-aandoen je cane als je loopt",
-            AutoEquipLightSourceOptions = "Auto-equip your light source in the dark!",
+            AutoEquipLightSourceOptions = "Auto-equip your light in the dark!",
             AutoEquipWeaponOptions = "Auto-aandoen je beste wapen in gevecht",
             AutoEquipGlasscutterOptions = "Auto-aandoen je glass cutter tegen schaduw monsters",
             AutoRefillSlingshotOptions = "Auto-herlaad je slingshot",
@@ -571,7 +573,7 @@ local Languages =
             TOGGLE_SORTING_CONTAINER = "Toggle Sorting container",
             TOGGLE_AUTO_EQUIP = "Toggle Auto-equip weapon",
             TOGGLE_AUTO_EQUIP_CANE = "Toggle Auto-equip cane",
-            AUTO_EQUIP_LIGHTSOURCE = "Auto-equip light source",
+            AUTO_EQUIP_LIGHTSOURCE = "Auto-equip light",
             TOGGLE_TELEPOOF_MODE = "Toggle Telepoof mouse through",
             BUTTON_SHOW = "Buttons",
             BUTTON_ANIMATIONS = "Animations",
@@ -594,7 +596,6 @@ local Languages =
             BUTTON_14_CATEGORY = "Button 14 category",
             BUTTON_15_CATEGORY = "Button 15 category",
             PREFERRED = "Preferred ",
-            PREFERRED_AUTO_LIGHT = "Preferred Auto-equip light",
             AUTO_UNEQUIP_REPAIRABLES = "Auto-unequip repairables",
             AUTO_RE_EQUIP_WEAPON = "Auto-re-equip weapon",
             AUTO_RE_EQUIP_ARMOR = "Auto-re-equip armor",
@@ -619,9 +620,10 @@ local Languages =
             PICKUP_IGNORE_FERNS = "Ignore Ferns",
             PICKUP_IGNORE_MARSH_BUSH = "Ignore Spiky Bush",
             TELEPOOF_ENABLED = "Enabled by default",
-            TELEPOOF_MOUSETHROUGH = "Improved mousethrough",
             TELEPOOF_DOUBLECLICK = "Doubleclick",
             TELEPOOF_HOVER = "Hovertext",
+            ORANGESTAFF_MOUSETHROUGH = "Star Caller Staff",
+            YELLOWSTAFF_MOUSETHROUGH = "The Lazy Explorer",
             LANTERN_ESTIMATION = "Lantern fuel estimation",
             CONTAINER_SORT = "Sorting container",
             ARMOR_SORT_PRIORITY = "Armor priority",
@@ -1468,7 +1470,7 @@ configuration_options =
         PreferenceMessage
     ),
     AddConfig(
-        CurrentLanguage.option_names.PREFERRED_AUTO_LIGHT,
+        CurrentLanguage.option_names.PREFERRED .. CurrentLanguage.option_names.AUTO_EQUIP_LIGHTSOURCE,
         "PREFERRED_AUTO_LIGHT",
         LightsourcePreferenceOptions,
         false,
@@ -1665,13 +1667,6 @@ configuration_options =
         SettingMessage
     ),
     AddConfig(
-        CurrentLanguage.option_names.TELEPOOF_MOUSETHROUGH,
-        "TELEPOOF_MOUSETHROUGH",
-        SettingOptions,
-        true,
-        SettingMessage
-    ),
-    AddConfig(
         CurrentLanguage.option_names.TELEPOOF_HOVER,
         "TELEPOOF_HOVER",
         SettingOptions,
@@ -1683,6 +1678,23 @@ configuration_options =
         "TELEPOOF_DOUBLECLICK",
         TelepoofDoubleClickOptions,
         .5,
+        SettingMessage
+    ),
+
+
+    AddSectionTitle(CurrentLanguage.option_titles.Mousethrough),
+    AddConfig(
+        CurrentLanguage.option_names.ORANGESTAFF_MOUSETHROUGH,
+        "ORANGESTAFF_MOUSETHROUGH",
+        SettingOptions,
+        true,
+        SettingMessage
+    ),
+    AddConfig(
+        CurrentLanguage.option_names.YELLOWSTAFF_MOUSETHROUGH,
+        "YELLOWSTAFF_MOUSETHROUGH",
+        SettingOptions,
+        true,
         SettingMessage
     ),
 

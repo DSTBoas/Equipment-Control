@@ -286,6 +286,7 @@ local NpcOffset =
     crawlingnightmare = 4,
     nightmarebeak = 5,
     minotaur = 5,
+    tallbird = 6,
     beequeen = 7,
     dragonfly = 8,
     crabking = 9,
