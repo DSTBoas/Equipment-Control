@@ -1,6 +1,6 @@
 local Say = require("util/say")
 local KeybindService = MOD_EQUIPMENT_CONTROL.KEYBINDSERVICE
-local SPECIALFOOD = MOD_EQUIPMENT_CONTROL.SPECIALFOOD
+local SpecialFood = MOD_EQUIPMENT_CONTROL.SPECIALFOOD
 
 local KeyToNames =
 {
@@ -59,7 +59,7 @@ local function Init()
 
     local OldUseItemFromInvTile = InventoryReplica.UseItemFromInvTile
     function InventoryReplica:UseItemFromInvTile(item)
-        if item and SPECIALFOOD[item.prefab] and not TheInput:IsKeyDown(EatOverrideKey) then
+        if item and SpecialFood[item.prefab] and not TheInput:IsKeyDown(EatOverrideKey) then
             Say(
                 string.format(
                     "Hold %s to eat %s.",

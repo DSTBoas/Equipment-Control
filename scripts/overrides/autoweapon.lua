@@ -44,18 +44,8 @@ local function GetPrefabFromInventory(prefab)
     return nil
 end
 
-local function IsEquipped(item)
-    for _, equippedItem in pairs(InventoryFunctions:GetEquips()) do
-        if equippedItem.prefab == item.prefab then
-            return true
-        end
-    end
-
-    return false
-end
-
 local function Equip(item)
-    if IsEquipped(item) then
+    if not item or InventoryFunctions:IsEquipped(item.prefab) then
         return
     end
 
@@ -69,10 +59,6 @@ local function EquipWeapon()
 
     local category = ThePlayer.components.actioncontroller:GetAutoEquipCategory()
     local weapon = ThePlayer.components.actioncontroller:GetItemFromCategory(category)
-
-    if not weapon or IsEquipped(weapon) then
-        return
-    end
 
     Equip(weapon)
 end

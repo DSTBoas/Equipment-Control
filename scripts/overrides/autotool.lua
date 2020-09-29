@@ -1,16 +1,6 @@
 local InventoryFunctions = require "util/inventoryfunctions"
 local KeybindService = MOD_EQUIPMENT_CONTROL.KEYBINDSERVICE
 
-local function IsEquipped(item)
-    for _, equippedItem in pairs(InventoryFunctions:GetEquips()) do
-        if equippedItem.prefab == item.prefab then
-            return true
-        end
-    end
-
-    return false
-end
-
 local function Init()
     local PlayerController = ThePlayer and ThePlayer.components.playercontroller
     local PlayerActionPicker = ThePlayer and ThePlayer.components.playeractionpicker
@@ -78,7 +68,7 @@ local function Init()
         if ent and CanEntitySeeTarget(self.inst, ent) and not InventoryFunctions:GetActiveItem() then
             local tools = GetTools(ent)
             for _, tool in pairs(tools) do
-                if not IsEquipped(tool) then
+                if not InventoryFunctions:IsEquipped(tool.prefab) then
                     local lmboverride = self:GetEquippedItemActions(ent, tool)
 
                     lmboverride = lmboverride and lmboverride[1]

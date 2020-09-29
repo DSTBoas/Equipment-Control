@@ -9,18 +9,20 @@ local Compatible =
     [ACTIONS.MIGRATE] = true,
 }
 
-local function CompatibleAction()
+local function IsCompatibleLeftClickAction()
     local buffaction = ThePlayer.components.playercontroller:GetLeftMouseAction()
 
-    return not buffaction
-        or buffaction
-       and Compatible[buffaction.action]
+    if not buffaction then
+        return true
+    end
+
+    return Compatible[buffaction.action]
 end
 
 local AUTO_EQUIP_CANE = GetModConfigData("AUTO_EQUIP_CANE", MOD_EQUIPMENT_CONTROL.MODNAME)
 
 local function ValidateCaneClick()
-    return CompatibleAction()
+    return IsCompatibleLeftClickAction()
        and InventoryFunctions:GetActiveItem() == nil
        and TheInput:GetHUDEntityUnderMouse() == nil
 end
@@ -37,20 +39,10 @@ local function CanEquipCane()
        and not InventoryFunctions:IsHeavyLifting()
 end
 
-local function IsEquipped(item)
-    for _, equippedItem in pairs(InventoryFunctions:GetEquips()) do
-        if equippedItem.prefab == item.prefab then
-            return true
-        end
-    end
-
-    return false
-end
-
 local function EquipCane()
     local item = ThePlayer.components.actioncontroller:GetItemFromCategory("CANE")
 
-    if not item or IsEquipped(item) then
+    if not item or InventoryFunctions:IsEquipped(item.prefab) then
         return
     end
 
@@ -90,7 +82,7 @@ local function Init()
 
     for control in pairs(MoveControls) do
         TheInput:AddControlHandler(control, function()
-            if KeybindService:ValidateKeybind() and CanEquipCane() then
+            if CanEquipCane() and KeybindService:ValidateKeybind() then
                 EquipCane()
             end
         end)

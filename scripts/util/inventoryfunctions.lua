@@ -7,8 +7,31 @@ end
 
 function InventoryFunctions:GetInventoryItems()
     local inventory = self:GetInventory()
-    return inventory and inventory:GetItems()
+    return inventory
+       and inventory:GetItems()
         or {}
+end
+
+function InventoryFunctions:IsEquipped(item)
+    if not item then
+        return false
+    end
+
+    if type(item) == "string" then
+        for _, equippedItem in pairs(self:GetEquips()) do
+            if equippedItem.prefab == item then
+                return true
+            end
+        end
+    else
+        for _, equippedItem in pairs(self:GetEquips()) do
+            if equippedItem == item then
+                return true
+            end
+        end
+    end
+
+    return false
 end
 
 function InventoryFunctions:GetPlayerInventory(equips, noActiveItem)
@@ -60,7 +83,8 @@ end
 
 function InventoryFunctions:GetBackpackItems()
     local backpack = self:GetBackpack()
-    return backpack and backpack:GetItems()
+    return backpack
+       and backpack:GetItems()
         or {}
 end
 

@@ -7,10 +7,6 @@ local Say = require "util/say"
 -- 
 
 local AUTO_RE_EQUIP_WEAPON = GetModConfigData("AUTO_RE_EQUIP_WEAPON", MOD_EQUIPMENT_CONTROL.MODNAME)
-local AUTO_RE_EQUIP_ARMOR = GetModConfigData("AUTO_RE_EQUIP_ARMOR", MOD_EQUIPMENT_CONTROL.MODNAME)
-local AUTO_REFUEL_LIGHT_SOURCES = GetModConfigData("AUTO_REFUEL_LIGHT_SOURCES", MOD_EQUIPMENT_CONTROL.MODNAME)
-local AUTO_UNEQUIP_REPAIRABLES = GetModConfigData("AUTO_UNEQUIP_REPAIRABLES", MOD_EQUIPMENT_CONTROL.MODNAME)
-local AUTO_SWITCH_BONE_ARMOR = GetModConfigData("AUTO_SWITCH_BONE_ARMOR", MOD_EQUIPMENT_CONTROL.MODNAME)
 local BUTTON_SHOW = GetModConfigData("BUTTON_SHOW", MOD_EQUIPMENT_CONTROL.MODNAME)
 
 local Trackers = {}
@@ -431,19 +427,19 @@ local ItemTracker = Class(function(self, inst)
         AddTracker(IsWeapon, "onremove", AutoReEquip)
     end
 
-    if AUTO_RE_EQUIP_ARMOR then
+    if GetModConfigData("AUTO_RE_EQUIP_ARMOR", MOD_EQUIPMENT_CONTROL.MODNAME) then
         AddTracker(IsArmor, "onremove", AutoReEquipArmor)
     end
 
-    if AUTO_REFUEL_LIGHT_SOURCES then
+    if GetModConfigData("AUTO_REFUEL_LIGHT_SOURCES", MOD_EQUIPMENT_CONTROL.MODNAME) then
         AddTracker(IsFuelable, "percentuseddirty", AutoRefuel, true)
     end
 
-    if AUTO_UNEQUIP_REPAIRABLES then
+    if GetModConfigData("AUTO_UNEQUIP_REPAIRABLES", MOD_EQUIPMENT_CONTROL.MODNAME) then
         AddTracker(IsRepairable, "percentuseddirty", AutoUnEquip, true, AutoUnEquip)
     end
 
-    if AUTO_SWITCH_BONE_ARMOR then
+    if GetModConfigData("AUTO_SWITCH_BONE_ARMOR", MOD_EQUIPMENT_CONTROL.MODNAME) then
         AddTracker(IsBoneArmor, "percentuseddirty", AutoSwitchSkeletonArmor, true)
     end
 
