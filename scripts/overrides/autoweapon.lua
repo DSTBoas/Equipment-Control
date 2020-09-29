@@ -1,5 +1,6 @@
 local InventoryFunctions = require "util/inventoryfunctions"
 local KeybindService = MOD_EQUIPMENT_CONTROL.KEYBINDSERVICE
+
 -- 
 -- Logic
 -- 
@@ -31,7 +32,8 @@ end
 local AUTO_EQUIP_WEAPON = GetModConfigData("AUTO_EQUIP_WEAPON", MOD_EQUIPMENT_CONTROL.MODNAME)
 
 local function WeaponTrigger(target)
-    return AUTO_EQUIP_WEAPON and not target:HasTag("butterfly")
+    return AUTO_EQUIP_WEAPON
+       and not target:HasTag("butterfly")
 end
 
 local function GetPrefabFromInventory(prefab)
