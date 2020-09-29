@@ -35,11 +35,12 @@ local function Init()
         end
     end
 
+
     local function GetToolTags(target)
         local ret = {}
 
         for toolAction in pairs(MODIFIED_TOOLACTIONS) do
-            if target:HasTag(toolAction .. "_workable") then
+            if target:HasTag(toolAction .. "_workable") and not InventoryFunctions:EquipHasTag(toolAction .. "_tool") then
                 ret[#ret + 1] = toolAction .. "_tool"
             end
         end
@@ -68,17 +69,15 @@ local function Init()
         if ent and CanEntitySeeTarget(self.inst, ent) and not InventoryFunctions:GetActiveItem() then
             local tools = GetTools(ent)
             for _, tool in pairs(tools) do
-                if not InventoryFunctions:IsEquipped(tool.prefab) then
-                    local lmboverride = self:GetEquippedItemActions(ent, tool)
+                local lmboverride = self:GetEquippedItemActions(ent, tool)
 
-                    lmboverride = lmboverride and lmboverride[1]
+                lmboverride = lmboverride and lmboverride[1]
 
-                    if lmboverride then
-                        lmboverride.MOD_AUTO_EQUIP = tool
-                    end
-
-                    return lmboverride, nil
+                if lmboverride then
+                    lmboverride.MOD_AUTO_EQUIP = tool
                 end
+
+                return lmboverride, nil
             end
         end
 

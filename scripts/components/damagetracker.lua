@@ -280,6 +280,8 @@ local NpcOffset =
 {
     beeguard = 3,
     rook = 3,
+    bat = 3,
+    rocky = 3,
     rook_nightmare = 3,
     crawlingnightmare = 4,
     nightmarebeak = 5,
@@ -294,14 +296,15 @@ local NpcOffset =
 local TagToOffset =
 {
     hive = 3,
-    knight = 3,
     rook = 3,
     pig = 3,
     merm = 3,
+    knight = 3.5,
     beefalo = 4,
     deer = 4,
     warg = 4,
     lightninggoat = 4,
+    bishop = 4.5,
     leif = 7,
     toadstool = 7,
 }
