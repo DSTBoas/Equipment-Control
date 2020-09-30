@@ -8,6 +8,7 @@ local Say = require "util/say"
 
 local AUTO_RE_EQUIP_WEAPON = GetModConfigData("AUTO_RE_EQUIP_WEAPON", MOD_EQUIPMENT_CONTROL.MODNAME)
 local BUTTON_SHOW = GetModConfigData("BUTTON_SHOW", MOD_EQUIPMENT_CONTROL.MODNAME)
+local PREFERRED_FUEL = GetModConfigData("PREFERRED_FUEL", MOD_EQUIPMENT_CONTROL.MODNAME)
 
 local Trackers = {}
 local TrackerFunctions = {}
@@ -187,16 +188,33 @@ local function AutoSwitchSkeletonArmor(item)
     end
 end
 
-local function GetFuels(item)
-    local fuels = {}
+local function GetFuelTypes(item)
+    local ret = {}
 
     for _, tag in pairs(FUELTYPE) do
         if item:HasTag(tag .. "_fueled") then
-            fuels[#fuels + 1] = tag
+            ret[#ret + 1] = tag
         end
     end
 
-    return fuels
+    return ret
+end
+
+local function GetFuel(fuelTypes)
+    local ret = {}
+
+    for _, invItem in pairs(InventoryFunctions:GetPlayerInventory(true)) do
+        for _, fuel in pairs(fuelTypes) do
+            if invItem:HasTag(fuel .. "_fuel") then
+                ret[#ret + 1] = invItem
+                if invItem.prefab == PREFERRED_FUEL then
+                    return invItem
+                end
+            end
+        end
+    end
+
+    return ret[1]
 end
 
 local function IsWalkButtonDown()
@@ -236,15 +254,11 @@ local function AutoRefuel(item)
     item = item.entity:GetParent()
 
     if ItemFunctions:GetPercentUsed(item) < 50 then
-        local fuels = GetFuels(item)
+        local fuelTypes = GetFuelTypes(item)
+        local fuel = GetFuel(fuelTypes)
 
-        for _, invItem in pairs(InventoryFunctions:GetPlayerInventory(true)) do
-            for _, fuel in pairs(fuels) do
-                if invItem:HasTag(fuel .. "_fuel") then
-                    AddFuel(invItem, item)
-                    return
-                end
-            end
+        if fuel then
+            AddFuel(fuel, item)
         end
     end
 end

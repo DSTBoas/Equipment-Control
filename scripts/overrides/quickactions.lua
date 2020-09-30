@@ -105,6 +105,7 @@ local CannotOverrideActions =
 local function ModDoGetMouseActions(self, position, target)
     local isaoetargeting = false
     local wantsaoetargeting = false
+
     if position == nil and not self.inst.replica.inventory:GetActiveItem() then
         isaoetargeting = self.inst.components.playercontroller:IsAOETargeting()
         wantsaoetargeting = not isaoetargeting and self.inst.components.playercontroller:HasAOETargeting()
@@ -305,6 +306,18 @@ end
 -- QuickActions Triggers
 -- 
 
+local function IsDigWorkable(target)
+    return target:HasTag(ACTIONS.DIG.id .. "_workable")
+end
+
+local function IsHammerWorkable(target)
+    return target:HasTag(ACTIONS.HAMMER.id .. "_workable")
+end
+
+local function IsNetWorkable(target)
+    return target:HasTag(ACTIONS.NET.id .. "_workable")
+end
+
 local function IsHighFire(inst)
     local x, y, z = inst.Transform:GetWorldPosition()
     local fire = (TheSim:FindEntities(x, y, z, .5, {"HASHEATER", "fx"}))[1]
@@ -361,9 +374,68 @@ local function IsBirdcageSleeping(target)
        and IsSleeping(target)
 end
 
+local function GetToolFromInventory(action)
+    local tag = action.id .. "_tool"
+
+    if InventoryFunctions:EquipHasTag(tag) then
+        return nil
+    end
+
+    for _, item in pairs(InventoryFunctions:GetPlayerInventory()) do
+        if item:HasTag(tag) then
+            return item
+        end
+    end
+
+    return nil
+end
+
 -- 
 -- QuickActions
--- 
+--
+
+local function CatchQuickAction(self, target)
+    local tool = GetToolFromInventory(ACTIONS.NET)
+
+    if tool then
+        local action = BufferedAction(self.inst, target, ACTIONS.NET, tool)
+
+        action.modlmb = true
+        action.modaction = "toolaction"
+
+        return action
+    end
+
+    return nil
+end
+
+local function DigQuickAction(self, target)
+    local tool = GetToolFromInventory(ACTIONS.DIG)
+
+    if tool then
+        local action = BufferedAction(self.inst, target, ACTIONS.DIG, tool)
+
+        action.modaction = "toolaction"
+
+        return action
+    end
+
+    return nil
+end
+
+local function HammerQuickAction(self, target)
+    local tool = GetToolFromInventory(ACTIONS.HAMMER)
+
+    if tool then
+        local action = BufferedAction(self.inst, target, ACTIONS.HAMMER, tool)
+
+        action.modaction = "toolaction"
+
+        return action
+    end
+
+    return nil
+end
 
 local function CampfireQuickAction(self, target)
     local fuel, fuelAction = GetFuelAction(target)
@@ -387,7 +459,7 @@ local function ResetTrapQuickAction(self, target)
     local action = BufferedAction(self.inst, target, ACTIONS.CHECKTRAP)
 
     action.GetActionString = function()
-        return "Reset " .. target.name
+        return "Reset"
     end
 
     action.modaction = "reset"
@@ -471,7 +543,7 @@ local function WakeupQuickAction(self, target)
     local action = BufferedAction(self.inst, target, ACTIONS.HARVEST)
 
     action.GetActionString = function()
-        return "Wakeup Bird"
+        return "Wakeup"
     end
 
     action.modaction = "wakeup"
@@ -490,6 +562,9 @@ AddQuickAction("QUICK_ACTION_WALLS", IsRepairableWall, RepairWallQuickAction)
 AddQuickAction("QUICK_ACTION_EXTINGUISH", IsExtinguishable, ExtinguishQuickAction)
 AddQuickAction("QUICK_ACTION_SLURTLEHOLE", IsSnurtleMound, LightQuickAction)
 AddQuickAction("QUICK_ACTION_WAKEUP_BIRD", IsBirdcageSleeping, WakeupQuickAction)
+AddQuickAction("QUICK_ACTION_DIG", IsDigWorkable, DigQuickAction)
+AddQuickAction("QUICK_ACTION_HAMMER", IsHammerWorkable, HammerQuickAction)
+AddQuickAction("QUICK_ACTION_NET", IsNetWorkable, CatchQuickAction)
 
 local IsCancelControl =
 {
@@ -531,7 +606,25 @@ local function Init()
 
         local act = self:GetRightMouseAction()
         if act and act.modaction then
-            if act.modaction == "scenegive" then
+            if act.modaction == "toolaction" then
+                if not InventoryFunctions:EquipHasTag(act.action.id .. "_tool") then
+                    SendRPCToServer(RPC.EquipActionItem, act.invobject)
+                end
+
+                local position = TheInput:GetWorldPosition()
+                local rpc = act.modlmb and RPC.LeftClick or RPC.RightClick
+
+                if self:CanLocomote() then
+                    act.preview_cb = function()
+                        SendRPCToServer(rpc, act.action.code, position.x, position.z, act.target, nil, nil, rpc == RPC.LeftClick, nil, nil, false)
+                    end
+                else
+                    SendRPCToServer(rpc, act.action.code, position.x, position.z, act.target, nil, nil, rpc == RPC.LeftClick, nil, nil, false)
+                end
+
+                self:DoAction(act)
+                return
+            elseif act.modaction == "scenegive" then
                 if self:CanLocomote() then
                     act.preview_cb = function()
                         SendRPCToServer(RPC.ControllerUseItemOnSceneFromInvTile, act.action.code, act.invobject, act.target)
@@ -696,10 +789,10 @@ local function Init()
 
     local OldDoGetMouseActions = PlayerActionPicker.DoGetMouseActions
     function PlayerActionPicker:DoGetMouseActions(position, target)
-        local lmb, rmb_override = ModDoGetMouseActions(self, position, target)
+        local _, rmb_override = ModDoGetMouseActions(self, position, target)
 
         if rmb_override then
-            return lmb, rmb_override
+            return _, rmb_override
         end
 
         return OldDoGetMouseActions(self, position, target)

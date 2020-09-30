@@ -1,9 +1,18 @@
 local InventoryFunctions = require "util/inventoryfunctions"
+local CraftFunctions = require "util/craftfunctions"
 
 local PREFERRED_AUTO_LIGHT = GetModConfigData("PREFERRED_AUTO_LIGHT", MOD_EQUIPMENT_CONTROL.MODNAME)
+local CRAFTING_ALLOWED = GetModConfigData("AUTO_EQUIP_LIGHTSOURCE", MOD_EQUIPMENT_CONTROL.MODNAME) == 2
 
-local function GetLightSource()
-    if ThePlayer.components.actioncontroller then
+local function GetCurrentAnimationLength()
+    return ThePlayer
+       and ThePlayer.AnimState
+       and ThePlayer.AnimState:GetCurrentAnimationLength()
+        or 0
+end
+
+local function GetLightSource(recur)
+    if ThePlayer.components.playercontroller then
         local lightsources = ThePlayer.components.actioncontroller:GetItemsFromCategory("LIGHTSOURCE")
 
         for _, lightsource in ipairs(lightsources) do
@@ -12,7 +21,32 @@ local function GetLightSource()
             end
         end
 
-        return lightsources[1]
+        if #lightsources > 0 then
+            return lightsources[1]
+        end
+
+        if not CRAFTING_ALLOWED or recur then
+            return nil
+        end
+
+        if CraftFunctions:CanCraft("torch") then
+            CraftFunctions:Craft("torch")
+
+            if not ThePlayer.components.playercontroller:CanLocomote() then
+                Sleep(FRAMES * 3)
+            end
+
+             -- @TODO Might wanna use an event based trigger here @TAG PERF, REFACTOR
+            while CraftFunctions:IsCrafting() do
+                Sleep(GetCurrentAnimationLength())
+            end
+
+            if InventoryFunctions:GetEquippedItem(EQUIPSLOTS.HANDS) then
+                Sleep(FRAMES * 3)
+            end
+
+            return GetLightSource(true)
+        end
     end
 
     return nil
@@ -22,7 +56,7 @@ local function EquipLight()
     local item = GetLightSource()
 
     if not item or InventoryFunctions:IsEquipped(item) then
-        return
+        return item
     end
 
     SendRPCToServer(RPC.ControllerUseItemOnSelfFromInvTile, ACTIONS.EQUIP.code, item)
@@ -31,7 +65,8 @@ local function EquipLight()
 end
 
 local function DarkTrigger()
-    return ThePlayer 
+    return ThePlayer
+       and ThePlayer.LightWatcher
        and ThePlayer.LightWatcher:GetTimeInDark() > 1
 end
 

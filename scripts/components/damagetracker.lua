@@ -306,8 +306,8 @@ local TagToOffset =
     warg = 4,
     lightninggoat = 4,
     bishop = 4.5,
-    leif = 7,
     toadstool = 7,
+    leif = 9,
 }
 
 local function GetHealthBarOffset(target)

@@ -5,7 +5,7 @@ icon_atlas = "modicon.xml"
 icon = "modicon.tex"
 
 author = "Boas"
-version = "2.0"
+version = "2.1"
 forumthread = ""
 
 dont_starve_compatible = false
@@ -63,7 +63,6 @@ local Languages =
             ButtonAutoEquipOptions = "Shift + Right click to change Auto-equip",
             BetaSettingOptions = "Use this feature at your own discretion",
             AutoEquipCaneOptions = "Auto-equip your cane when using the movement keys",
-            AutoEquipLightSourceOptions = "Auto-equip your light in the dark!",
             AutoEquipWeaponOptions = "Auto-equip your best weapon in combat",
             AutoEquipGlasscutterOptions = "Auto-equip your glass cutter against nightmare creatures",
             AutoRefillSlingshotOptions = "Auto-refill your slingshot when out of ammo",
@@ -89,6 +88,32 @@ local Languages =
                     "Best",
                     "Best: re-equip to the next best weapon"
                 }
+            },
+            AutoEquipLightSourceOptions =
+            {
+                [1] =
+                {
+                    "Enabled",
+                    "Auto-equip your light in the dark!"
+                },
+                [2] =
+                {
+                    "Enabled (Craft)",
+                    "Auto-equip your light in the dark! (Auto-craft enabled)"
+                },
+            },
+            AutoEquipToolOptions =
+            {
+                [1] =
+                {
+                    "Enabled",
+                    "Auto-equip tools"
+                },
+                [2] =
+                {
+                    "Enabled (Craft)",
+                    "Auto-equip tools (Auto-craft enabled)"
+                },
             },
             SortContainerOptions =
             {
@@ -221,6 +246,16 @@ local Languages =
             {
                 [1] = "Golden Scythe",
                 [2] = "Scythe",
+            },
+            FuelLanternPreferenceOptions =
+            {
+                [1] = "Light Bulb",
+                [2] = "Slurtle Slime",
+            },
+            FuelMogglesPreferenceOptions =
+            {
+                [1] = "Glow Berry",
+                [2] = "Lesser Glow Berry",
             },
             TelepoofDoubleClickOptions =
             {
@@ -335,307 +370,6 @@ local Languages =
             OVERRIDE_SLOT1_SORT = "Keep in slot 1",
         }
     },
-    nl =
-    {
-        option_titles =
-        {
-            Keybinds = "Keybinds",
-            Toggles = "Toggles",
-            Buttons = "Buttons",
-            Preference = "Preferences",
-            Automation = "Automation",
-            DamageEstimation = "Damage estimation",
-            QuickActions = "Quick actions",
-            Pickup = "Pickup",
-            Telepoof = "Telepoof",
-            Estimation = "Estimation",
-            Mousethrough = "Improved mousethrough",
-            Sorting = "Sorting",
-        },
-        option_messages =
-        {
-            AssignKeyMessage = "Kies een toets",
-            AssignLanguageMessage = "Kies je taal",
-            ModNeededMessage = " (Mod vereist)",
-            PreferenceMessage = "Kies je voorkeur",
-            SettingMessage = "Pas aan naar je voorkeur",
-            BetaSettingMessage = "(beta) ",
-            ButtonPreferenceOptions = "Right click to change preference",
-            ButtonAutoEquipOptions = "Shift + Right click to change Auto-equip",
-            BetaSettingOptions = "Deze feature kan nog onstabiel zijn",
-            AutoEquipCaneOptions = "Auto-aandoen je cane als je loopt",
-            AutoEquipLightSourceOptions = "Auto-equip your light in the dark!",
-            AutoEquipWeaponOptions = "Auto-aandoen je beste wapen in gevecht",
-            AutoEquipGlasscutterOptions = "Auto-aandoen je glass cutter tegen schaduw monsters",
-            AutoRefillSlingshotOptions = "Auto-herlaad je slingshot",
-            AutoDetectRepairableOptions = "Auto-uitdoen de items die je kan repareren",
-            AutoSwitchOptions = "Auto-verwissel bone armor om onkwetsbaar te blijven",
-            AutoReFuelOptions = "Auto-hervullen van je lampen",
-            AutoReEquipArmorOptions = "Auto-opnieuw-aandoen van je armor",
-            AutoReGearOptions = "Auto-regear na je transformatie terug naar Woodie",
-        },
-        option_config =
-        {
-            Disabled = "Uit",
-            Enabled = "Aan",
-            AutoReEquipOptions =
-            {
-                [1] =
-                {
-                    "Hetzelfde",
-                    "Hetzelfde: her-aandoen naar het zelfde wapen"
-                },
-                [2] =
-                {
-                    "Beste",
-                    "Beste: her-aandoen naar je beste wapen"
-                }
-            },
-            SortContainerOptions =
-            {
-                [1] =
-                {
-                    "Full inventory",
-                    "Sorts your inventory and backpack"
-                },
-                [2] =
-                {
-                    "Inventory",
-                    "Sorts only your inventory"
-                },
-                [3] =
-                {
-                    "Backpack",
-                    "Sorts only your backpack"
-                }
-            },
-            EstimationOptions =
-            {
-                [1] =
-                {
-                    "Round",
-                    "Example: 100%"
-                },
-                [2] =
-                {
-                    "Decimal",
-                    "Example: 99.9%"
-                }
-            },
-            LightsourcePreferenceOptions =
-            {
-                [1] = "Lantern",
-                [2] = "Miner Hat",
-                [3] = "Willow's Lighter",
-                [4] = "Torch",
-                [5] = "Moggles",
-            },
-            CanePreferenceOptions =
-            {
-                [1] = "The Lazy Explorer",
-                [2] = "Walking Cane",
-            },
-            WeaponPreferenceOptions =
-            {
-                [1] = "Darksword",
-                [2] = "Glasscutter",
-                [3] = "Thulecite Club",
-                [4] = "Hambat",
-                [5] = "Tentacle Spike",
-                [6] = "Morning Star",
-                [7] = "Bat Bat",
-                [8] = "Battle Spear",
-                [9] = "Spear",
-                [10] = "Tail o' Three Cats",
-                [11] = "Bull Kelp Stalk",
-
-                [12] = "[M] Katana",
-                [13] = "[M] Poseidon",
-                [14] = "[M] Skullspear",
-                [15] = "[M] Halberd",
-                [16] = "[M] Deathscythe",
-                [17] = "[M] Purplesword",
-                [18] = "[M] Battleaxe",
-                [19] = "[M] Pirate",
-                [20] = "[M] Lightningsword",
-                [21] = "[M] Flamesword",
-            },
-            HeadArmorPreferenceOptions =
-            {
-                [1] = "Bone Helm",
-                [2] = "Thulecite Crown",
-                [3] = "Bee Queen Crown",
-                [4] = "Battle Helm",
-                [5] = "Football Helmet",
-                [6] = "Beekeeper Hat",
-                [7] = "CookieCutter Cap",
-            },
-            BodyArmorPreferenceOptions =
-            {
-                [1] = "Bone Armor",
-                [2] = "Thulecite Suit",
-                [3] = "Scalemail",
-                [4] = "Marble Suit",
-                [5] = "Snurtle Shell",
-                [6] = "Night Armor",
-                [7] = "Log Suit",
-                [8] = "Bramble Husk",
-                [9] = "Grass Suit",
-            },
-            AxePreferenceOptions =
-            {
-                [1] = "Lucy the Axe",
-                [2] = "Moon Glass Axe",
-                [3] = "Luxury Axe",
-                [4] = "Axe",
-            },
-            PickaxePreferenceOptions =
-            {
-                [1] = "Pick/Axe",
-                [2] = "Opulent Pickaxe",
-                [3] = "Pickaxe",
-            },
-            RangedPreferenceOptions =
-            {
-                [1] = "Trusty Slingshot",
-                [2] = "Blow Dart",
-                [3] = "Electric Dart",
-                [4] = "Fire Dart",
-                [5] = "Sleep Dart",
-                [6] = "Boomerang",
-                [7] = "Napsack",
-                [8] = "[M] Bow",
-                [9] = "[M] Musket",
-                [10] = "[M] Crossbow",
-            },
-            StaffPreferenceOptions =
-            {
-                [1] = "Star Caller Staff",
-                [2] = "Moon Caller Staff",
-                [3] = "Fire Staff",
-                [4] = "Ice Staff",
-                [5] = "Telelocator Staff",
-                [6] = "Deconstruct Staff",
-                [7] = "Weather Pain",
-            },
-            ScythePreferenceOptions =
-            {
-                [1] = "Golden Scythe",
-                [2] = "Scythe",
-            },
-            TelepoofDoubleClickOptions =
-            {
-                [1] = "Default",
-                [2] = "Fast",
-                [3] = "Ludicrous",
-                [4] = "Plaid",
-            },
-            SortPriorityOptions =
-            {
-                [1] = "1",
-                [2] = "2",
-                [3] = "3",
-                [4] = "4",
-                [5] = "5",
-                [6] = "6",
-                [7] = "7",
-            },
-            ButtonCategoriesOptions =
-            {
-                [1] = "Cane",
-                [2] = "Weapon",
-                [3] = "Light source",
-                [4] = "Armor",
-                [5] = "Head armor",
-                [6] = "Body armor",
-                [7] = "Axe",
-                [8] = "Pickaxe",
-                [9] = "Hammer",
-                [10] = "Shovel",
-                [11] = "[M] Scythe",
-                [12] = "Pitchfork",
-                [13] = "Food",
-                [14] = "Healing food",
-                [15] = "Ranged weapon",
-                [16] = "Staff",
-            },
-        },
-        option_names =
-        {
-            Language = "Taal",
-            DROPKEY = "Drop lantern",
-            CONFIRM_TO_EAT = "Confirm to eat",
-            PICKUP_FILTER = "Pickup filter",
-            ATTACK_FILTER = "Attack filter",
-            SORT_INVENTORY = "Sort inventory",
-            SORT_CHEST = "Sort chest",
-            TOGGLE_TELEPOOF = "Toggle Telepoof",
-            TOGGLE_SORTING_CONTAINER = "Toggle Sorting container",
-            TOGGLE_AUTO_EQUIP = "Toggle Auto-equip weapon",
-            TOGGLE_AUTO_EQUIP_CANE = "Toggle Auto-equip cane",
-            AUTO_EQUIP_LIGHTSOURCE = "Auto-equip light",
-            TOGGLE_TELEPOOF_MODE = "Toggle Telepoof mouse through",
-            BUTTON_SHOW = "Buttons",
-            BUTTON_ANIMATIONS = "Animations",
-            BUTTON_SHOW_KEYBIND = "Show keybind",
-            BUTTON_PREFERENCE_CHANGE = "Preference shortcut",
-            BUTTON_AUTO_EQUIP_CHANGE = "Auto-equip shortcut",
-            BUTTON_1_CATEGORY = "Button 1 category",
-            BUTTON_2_CATEGORY = "Button 2 category",
-            BUTTON_3_CATEGORY = "Button 3 category",
-            BUTTON_4_CATEGORY = "Button 4 category",
-            BUTTON_5_CATEGORY = "Button 5 category",
-            BUTTON_6_CATEGORY = "Button 6 category",
-            BUTTON_7_CATEGORY = "Button 7 category",
-            BUTTON_8_CATEGORY = "Button 8 category",
-            BUTTON_9_CATEGORY = "Button 9 category",
-            BUTTON_10_CATEGORY = "Button 10 category",
-            BUTTON_11_CATEGORY = "Button 11 category",
-            BUTTON_12_CATEGORY = "Button 12 category",
-            BUTTON_13_CATEGORY = "Button 13 category",
-            BUTTON_14_CATEGORY = "Button 14 category",
-            BUTTON_15_CATEGORY = "Button 15 category",
-            PREFERRED = "Preferred ",
-            AUTO_UNEQUIP_REPAIRABLES = "Auto-unequip repairables",
-            AUTO_RE_EQUIP_WEAPON = "Auto-re-equip weapon",
-            AUTO_RE_EQUIP_ARMOR = "Auto-re-equip armor",
-            AUTO_EQUIP_WEAPON = "Auto-equip weapon",
-            AUTO_EQUIP_CANE = "Auto-equip cane",
-            AUTO_EQUIP_TOOL = "Auto-equip tools",
-            AUTO_EQUIP_GLASSCUTTER = "Auto-equip glass cutter",
-            WOODIE_WEREITEM_UNEQUIP = "Auto-regear woodie",
-            AUTO_SWITCH_BONE_ARMOR = "Auto-switch bone armor",
-            AUTO_REFUEL_LIGHT_SOURCES = "Auto-refuel light sources",
-            DAMAGE_ESTIMATION = "Damage estimation",
-            QUICK_ACTION_CAMPFIRE = "Add Fuel Campfires",
-            QUICK_ACTION_TRAP = "Reset Trap",
-            QUICK_ACTION_BIRD_CAGE = "Feed Bird",
-            QUICK_ACTION_WAKEUP_BIRD = "Wakeup Bird",
-            QUICK_ACTION_WALLS = "Repair Wall",
-            QUICK_ACTION_EXTINGUISH = "Extinguish Fire",
-            QUICK_ACTION_SLURTLEHOLE = "Light Slurtle Mound",
-            PRIOTIZE_VALUABLE_ITEMS = "Pickup valuables first",
-            PICKUP_IGNORE_FLOWERS = "Ignore Flowers",
-            PICKUP_IGNORE_SUCCULENTS = "Ignore Succulents",
-            PICKUP_IGNORE_FERNS = "Ignore Ferns",
-            PICKUP_IGNORE_MARSH_BUSH = "Ignore Spiky Bush",
-            TELEPOOF_ENABLED = "Enabled by default",
-            TELEPOOF_DOUBLECLICK = "Doubleclick",
-            TELEPOOF_HOVER = "Hovertext",
-            ORANGESTAFF_MOUSETHROUGH = "Star Caller Staff",
-            YELLOWSTAFF_MOUSETHROUGH = "The Lazy Explorer",
-            LANTERN_ESTIMATION = "Lantern fuel estimation",
-            CONTAINER_SORT = "Sorting container",
-            ARMOR_SORT_PRIORITY = "Armor priority",
-            LIGHT_SORT_PRIORITY = "Light source priority",
-            STAFF_SORT_PRIORITY = "Staff priority",
-            EQUIPMENT_SORT_PRIORITY = "Equipment priority",
-            FOOD_SORT_PRIORITY = "Food priority",
-            RESOURCE_SORT_PRIORITY = "Resource priority",
-            TOOL_SORT_PRIORITY = "Tool priority",
-            OVERRIDE_SLOT1_SORT = "Keep in slot 1",
-        }
-    }
 }
 
 local CurrentLanguage = Languages[locale] or Languages.en
@@ -672,9 +406,6 @@ local function GetKeyboardOptions(hover)
         "Space",
         "Enter",
         "Esc",
-        "Insert",
-        "Delete",
-        "End",
         "Pause",
         "Print Screen",
         "Caps Lock",
@@ -688,6 +419,7 @@ local function GetKeyboardOptions(hover)
         "Right Alt",
         "Left Alt",
         "Alt",
+        "Backspace",
         "\\",
         ".",
         "/",
@@ -699,6 +431,10 @@ local function GetKeyboardOptions(hover)
         "Arrow Down",
         "Arrow Right",
         "Arrow Left",
+        "Insert",
+        "Delete",
+        "Home",
+        "End",
         "Page Up",
         "Page Down"
     }
@@ -710,9 +446,6 @@ local function GetKeyboardOptions(hover)
         "SPACE",
         "ENTER",
         "ESCAPE",
-        "INSERT",
-        "DELETE",
-        "END",
         "PAUSE",
         "PRINT",
         "CAPSLOCK",
@@ -727,6 +460,7 @@ local function GetKeyboardOptions(hover)
         "LALT",
         "ALT",
         "BACKSPACE",
+        "BACKSLASH",
         "PERIOD",
         "SLASH",
         "SEMICOLON",
@@ -737,6 +471,10 @@ local function GetKeyboardOptions(hover)
         "DOWN",
         "RIGHT",
         "LEFT",
+        "INSERT",
+        "DELETE",
+        "HOME",
+        "END",
         "PAGEUP",
         "PAGEDOWN",
     }
@@ -796,7 +534,6 @@ local SettingOptions = GetDefaultOptions()
 local BetaSettingOptions = GetDefaultOptions(CurrentLanguage.option_messages.BetaSettingOptions)
 
 local AutoEquipCaneOptions = GetDefaultOptions(CurrentLanguage.option_messages.AutoEquipCaneOptions)
-local AutoEquipLightSourceOptions = GetDefaultOptions(CurrentLanguage.option_messages.AutoEquipLightSourceOptions)
 local AutoEquipWeaponOptions = GetDefaultOptions(CurrentLanguage.option_messages.AutoEquipWeaponOptions)
 local AutoEquipGlasscutterOptions = GetDefaultOptions(CurrentLanguage.option_messages.AutoEquipGlasscutterOptions)
 local AutoRefillSlingshotOptions = GetDefaultOptions(CurrentLanguage.option_messages.AutoRefillSlingshotOptions)
@@ -811,6 +548,20 @@ local AutoReEquipOptions =
     AddConfigOption(CurrentLanguage.option_config.Disabled, false),
     AddConfigOption(CurrentLanguage.option_config.AutoReEquipOptions[1][1], 1, CurrentLanguage.option_config.AutoReEquipOptions[1][2]),
     AddConfigOption(CurrentLanguage.option_config.AutoReEquipOptions[2][1], 2, CurrentLanguage.option_config.AutoReEquipOptions[2][2]),
+}
+
+local AutoEquipLightSourceOptions =
+{
+    AddConfigOption(CurrentLanguage.option_config.Disabled, false),
+    AddConfigOption(CurrentLanguage.option_config.AutoEquipLightSourceOptions[1][1], 1, CurrentLanguage.option_config.AutoEquipLightSourceOptions[1][2]),
+    AddConfigOption(CurrentLanguage.option_config.AutoEquipLightSourceOptions[2][1], 2, CurrentLanguage.option_config.AutoEquipLightSourceOptions[2][2]),
+}
+
+local AutoEquipToolOptions =
+{
+    AddConfigOption(CurrentLanguage.option_config.Disabled, false),
+    AddConfigOption(CurrentLanguage.option_config.AutoEquipToolOptions[1][1], 1, CurrentLanguage.option_config.AutoEquipToolOptions[1][2]),
+    AddConfigOption(CurrentLanguage.option_config.AutoEquipToolOptions[2][1], 2, CurrentLanguage.option_config.AutoEquipToolOptions[2][2]),
 }
 
 local ButtonPreferenceOptions = GetDefaultOptions(CurrentLanguage.option_messages.ButtonPreferenceOptions)
@@ -838,6 +589,20 @@ local LightsourcePreferenceOptions =
     AddConfigOption(CurrentLanguage.option_config.LightsourcePreferenceOptions[3], "lighter"),
     AddConfigOption(CurrentLanguage.option_config.LightsourcePreferenceOptions[4], "torch"),
     AddConfigOption(CurrentLanguage.option_config.LightsourcePreferenceOptions[5], "molehat"),
+}
+
+local FuelLanternPreferenceOptions =
+{
+    AddDisabledOption(),
+    AddConfigOption(CurrentLanguage.option_config.FuelLanternPreferenceOptions[1], "lightbulb"),
+    AddConfigOption(CurrentLanguage.option_config.FuelLanternPreferenceOptions[2], "slurtleslime"),
+}
+
+local FuelMogglesPreferenceOptions =
+{
+    AddDisabledOption(),
+    AddConfigOption(CurrentLanguage.option_config.FuelMogglesPreferenceOptions[1], "wormlight"),
+    AddConfigOption(CurrentLanguage.option_config.FuelMogglesPreferenceOptions[2], "wormlight_lesser"),
 }
 
 local CanePreferenceOptions =
@@ -1048,7 +813,6 @@ local ButtonCategoriesOptions =
 local LanguageOptions =
 {
     AddConfigOption("English", "en"),
-    AddConfigOption("Dutch", "nl"),
 }
 
 local AssignKeyMessage = CurrentLanguage.option_messages.AssignKeyMessage
@@ -1476,6 +1240,20 @@ configuration_options =
         false,
         PreferenceMessage
     ),
+    AddConfig(
+        CurrentLanguage.option_names.PREFERRED .. "Lantern fuel",
+        "PREFERRED_FUEL_LANTERN",
+        FuelLanternPreferenceOptions,
+        false,
+        PreferenceMessage
+    ),
+    AddConfig(
+        CurrentLanguage.option_names.PREFERRED .. "Moggles fuel",
+        "PREFERRED_FUEL_MOGGLES",
+        FuelMogglesPreferenceOptions,
+        false,
+        PreferenceMessage
+    ),
 
 
     AddSectionTitle(CurrentLanguage.option_titles.Automation),
@@ -1518,14 +1296,14 @@ configuration_options =
         CurrentLanguage.option_names.AUTO_EQUIP_LIGHTSOURCE,
         "AUTO_EQUIP_LIGHTSOURCE",
         AutoEquipLightSourceOptions,
-        false,
+        1,
         SettingMessage
     ),
     AddConfig(
         CurrentLanguage.option_names.AUTO_EQUIP_TOOL,
         "AUTO_EQUIP_TOOL",
-        SettingOptions,
-        true,
+        AutoEquipToolOptions,
+        1,
         SettingMessage
     ),
     AddConfig(
@@ -1569,6 +1347,27 @@ configuration_options =
 
 
     AddSectionTitle(CurrentLanguage.option_titles.QuickActions),
+    AddConfig(
+        "Bug Net",
+        "QUICK_ACTION_NET",
+        SettingOptions,
+        true,
+        SettingMessage
+    ),
+    AddConfig(
+        "Hammer",
+        "QUICK_ACTION_HAMMER",
+        SettingOptions,
+        true,
+        SettingMessage
+    ),
+    AddConfig(
+        "Shovel",
+        "QUICK_ACTION_DIG",
+        SettingOptions,
+        true,
+        SettingMessage
+    ),
     AddConfig(
         CurrentLanguage.option_names.QUICK_ACTION_CAMPFIRE,
         "QUICK_ACTION_CAMPFIRE",
