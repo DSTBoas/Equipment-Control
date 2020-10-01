@@ -82,10 +82,10 @@ local function Init()
                                         end
                                     end
                                 end
+                                
+                                Sleep(FRAMES * 3)
 
-                                local hasTool = InventoryFunctions:EquipHasTag(act.HASTOCRAFT)
-
-                                if hasTool then
+                                if InventoryFunctions:EquipHasTag(act.HASTOCRAFT) then
                                     local act = BufferedAction(self.inst, target, ToolData[act.HASTOCRAFT].action)
                                     if self:CanLocomote() then
                                         act.preview_cb = function()

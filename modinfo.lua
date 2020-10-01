@@ -5,7 +5,7 @@ icon_atlas = "modicon.xml"
 icon = "modicon.tex"
 
 author = "Boas"
-version = "2.1"
+version = "2.2"
 forumthread = ""
 
 dont_starve_compatible = false
@@ -1348,7 +1348,7 @@ configuration_options =
 
     AddSectionTitle(CurrentLanguage.option_titles.QuickActions),
     AddConfig(
-        "Bug Net",
+        "Catch",
         "QUICK_ACTION_NET",
         SettingOptions,
         true,
@@ -1362,7 +1362,7 @@ configuration_options =
         SettingMessage
     ),
     AddConfig(
-        "Shovel",
+        "Dig",
         "QUICK_ACTION_DIG",
         SettingOptions,
         true,
