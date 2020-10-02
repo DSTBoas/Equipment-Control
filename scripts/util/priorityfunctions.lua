@@ -141,7 +141,7 @@ local function GetPriority(item)
             priority = priority + GetPriorityRank(ItemFunctions:GetPercentUsed(item) * .0000001)
         elseif ItemFunctions:IsLightSource(item) then
             priority = priority + Settings.LIGHT_SORT_PRIORITY
-            priority = priority + GetPriorityRank(ItemFunctions:GetFuelTime(item) + ItemFunctions:GetPercentUsed(item) * .0000001)
+            priority = priority + GetPriorityRank(ItemFunctions:GetMaxFuel(item) + ItemFunctions:GetPercentUsed(item) * .0000001)
         elseif ItemFunctions:IsStaff(item) then
             priority = priority + Settings.STAFF_SORT_PRIORITY
             priority = priority + GetPriorityRank(ItemFunctions:GetPercentUsed(item) * .0000001)

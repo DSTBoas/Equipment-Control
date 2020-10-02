@@ -99,14 +99,13 @@ local function GetQuickAction(self, target)
     return nil
 end
 
-local CanOverride =
-{
-    [ACTIONS.WALKTO] = true,
-    [ACTIONS.LOOKAT] = true,
-    [ACTIONS.PICK] = true,
-}
-
+local OldDoGetMouseActions = function() return nil end
 local function ModDoGetMouseActions(self, position, target)
+    local _, RMBaction = OldDoGetMouseActions(self)
+    if RMBaction then
+        return nil
+    end
+
     local isaoetargeting = false
     local wantsaoetargeting = false
 
@@ -128,15 +127,11 @@ local function ModDoGetMouseActions(self, position, target)
         end
 
         if cansee and target then
-            local rmb = not wantsaoetargeting and self:GetRightClickActions(position, target)[1] or nil
+            local rmb_override = GetQuickAction(self, target)
 
-            if rmb and CanOverride[rmb.action] then
-                local rmb_override = GetQuickAction(self, target)
-
-                if rmb_override then
-                    local lmb = not isaoetargeting and self:GetLeftClickActions(position, target)[1] or nil
-                    return lmb, rmb_override
-                end
+            if rmb_override then
+                local lmb = not isaoetargeting and self:GetLeftClickActions(position, target)[1] or nil
+                return lmb, rmb_override
             end
         end
     end
@@ -806,7 +801,7 @@ local function Init()
     -- PlayerActionPicker Overrides
     -- 
 
-    local OldDoGetMouseActions = PlayerActionPicker.DoGetMouseActions
+    OldDoGetMouseActions = PlayerActionPicker.DoGetMouseActions
     function PlayerActionPicker:DoGetMouseActions(position, target)
         local _, rmb_override = ModDoGetMouseActions(self, position, target)
 
