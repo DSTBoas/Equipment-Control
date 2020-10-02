@@ -1,6 +1,8 @@
 local InventoryFunctions = require "util/inventoryfunctions"
 local ItemFunctions = require "util/itemfunctions"
 
+local PREFERRED_CAMPFIRE_FUEL = GetModConfigData("PREFERRED_CAMPFIRE_FUEL", MOD_EQUIPMENT_CONTROL.MODNAME)
+
 local Events = {}
 
 local function AddEvent(self, event, n, callback)
@@ -97,9 +99,11 @@ local function GetQuickAction(self, target)
     return nil
 end
 
-local CannotOverrideActions =
+local CanOverride =
 {
-    [ACTIONS.HAMMER] = true;
+    [ACTIONS.WALKTO] = true,
+    [ACTIONS.LOOKAT] = true,
+    [ACTIONS.PICK] = true,
 }
 
 local function ModDoGetMouseActions(self, position, target)
@@ -126,7 +130,7 @@ local function ModDoGetMouseActions(self, position, target)
         if cansee and target then
             local rmb = not wantsaoetargeting and self:GetRightClickActions(position, target)[1] or nil
 
-            if rmb and not CannotOverrideActions[rmb.action] then
+            if rmb and CanOverride[rmb.action] then
                 local rmb_override = GetQuickAction(self, target)
 
                 if rmb_override then
@@ -165,13 +169,28 @@ local function IsCompatibleFuel(target, item)
        and item:HasTag("CHEMICAL_fuel")
 end
 
-local function GetFuelAction(target)
+local function GetActionFromFuel(item)
+    return item:GetIsWet() and ACTIONS.ADDWETFUEL
+        or ACTIONS.ADDFUEL
+end
+
+local function GetFuelAndAction(target)
+    local ret = {}
+
     for _, item in pairs(InventoryFunctions:GetPlayerInventory()) do
         if IsCompatibleFuel(target, item) then
-            return item, item:GetIsWet() and ACTIONS.ADDWETFUEL
-                or ACTIONS.ADDFUEL
+            ret[#ret + 1] = item
+            if item.prefab == PREFERRED_CAMPFIRE_FUEL then
+                return item, GetActionFromFuel(item)
+            end
         end
     end
+
+    if ret[1] then
+        return ret[1], GetActionFromFuel(ret[1])
+    end
+
+    return nil
 end
 
 local invalid_foods =
@@ -438,10 +457,10 @@ local function HammerQuickAction(self, target)
 end
 
 local function CampfireQuickAction(self, target)
-    local fuel, fuelAction = GetFuelAction(target)
+    local fuel, fuelAct = GetFuelAndAction(target)
 
     if fuel then
-        local action = BufferedAction(self.inst, target, fuelAction, fuel)
+        local action = BufferedAction(self.inst, target, fuelAct, fuel)
 
         action.GetActionString = function()
             return "Add Fuel (" .. fuel.name .. ")"

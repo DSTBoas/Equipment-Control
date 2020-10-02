@@ -59,7 +59,7 @@ local function EquipLight()
         return item
     end
 
-    SendRPCToServer(RPC.ControllerUseItemOnSelfFromInvTile, ACTIONS.EQUIP.code, item)
+    InventoryFunctions:Equip(item)
 
     return item
 end

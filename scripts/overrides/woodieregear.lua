@@ -17,7 +17,7 @@ local function Equip(inst)
             for _, invItem in pairs(InventoryFunctions:GetPlayerInventory()) do
                 for _, transformItem in pairs(TransformationUnEquips) do
                     if invItem == transformItem then
-                        SendRPCToServer(RPC.UseItemFromInvTile, ACTIONS.EQUIP.code, transformItem)
+                        InventoryFunctions:Equip(transformItem)
                         break
                     end
                 end

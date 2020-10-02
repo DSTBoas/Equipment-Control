@@ -32,14 +32,11 @@ end
 local function AutoReEquip(item)
     if AUTO_RE_EQUIP_WEAPON == AutoEquipEnum.BEST and ItemFunctions:IsMeleeWeapon(item) then
         item = GetItemFromCategory("WEAPON")
-
-        if item then
-            SendRPCToServer(RPC.ControllerUseItemOnSelfFromInvTile, ACTIONS.EQUIP.code, item)
-        end
+        InventoryFunctions:Equip(item)
     else
         for _, invItem in pairs(InventoryFunctions:GetPlayerInventory(true)) do
             if invItem.prefab == item.prefab then
-                SendRPCToServer(RPC.ControllerUseItemOnSelfFromInvTile, ACTIONS.EQUIP.code, invItem)
+                InventoryFunctions:Equip(invItem)
                 break
             end
         end
@@ -61,7 +58,7 @@ local function AutoReEquipArmor(item)
     item = GetItemFromCategory(category)
     if item then
         item:DoTaskInTime(FRAMES * 10, function()
-            SendRPCToServer(RPC.ControllerUseItemOnSelfFromInvTile, ACTIONS.EQUIP.code, item)
+            InventoryFunctions:Equip(item)
         end)
     end
 end
@@ -184,7 +181,7 @@ local function AutoSwitchSkeletonArmor(item)
     end
 
     if bestArmor then
-        SendRPCToServer(RPC.ControllerUseItemOnSelfFromInvTile, ACTIONS.EQUIP.code, bestArmor)
+        InventoryFunctions:Equip(bestArmor)
     end
 end
 
@@ -263,9 +260,9 @@ local function AutoRefuel(item)
     end
 end
 
-local function RefreshButtons()
-    if ThePlayer and ThePlayer.HUD and ThePlayer.HUD.controls.buttons then
-        ThePlayer.HUD.controls.buttons:Refresh()
+local function RefreshButtons(item)
+    if ThePlayer and ThePlayer.HUD and ThePlayer.HUD.controls.inv.buttons then
+        ThePlayer.HUD.controls.inv.buttons:Refresh(item)
     end
 end
 
@@ -314,14 +311,14 @@ end
 --- Tracker system
 --- 
 
-local function AddTracker(triggerFn, event, eventFn, classified, initFn)
+local function AddTracker(triggerFn, event, eventFn, classified, init)
     TrackerFunctions[#TrackerFunctions + 1] =
     {
         trigger = triggerFn,
         event = event,
         eventFn = eventFn,
         classified = classified,
-        initFn = initFn,
+        init = init,
     }
 end
 
@@ -363,8 +360,8 @@ local function AttachTrackers(item)
                 tracker = TrackerFunctions[i],
             }
 
-            if TrackerFunctions[i].initFn then
-                TrackerFunctions[i].initFn(location)
+            if TrackerFunctions[i].init then
+                TrackerFunctions[i].init(location)
             end
         end
     end
@@ -446,7 +443,7 @@ local ItemTracker = Class(function(self, inst)
     end
 
     if GetModConfigData("AUTO_REFUEL_LIGHT_SOURCES", MOD_EQUIPMENT_CONTROL.MODNAME) then
-        AddTracker(IsFuelable, "percentuseddirty", AutoRefuel, true)
+        AddTracker(IsFuelable, "percentuseddirty", AutoRefuel, true, AutoRefuel)
     end
 
     if GetModConfigData("AUTO_UNEQUIP_REPAIRABLES", MOD_EQUIPMENT_CONTROL.MODNAME) then

@@ -5,7 +5,7 @@ icon_atlas = "modicon.xml"
 icon = "modicon.tex"
 
 author = "Boas"
-version = "2.2"
+version = "2.3"
 forumthread = ""
 
 dont_starve_compatible = false
@@ -256,6 +256,21 @@ local Languages =
             {
                 [1] = "Glow Berry",
                 [2] = "Lesser Glow Berry",
+            },
+            CampfireFuelPreferenceOptions =
+            {
+                [1] = "Charcoal",
+                [2] = "Boards",
+                [3] = "Rope",
+                [4] = "Log",
+                [5] = "Cut Grass",
+                [6] = "Twigs",
+                [7] = "Beefalo Wool",
+                [8] = "Pine Cone",
+                [9] = "Manure",
+                [10] = "Rotten Egg",
+                [11] = "Rot",
+                [12] = "Nitre",
             },
             TelepoofDoubleClickOptions =
             {
@@ -603,6 +618,23 @@ local FuelMogglesPreferenceOptions =
     AddDisabledOption(),
     AddConfigOption(CurrentLanguage.option_config.FuelMogglesPreferenceOptions[1], "wormlight"),
     AddConfigOption(CurrentLanguage.option_config.FuelMogglesPreferenceOptions[2], "wormlight_lesser"),
+}
+
+local CampfireFuelPreferenceOptions =
+{
+    AddDisabledOption(),
+    AddConfigOption(CurrentLanguage.option_config.CampfireFuelPreferenceOptions[1], "charcoal"),
+    AddConfigOption(CurrentLanguage.option_config.CampfireFuelPreferenceOptions[2], "boards"),
+    AddConfigOption(CurrentLanguage.option_config.CampfireFuelPreferenceOptions[3], "rope"),
+    AddConfigOption(CurrentLanguage.option_config.CampfireFuelPreferenceOptions[4], "log"),
+    AddConfigOption(CurrentLanguage.option_config.CampfireFuelPreferenceOptions[5], "cutgrass"),
+    AddConfigOption(CurrentLanguage.option_config.CampfireFuelPreferenceOptions[6], "twigs"),
+    AddConfigOption(CurrentLanguage.option_config.CampfireFuelPreferenceOptions[7], "beefalowool"),
+    AddConfigOption(CurrentLanguage.option_config.CampfireFuelPreferenceOptions[8], "pinecone"),
+    AddConfigOption(CurrentLanguage.option_config.CampfireFuelPreferenceOptions[9], "poop"),
+    AddConfigOption(CurrentLanguage.option_config.CampfireFuelPreferenceOptions[10], "rottenegg"),
+    AddConfigOption(CurrentLanguage.option_config.CampfireFuelPreferenceOptions[11], "spoiled_food"),
+    AddConfigOption(CurrentLanguage.option_config.CampfireFuelPreferenceOptions[12], "nitre"),
 }
 
 local CanePreferenceOptions =
@@ -1251,6 +1283,13 @@ configuration_options =
         CurrentLanguage.option_names.PREFERRED .. "Moggles fuel",
         "PREFERRED_FUEL_MOGGLES",
         FuelMogglesPreferenceOptions,
+        false,
+        PreferenceMessage
+    ),
+    AddConfig(
+        CurrentLanguage.option_names.PREFERRED .. "Campfire fuel",
+        "PREFERRED_CAMPFIRE_FUEL",
+        CampfireFuelPreferenceOptions,
         false,
         PreferenceMessage
     ),

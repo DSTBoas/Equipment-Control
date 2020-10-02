@@ -234,35 +234,33 @@ function ItemFunctions:GetFiniteUses(item)
     return lastUsePercent
 end
 
-function ItemFunctions:GetFuelTime(item)
-    local priority = 0
-
-    local prefab = item.prefab:upper()
-    if TUNING[prefab .. "_LIGHTTIME"] then
-        priority = TUNING[prefab .. "_LIGHTTIME"]
-    elseif TUNING[prefab .. "_FUEL"] then
-        priority = TUNING[prefab .. "_FUEL"]
-    elseif TUNING[prefab .. "_PERISHTIME"] then
-        priority = TUNING[prefab .. "_PERISHTIME"]
-    end
-
-    return priority
+function ItemFunctions:GetMaxFuel(item)
+    local cachedItem = self:GetCachedItem(item)
+    return cachedItem
+       and cachedItem.components.fueled
+       and cachedItem.components.fueled.maxfuel
+        or 0
 end
 
 function ItemFunctions:IsLightSource(item)
-    return self:GetFuelTime(item) > 0
-       and not item:HasTag("fueldepleted")
+    return not item:HasTag("fueldepleted")
+       and (item:HasTag(FUELTYPE.CAVE .. "_fueled")
+            or item:HasTag(FUELTYPE.WORMLIGHT .. "_fueled")
+            or item:HasTag("lighter"))
 end
 
 function ItemFunctions:IsRepairable(item)
     local cachedItem = self:GetCachedItem(item)
-    return item.prefab == "staff_tornado"
-        or cachedItem
+
+    if item.prefab == "staff_tornado" or item.prefab == "molehat" then
+        return true
+    end
+
+    return cachedItem
        and cachedItem.components.fueled
        and not cachedItem.components.fueled.no_sewing
        and cachedItem.components.fueled.depleted == EntityScript.Remove
-       and (cachedItem.components.fueled.fueltype == FUELTYPE.USAGE
-           or cachedItem.components.fueled.fueltype == FUELTYPE.NIGHTMARE)
+       and cachedItem.components.fueled.fueltype ~= FUELTYPE.BURNABLE
 end
 
 function ItemFunctions:IsTerraformer(item)

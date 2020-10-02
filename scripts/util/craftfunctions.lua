@@ -17,31 +17,27 @@ function CraftFunctions:IsCrafting()
     return IsBuilding(animState)
 end
 
-function CraftFunctions:CanCraft(prefab)
-    local recipe = AllRecipes[prefab]
-
-    if recipe then
-        for _, ingredient in pairs(recipe.ingredients) do
-            if not InventoryFunctions:Has(ingredient.type, ingredient.amount) then
-                return false
-            end
-        end
-
-        return true
-    end
-
-    return false
+local function GetBuilder()
+    return ThePlayer
+       and ThePlayer.replica.builder
 end
 
-function CraftFunctions:Craft(prefab)
-    local PlayerController = ThePlayer and ThePlayer.components.playercontroller
+function CraftFunctions:CanCraft(recipename)
+    local builder = GetBuilder()
+    return builder
+       and builder:CanBuild(recipename)
+end
 
-    if PlayerController then
-        local recipe = AllRecipes[prefab]
+function CraftFunctions:Craft(recipe)
+    recipe = GetValidRecipe(recipe)
 
-        if recipe then
-            PlayerController:RemoteMakeRecipeFromMenu(recipe)
-        end
+    if not recipe then
+        return
+    end
+
+    local builder = GetBuilder()
+    if builder then
+        builder:MakeRecipeFromMenu(recipe)
     end
 end
 

@@ -12,6 +12,21 @@ function InventoryFunctions:GetInventoryItems()
         or {}
 end
 
+function InventoryFunctions:Equip(item, prefab)
+    if not item or prefab and InventoryFunctions:IsEquipped(item.prefab) then
+        return
+    end
+
+    if ThePlayer.components.inventory ~= nil then
+        ThePlayer.components.locomotor:PushAction(
+            BufferedAction(ThePlayer, nil, ACTIONS.EQUIP, item),
+            true
+        )
+    else
+        SendRPCToServer(RPC.ControllerUseItemOnSelfFromInvTile, ACTIONS.EQUIP.code, item)
+    end
+end
+
 function InventoryFunctions:IsEquipped(item)
     if not item then
         return false
@@ -135,6 +150,12 @@ function InventoryFunctions:UseItemFromInvTile(item)
     local inventory = self:GetInventory()
     return inventory
        and inventory:UseItemFromInvTile(item)
+end
+
+function InventoryFunctions:ControllerUseItemOnSelfFromInvTile(item)
+    local inventory = self:GetInventory()
+    return inventory
+       and inventory:ControllerUseItemOnSelfFromInvTile(item)
 end
 
 function InventoryFunctions:DropItemFromInvTile(item)

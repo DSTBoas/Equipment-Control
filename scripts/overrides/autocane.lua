@@ -41,12 +41,8 @@ end
 
 local function EquipCane()
     local item = ThePlayer.components.actioncontroller:GetItemFromCategory("CANE")
-
-    if not item or InventoryFunctions:IsEquipped(item.prefab) then
-        return
-    end
-
-    SendRPCToServer(RPC.ControllerUseItemOnSelfFromInvTile, ACTIONS.EQUIP.code, item)
+    
+    InventoryFunctions:Equip(item, true)
 end
 
 local MoveControls =

@@ -160,7 +160,7 @@ function ActionController:UseItem(item)
                 return
             end
         end
-        SendRPCToServer(RPC.ControllerUseItemOnSelfFromInvTile, ACTIONS.EQUIP.code, item)
+        InventoryFunctions:Equip(item)
         return
     end
 

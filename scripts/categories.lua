@@ -51,7 +51,7 @@ Categories.LIGHTSOURCE.fn = function(item)
 end
 
 Categories.LIGHTSOURCE.priority = function(item)
-    return ItemFunctions:GetFuelTime(item)
+    return ItemFunctions:GetMaxFuel(item)
 end
 
 Categories.ARMOR.fn = function(item)

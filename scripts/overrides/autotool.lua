@@ -53,7 +53,7 @@ local function Init()
             local act = ThePlayer.components.playercontroller:GetLeftMouseAction()
             if act then
                 if act.MOD_AUTO_EQUIP then
-                    SendRPCToServer(RPC.ControllerUseItemOnSelfFromInvTile, ACTIONS.EQUIP.code, act.MOD_AUTO_EQUIP)
+                    InventoryFunctions:Equip(act.MOD_AUTO_EQUIP)
                 elseif act.HASTOCRAFT then
                     for _, prefab in pairs(ToolData[act.HASTOCRAFT].tools) do
                         if CraftFunctions:CanCraft(prefab) then
@@ -98,6 +98,7 @@ local function Init()
                                     self:DoAction(act)
                                 end
                             end)
+                            return
                         end
                     end
                 end

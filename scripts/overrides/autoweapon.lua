@@ -46,14 +46,6 @@ local function GetPrefabFromInventory(prefab)
     return nil
 end
 
-local function Equip(item)
-    if not item or InventoryFunctions:IsEquipped(item.prefab) then
-        return
-    end
-
-    SendRPCToServer(RPC.ControllerUseItemOnSelfFromInvTile, ACTIONS.EQUIP.code, item)
-end
-
 local function EquipWeapon()
     if not ThePlayer or not ThePlayer.components.actioncontroller then
         return
@@ -62,7 +54,7 @@ local function EquipWeapon()
     local category = ThePlayer.components.actioncontroller:GetAutoEquipCategory()
     local weapon = ThePlayer.components.actioncontroller:GetItemFromCategory(category)
 
-    Equip(weapon)
+    InventoryFunctions:Equip(weapon, true)
 end
 
 local function EquipGlasscutter()
@@ -73,7 +65,7 @@ local function EquipGlasscutter()
         return
     end
 
-    Equip(weapon)
+    InventoryFunctions:Equip(weapon, true)
 end
 
 -- 
