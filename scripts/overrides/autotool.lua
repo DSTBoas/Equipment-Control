@@ -105,12 +105,6 @@ local function Init()
             end
         end
 
-        -- Automagic control repeat
-        if self:IsDoingOrWorking() then
-            PlayerControllerOnLeftClick(self, true)
-            return
-        end
-
         PlayerControllerOnLeftClick(self, down)
     end
 
@@ -189,29 +183,31 @@ local function Init()
 
     local PlayerActionPickerDoGetMouseActions = PlayerActionPicker.DoGetMouseActions
     function PlayerActionPicker:DoGetMouseActions(...)
-        local target = TheInput:GetWorldEntityUnderMouse()
-        if target and CanEntitySeeTarget(self.inst, target) and not InventoryFunctions:GetActiveItem() then
-            local tools, hasToCraft = GetTools(target)
-            for _, tool in pairs(tools) do
-                local lmboverride = not hasToCraft and self:GetEquippedItemActions(target, tool)
-                                    or GetToolActions(tool, target)
+        if not InventoryFunctions:IsHeavyLifting() then
+            local target = TheInput:GetWorldEntityUnderMouse()
+            if target and CanEntitySeeTarget(self.inst, target) and not InventoryFunctions:GetActiveItem() then
+                local tools, hasToCraft = GetTools(target)
+                for _, tool in pairs(tools) do
+                    local lmboverride = not hasToCraft and self:GetEquippedItemActions(target, tool)
+                                        or GetToolActions(tool, target)
 
-                lmboverride = lmboverride and lmboverride[1]
+                    lmboverride = lmboverride and lmboverride[1]
 
-                if lmboverride then
-                    if not hasToCraft then
-                        lmboverride.MOD_AUTO_EQUIP = tool
-                    else
-                        lmboverride.HASTOCRAFT = tool
+                    if lmboverride then
+                        if not hasToCraft then
+                            lmboverride.MOD_AUTO_EQUIP = tool
+                        else
+                            lmboverride.HASTOCRAFT = tool
+                        end
+
+                        local rmb = self:GetRightClickActions(TheInput:GetWorldPosition(), target)[1]
+
+                        if rmb and FilteredActions[rmb.action] then 
+                            rmb = nil
+                        end
+
+                        return lmboverride, rmb
                     end
-
-                    local rmb = self:GetRightClickActions(TheInput:GetWorldPosition(), target)[1]
-
-                    if rmb and FilteredActions[rmb.action] then 
-                        rmb = nil
-                    end
-
-                    return lmboverride, rmb
                 end
             end
         end

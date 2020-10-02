@@ -99,13 +99,7 @@ local function GetQuickAction(self, target)
     return nil
 end
 
-local OldDoGetMouseActions = function() return nil end
-local function ModDoGetMouseActions(self, position, target)
-    local _, RMBaction = OldDoGetMouseActions(self)
-    if RMBaction then
-        return nil
-    end
-
+local function GetRMBOverride(self, position, target)
     local isaoetargeting = false
     local wantsaoetargeting = false
 
@@ -130,8 +124,7 @@ local function ModDoGetMouseActions(self, position, target)
             local rmb_override = GetQuickAction(self, target)
 
             if rmb_override then
-                local lmb = not isaoetargeting and self:GetLeftClickActions(position, target)[1] or nil
-                return lmb, rmb_override
+                return rmb_override
             end
         end
     end
@@ -183,6 +176,16 @@ local function GetFuelAndAction(target)
 
     if ret[1] then
         return ret[1], GetActionFromFuel(ret[1])
+    end
+
+    return nil
+end
+
+local function GetRazor()
+    for _, item in pairs(InventoryFunctions:GetPlayerInventory()) do
+        if item.prefab == "razor" then
+            return item
+        end
     end
 
     return nil
@@ -316,6 +319,37 @@ local function GetIgniteItem()
     return nil
 end
 
+local function GetToolFromInventory(action)
+    local tag = action.id .. "_tool"
+
+    if InventoryFunctions:EquipHasTag(tag) then
+        return nil
+    end
+
+    for _, item in pairs(InventoryFunctions:GetPlayerInventory()) do
+        if item:HasTag(tag) then
+            return item
+        end
+    end
+
+    return nil
+end
+
+local function GetKlausSackKey()
+    local ret = {}
+
+    for _, item in pairs(InventoryFunctions:GetPlayerInventory()) do
+        if item:HasTag("klaussackkey") then
+            ret[#ret + 1] = item
+            if item.prefab =="klaussackkey" then
+                return item
+            end
+        end
+    end
+
+    return ret[1]
+end
+
 -- 
 -- QuickActions Triggers
 -- 
@@ -373,6 +407,12 @@ local function IsSleeping(target)
         or target.AnimState:IsCurrentAnimation("sleep_pst")
 end
 
+local function HasHair(target)
+    return target:HasTag("beefalo")
+       and IsSleeping(target)
+       and target.AnimState:GetBuild() ~= "beefalo_shaved_build"
+end
+
 local function IsValidBirdcage(target)
     return target.prefab == "birdcage"
        and target:HasTag("trader")
@@ -388,20 +428,8 @@ local function IsBirdcageSleeping(target)
        and IsSleeping(target)
 end
 
-local function GetToolFromInventory(action)
-    local tag = action.id .. "_tool"
-
-    if InventoryFunctions:EquipHasTag(tag) then
-        return nil
-    end
-
-    for _, item in pairs(InventoryFunctions:GetPlayerInventory()) do
-        if item:HasTag(tag) then
-            return item
-        end
-    end
-
-    return nil
+local function IsKlausSack(target)
+    return target:HasTag("klaussacklock")
 end
 
 -- 
@@ -461,7 +489,7 @@ local function CampfireQuickAction(self, target)
             return "Add Fuel (" .. fuel.name .. ")"
         end
 
-        action.modaction = "scenegive"
+        action.modaction = "sceneuse"
 
         return action
     end
@@ -481,6 +509,34 @@ local function ResetTrapQuickAction(self, target)
     return action
 end
 
+local function BeefaloQuickAction(self, target)
+    local razor = GetRazor()
+
+    if razor then
+        local action = BufferedAction(self.inst, target, ACTIONS.SHAVE, razor)
+
+        action.modaction = "sceneuse"
+
+        return action
+    end
+
+    return nil
+end
+
+local function KlausSackQuickAction(self, target)
+    local key = GetKlausSackKey()
+
+    if key then
+        local action = BufferedAction(self.inst, target, ACTIONS.USEKLAUSSACKKEY, key)
+
+        action.modaction = "sceneuse"
+
+        return action
+    end
+
+    return nil
+end
+
 local function FeedBirdcageQuickAction(self, target)
     local food = GetBirdFood()
 
@@ -491,7 +547,7 @@ local function FeedBirdcageQuickAction(self, target)
             return "Feed (" .. GetDisplayName(food) .. ")"
         end
 
-        action.modaction = "scenegive"
+        action.modaction = "sceneuse"
 
         return action
     end
@@ -509,7 +565,7 @@ local function RepairWallQuickAction(self, target)
             return "Repair (" .. repairItem.name .. ")"
         end
 
-        action.modaction = "scenegive"
+        action.modaction = "sceneuse"
 
         return action
     end
@@ -572,6 +628,7 @@ end
 AddQuickAction("QUICK_ACTION_CAMPFIRE", IsCampfire, CampfireQuickAction)
 AddQuickAction("QUICK_ACTION_TRAP", IsTrapSprung, ResetTrapQuickAction)
 AddQuickAction("QUICK_ACTION_BIRD_CAGE", BirdTraderValid, FeedBirdcageQuickAction)
+AddQuickAction("QUICK_ACTION_BEEFALO", HasHair, BeefaloQuickAction)
 AddQuickAction("QUICK_ACTION_WALLS", IsRepairableWall, RepairWallQuickAction)
 AddQuickAction("QUICK_ACTION_EXTINGUISH", IsExtinguishable, ExtinguishQuickAction)
 AddQuickAction("QUICK_ACTION_SLURTLEHOLE", IsSnurtleMound, LightQuickAction)
@@ -579,6 +636,7 @@ AddQuickAction("QUICK_ACTION_WAKEUP_BIRD", IsBirdcageSleeping, WakeupQuickAction
 AddQuickAction("QUICK_ACTION_DIG", IsDigWorkable, DigQuickAction)
 AddQuickAction("QUICK_ACTION_HAMMER", IsHammerWorkable, HammerQuickAction)
 AddQuickAction("QUICK_ACTION_NET", IsNetWorkable, CatchQuickAction)
+AddQuickAction("QUICK_ACTION_KLAUS_SACK", IsKlausSack, KlausSackQuickAction)
 
 local IsCancelControl =
 {
@@ -638,7 +696,7 @@ local function Init()
 
                 self:DoAction(act)
                 return
-            elseif act.modaction == "scenegive" then
+            elseif act.modaction == "sceneuse" then
                 if self:CanLocomote() then
                     act.preview_cb = function()
                         SendRPCToServer(RPC.ControllerUseItemOnSceneFromInvTile, act.action.code, act.invobject, act.target)
@@ -801,15 +859,25 @@ local function Init()
     -- PlayerActionPicker Overrides
     -- 
 
-    OldDoGetMouseActions = PlayerActionPicker.DoGetMouseActions
-    function PlayerActionPicker:DoGetMouseActions(position, target)
-        local _, rmb_override = ModDoGetMouseActions(self, position, target)
+    local CanOverride =
+    {
+        [ACTIONS.LOOKAT] = true,
+        [ACTIONS.WALKTO] = true,
+    }
 
-        if rmb_override then
-            return _, rmb_override
+    local OldDoGetMouseActions = PlayerActionPicker.DoGetMouseActions
+    function PlayerActionPicker:DoGetMouseActions(...)
+        local lmb, rmb = OldDoGetMouseActions(self, ...)
+
+        if not rmb or CanOverride[rmb.action] then
+            local rmb_override = GetRMBOverride(self, ...)
+
+            if rmb_override then
+                return lmb, rmb_override
+            end
         end
 
-        return OldDoGetMouseActions(self, position, target)
+        return lmb, rmb
     end
 end
 

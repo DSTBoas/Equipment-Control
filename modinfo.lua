@@ -5,7 +5,7 @@ icon_atlas = "modicon.xml"
 icon = "modicon.tex"
 
 author = "Boas"
-version = "2.4"
+version = "2.5"
 forumthread = ""
 
 dont_starve_compatible = false
@@ -311,7 +311,7 @@ local Languages =
         },
         option_names =
         {
-            Language = "Language",
+            LANGUAGE = "Language",
             DROPKEY = "Drop lantern",
             CONFIRM_TO_EAT = "Confirm to eat",
             PICKUP_FILTER = "Pickup filter",
@@ -344,6 +344,9 @@ local Languages =
             BUTTON_14_CATEGORY = "Button 14 category",
             BUTTON_15_CATEGORY = "Button 15 category",
             PREFERRED = "Preferred ",
+            PREFERRED_FUEL_LANTERN = "Lantern fuel",
+            PREFERRED_FUEL_MOGGLES = "Moggles fuel",
+            PREFERRED_CAMPFIRE_FUEL = "Campfire fuel",
             AUTO_UNEQUIP_REPAIRABLES = "Auto-unequip repairables",
             AUTO_RE_EQUIP_WEAPON = "Auto-re-equip weapon",
             AUTO_RE_EQUIP_ARMOR = "Auto-re-equip armor",
@@ -355,9 +358,15 @@ local Languages =
             WOODIE_WEREITEM_UNEQUIP = "Auto-regear woodie",
             AUTO_SWITCH_BONE_ARMOR = "Auto-switch bone armor",
             AUTO_REFUEL_LIGHT_SOURCES = "Auto-refuel light sources",
+            AUTO_CATCH_BOOMERANG = "Auto-catch boomerang",
             DAMAGE_ESTIMATION = "Damage estimation",
+            QUICK_ACTION_NET = "Catch",
+            QUICK_ACTION_HAMMER = "Hammer",
+            QUICK_ACTION_DIG = "Dig",
             QUICK_ACTION_CAMPFIRE = "Add Fuel Campfires",
             QUICK_ACTION_TRAP = "Reset Trap",
+            QUICK_ACTION_BEEFALO = "Shave Beefalo",
+            QUICK_ACTION_KLAUS_SACK = "Unlock Loot Stash",
             QUICK_ACTION_BIRD_CAGE = "Feed Bird",
             QUICK_ACTION_WAKEUP_BIRD = "Wakeup Bird",
             QUICK_ACTION_WALLS = "Repair Wall",
@@ -387,7 +396,12 @@ local Languages =
     },
 }
 
-local CurrentLanguage = Languages[locale] or Languages.en
+local CurrentLanguage = Languages.en
+local TheLocale = "en"
+if locale ~= nil then
+    CurrentLanguage = Languages[locale] or Languages.en
+    TheLocale = locale
+end
 
 local function AddConfigOption(desc, data, hover)
     return {description = desc, data = data, hover = hover}
@@ -857,10 +871,10 @@ local BetaSettingMessage = CurrentLanguage.option_messages.BetaSettingMessage ..
 configuration_options =
 {
     AddConfig(
-        CurrentLanguage.option_names.Language,
+        CurrentLanguage.option_names.LANGUAGE,
         "LANGUAGE",
         LanguageOptions,
-        Languages[locale] and locale or "en",
+        TheLocale,
         AssignLanguageMessage
     ),
 
@@ -1273,21 +1287,21 @@ configuration_options =
         PreferenceMessage
     ),
     AddConfig(
-        CurrentLanguage.option_names.PREFERRED .. "Lantern fuel",
+        CurrentLanguage.option_names.PREFERRED .. CurrentLanguage.option_names.PREFERRED_FUEL_LANTERN,
         "PREFERRED_FUEL_LANTERN",
         FuelLanternPreferenceOptions,
         false,
         PreferenceMessage
     ),
     AddConfig(
-        CurrentLanguage.option_names.PREFERRED .. "Moggles fuel",
+        CurrentLanguage.option_names.PREFERRED .. CurrentLanguage.option_names.PREFERRED_FUEL_MOGGLES,
         "PREFERRED_FUEL_MOGGLES",
         FuelMogglesPreferenceOptions,
         false,
         PreferenceMessage
     ),
     AddConfig(
-        CurrentLanguage.option_names.PREFERRED .. "Campfire fuel",
+        CurrentLanguage.option_names.PREFERRED .. CurrentLanguage.option_names.PREFERRED_CAMPFIRE_FUEL,
         "PREFERRED_CAMPFIRE_FUEL",
         CampfireFuelPreferenceOptions,
         false,
@@ -1367,6 +1381,13 @@ configuration_options =
         SettingMessage
     ),
     AddConfig(
+        CurrentLanguage.option_names.AUTO_CATCH_BOOMERANG,
+        "AUTO_CATCH_BOOMERANG",
+        SettingOptions,
+        false,
+        SettingMessage
+    ),
+    AddConfig(
         CurrentLanguage.option_names.AUTO_REFUEL_LIGHT_SOURCES,
         "AUTO_REFUEL_LIGHT_SOURCES",
         AutoReFuelOptions,
@@ -1387,21 +1408,21 @@ configuration_options =
 
     AddSectionTitle(CurrentLanguage.option_titles.QuickActions),
     AddConfig(
-        "Catch",
+        CurrentLanguage.option_names.QUICK_ACTION_NET,
         "QUICK_ACTION_NET",
         SettingOptions,
         true,
         SettingMessage
     ),
     AddConfig(
-        "Hammer",
+        CurrentLanguage.option_names.QUICK_ACTION_HAMMER,
         "QUICK_ACTION_HAMMER",
         SettingOptions,
-        true,
+        false,
         SettingMessage
     ),
     AddConfig(
-        "Dig",
+        CurrentLanguage.option_names.QUICK_ACTION_DIG,
         "QUICK_ACTION_DIG",
         SettingOptions,
         true,
@@ -1417,6 +1438,20 @@ configuration_options =
     AddConfig(
         CurrentLanguage.option_names.QUICK_ACTION_TRAP,
         "QUICK_ACTION_TRAP",
+        SettingOptions,
+        true,
+        SettingMessage
+    ),
+    AddConfig(
+        CurrentLanguage.option_names.QUICK_ACTION_BEEFALO,
+        "QUICK_ACTION_BEEFALO",
+        SettingOptions,
+        true,
+        SettingMessage
+    ),
+    AddConfig(
+        CurrentLanguage.option_names.QUICK_ACTION_KLAUS_SACK,
+        "QUICK_ACTION_KLAUS_SACK",
         SettingOptions,
         true,
         SettingMessage

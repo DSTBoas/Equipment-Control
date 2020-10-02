@@ -1,12 +1,28 @@
 local InventoryFunctions = require "util/inventoryfunctions"
 local KeybindService = MOD_EQUIPMENT_CONTROL.KEYBINDSERVICE
 
-local Compatible =
+local CanWalkTo =
 {
+    [ACTIONS.RUMMAGE] = true,
+    [ACTIONS.DRY] = true,
+    [ACTIONS.BAIT] = true,
+    [ACTIONS.ADDFUEL] = true,
+    [ACTIONS.ADDWETFUEL] = true,
     [ACTIONS.PICK] = true,
+    [ACTIONS.GIVE] = true,
+    [ACTIONS.GIVETOPLAYER] = true,
+    [ACTIONS.GIVEALLTOPLAYER] = true,
+    [ACTIONS.FEEDPLAYER] = true,
+    [ACTIONS.COOK] = true,
+    [ACTIONS.SLEEPIN] = true,
+    [ACTIONS.PLANT] = true,
+    [ACTIONS.HARVEST] = true,
+    [ACTIONS.SMOTHER] = true,
     [ACTIONS.PICKUP] = true,
     [ACTIONS.JUMPIN] = true,
     [ACTIONS.MIGRATE] = true,
+    [ACTIONS.STEER_BOAT] = true,
+    [ACTIONS.MOUNT_PLANK] = true,
 }
 
 local function IsCompatibleLeftClickAction()
@@ -16,21 +32,24 @@ local function IsCompatibleLeftClickAction()
         return true
     end
 
-    return Compatible[buffaction.action]
+    return CanWalkTo[buffaction.action]
 end
 
 local AUTO_EQUIP_CANE = GetModConfigData("AUTO_EQUIP_CANE", MOD_EQUIPMENT_CONTROL.MODNAME)
 
 local function ValidateCaneClick()
     return IsCompatibleLeftClickAction()
-       and InventoryFunctions:GetActiveItem() == nil
        and TheInput:GetHUDEntityUnderMouse() == nil
 end
 
 local function IsLightSourceEquipped()
     local equipped = InventoryFunctions:GetEquippedItem(EQUIPSLOTS.HANDS)
-    return equipped
-       and Categories.LIGHTSOURCE.fn(equipped)
+
+    if not equipped then
+        return false
+    end
+
+    return Categories.LIGHTSOURCE.fn(equipped)
 end
 
 local function CanEquipCane()
@@ -40,18 +59,11 @@ local function CanEquipCane()
 end
 
 local function EquipCane()
-    local item = ThePlayer.components.actioncontroller:GetItemFromCategory("CANE")
-    
-    InventoryFunctions:Equip(item, true)
+    InventoryFunctions:Equip(
+        ThePlayer.components.actioncontroller:GetItemFromCategory("CANE"),
+        true
+    )
 end
-
-local MoveControls =
-{
-    [CONTROL_MOVE_UP] = true,
-    [CONTROL_MOVE_DOWN] = true,
-    [CONTROL_MOVE_LEFT] = true,
-    [CONTROL_MOVE_RIGHT] = true,
-}
 
 local function Init()
     local PlayerController = ThePlayer and ThePlayer.components.playercontroller
@@ -62,26 +74,36 @@ local function Init()
 
     local PlayerControllerOnLeftClick = PlayerController.OnLeftClick
     function PlayerController:OnLeftClick(down)
-        if CanEquipCane() and ValidateCaneClick() then
+        if down and CanEquipCane() and ValidateCaneClick() then
             EquipCane()
 
-            if self:IsDoingOrWorking() then
-                self.inst:DoTaskInTime(0, function()
-                    PlayerControllerOnLeftClick(self, true)
-                end)
-                return
-            end
+            -- Avoid action interference
+            self.inst:DoTaskInTime(GetTickTime(), function()
+                PlayerControllerOnLeftClick(self, down)
+            end)
+            return
         end
 
         PlayerControllerOnLeftClick(self, down)
     end
 
-    for control in pairs(MoveControls) do
-        TheInput:AddControlHandler(control, function()
-            if CanEquipCane() and KeybindService:ValidateKeybind() then
-                EquipCane()
-            end
-        end)
+    local PlayerControllerDoDragWalking = PlayerController.DoDragWalking
+    function PlayerController:DoDragWalking(...)
+        local isDragWalking = PlayerControllerDoDragWalking(self, ...)
+
+        if isDragWalking and CanEquipCane() then
+            EquipCane()
+        end
+
+        return isDragWalking
+    end
+
+    local PlayerControllerDoDirectWalking = PlayerController.DoDirectWalking
+    function PlayerController:DoDirectWalking(...)
+        PlayerControllerDoDirectWalking(self, ...)
+        if self.directwalking and CanEquipCane() then
+            EquipCane()
+        end
     end
 end
 

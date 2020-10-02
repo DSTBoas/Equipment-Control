@@ -268,8 +268,68 @@ end
 
 local function OnFuelDepleted(item)
     item = item.entity:GetParent()
+
     if item:HasTag("fueldepleted") then
         RefreshButtons()
+    end
+end
+
+local AutoCatch =
+{
+    tasks = {},
+    timeout = 30,
+}
+
+local function AutoCatchTimeout(item)
+    local elapsedTime = GetTime() - AutoCatch.tasks[item].start
+    return elapsedTime > AutoCatch.timeout
+end
+
+local function StopAutoCatch(item)
+    AutoCatch.tasks[item].task:Cancel()
+    AutoCatch.tasks[item] = nil
+end
+
+local function GetBoomerang()
+    return FindEntity(ThePlayer, 5, nil, {"catchable"}) -- 4
+end
+
+local function IsReturningToPlayer(item)
+    local boomerangRot = item.Transform:GetRotation()
+    local boomerangAngleToPlayer = item:GetAngleToPoint(ThePlayer.Transform:GetWorldPosition())
+    local deltaAngle = boomerangRot - boomerangAngleToPlayer
+    return deltaAngle < 40 and deltaAngle > -40
+end
+
+local function IsCatchable(item)
+    return item:HasTag("catchable")
+end
+
+local function AutoCatchPeriodic(inst, item)
+    if not IsCatchable(item) or AutoCatchTimeout(item) then
+        StopAutoCatch(item)
+        return
+    end
+
+    local boomerang = GetBoomerang()
+    if boomerang and IsReturningToPlayer(boomerang) then
+        local x, _, z = boomerang.Transform:GetWorldPosition()
+        SendRPCToServer(RPC.LeftClick, ACTIONS.CATCH.code, x, z, boomerang)
+    end
+end
+            
+local function AutoCatchBoomerang(item)
+    item = item.entity:GetParent()
+
+    if ThePlayer.AnimState:IsCurrentAnimation("throw") then
+        if AutoCatch.tasks[item] ~= nil then
+            return
+        end
+        AutoCatch.tasks[item] =
+        {
+          start = GetTime(),
+          task = ThePlayer:DoPeriodicTask(0, AutoCatchPeriodic, 0, item), 
+        }
     end
 end
 
@@ -279,6 +339,10 @@ end
 
 local function IsHambat(item)
     return item.prefab == "hambat"
+end
+
+local function IsBoomerang(item)
+    return item.prefab == "boomerang"
 end
 
 local function IsArmor(item)
@@ -307,9 +371,9 @@ local function IsRepairable(item)
     return ItemFunctions:IsRepairable(item)
 end
 
---- 
---- Tracker system
---- 
+-- 
+-- Tracker system
+-- 
 
 local function AddTracker(triggerFn, event, eventFn, classified, init)
     TrackerFunctions[#TrackerFunctions + 1] =
@@ -404,8 +468,12 @@ if BUTTON_SHOW then
 end
 
 local function OnDeactivateWorld()
-    for _, eslot in pairs(Trackers) do
+    for eslot in pairs(Trackers) do
         DetachTrackers(eslot)
+    end
+
+    for task in pairs(AutoCatch.tasks) do
+        StopAutoCatch(task)
     end
 end
 
@@ -440,6 +508,10 @@ local ItemTracker = Class(function(self, inst)
 
     if GetModConfigData("AUTO_RE_EQUIP_ARMOR", MOD_EQUIPMENT_CONTROL.MODNAME) then
         AddTracker(IsArmor, "onremove", AutoReEquipArmor)
+    end
+
+    if GetModConfigData("AUTO_CATCH_BOOMERANG", MOD_EQUIPMENT_CONTROL.MODNAME) then
+        AddTracker(IsBoomerang, "onremove", AutoCatchBoomerang, true)
     end
 
     if GetModConfigData("AUTO_REFUEL_LIGHT_SOURCES", MOD_EQUIPMENT_CONTROL.MODNAME) then
