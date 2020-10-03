@@ -290,31 +290,35 @@ local function StopAutoCatch(item)
     AutoCatch.tasks[item] = nil
 end
 
-local function GetBoomerang()
-    return FindEntity(ThePlayer, 5, nil, {"catchable"}) -- 4
-end
-
 local function IsReturningToPlayer(item)
-    local boomerangRot = item.Transform:GetRotation()
-    local boomerangAngleToPlayer = item:GetAngleToPoint(ThePlayer.Transform:GetWorldPosition())
-    local deltaAngle = boomerangRot - boomerangAngleToPlayer
-    return deltaAngle < 40 and deltaAngle > -40
+    local rotation = item.Transform:GetRotation()
+    local angleToPoint = item:GetAngleToPoint(ThePlayer.Transform:GetWorldPosition())
+    return math.abs(rotation - angleToPoint) < 40
 end
 
 local function IsCatchable(item)
     return item:HasTag("catchable")
 end
 
-local function AutoCatchPeriodic(inst, item)
+local function RangeCheck(target)
+    return ThePlayer:GetDistanceSqToInst(target) < 15
+end
+
+local function AutoCatchPeriodic(item)
     if not IsCatchable(item) or AutoCatchTimeout(item) then
         StopAutoCatch(item)
         return
     end
 
-    local boomerang = GetBoomerang()
-    if boomerang and IsReturningToPlayer(boomerang) then
-        local x, _, z = boomerang.Transform:GetWorldPosition()
-        SendRPCToServer(RPC.LeftClick, ACTIONS.CATCH.code, x, z, boomerang)
+    if not AutoCatch.tasks[item].incoming then
+        AutoCatch.tasks[item].incoming = IsReturningToPlayer(item)
+        if not AutoCatch.tasks[item].incoming then
+            return
+        end
+    end
+
+    if RangeCheck(item) then
+        SendRPCToServer(RPC.ActionButton, ACTIONS.CATCH.code, item)
     end
 end
             
@@ -325,10 +329,12 @@ local function AutoCatchBoomerang(item)
         if AutoCatch.tasks[item] ~= nil then
             return
         end
+
         AutoCatch.tasks[item] =
         {
-          start = GetTime(),
-          task = ThePlayer:DoPeriodicTask(0, AutoCatchPeriodic, 0, item), 
+            incoming = false,
+            start = GetTime(),
+            task = item:DoPeriodicTask(0, AutoCatchPeriodic, 0, item), 
         }
     end
 end
@@ -470,10 +476,6 @@ end
 local function OnDeactivateWorld()
     for eslot in pairs(Trackers) do
         DetachTrackers(eslot)
-    end
-
-    for task in pairs(AutoCatch.tasks) do
-        StopAutoCatch(task)
     end
 end
 

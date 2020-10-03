@@ -32,7 +32,7 @@ local function GetLightSource(recur)
         if CraftFunctions:CanCraft("torch") then
             CraftFunctions:Craft("torch")
 
-            if not ThePlayer.components.playercontroller:CanLocomote() then
+            if ThePlayer.components.locomotor == nil then
                 Sleep(FRAMES * 3)
             end
 
@@ -107,8 +107,8 @@ local function Init()
         return
     end
 
-    ThePlayer:StartThread(function()
-        while true do
+    StartThread(function()
+        while ThePlayer do
             if DarkTrigger() then
                 local lightsource = EquipLight()
                 if lightsource then
@@ -121,7 +121,7 @@ local function Init()
             end
             Sleep(1)
         end
-    end)
+    end, "AutoLightThread")
 end
 
 return Init

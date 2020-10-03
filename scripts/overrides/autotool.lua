@@ -54,6 +54,11 @@ local function Init()
             if act then
                 if act.MOD_AUTO_EQUIP then
                     InventoryFunctions:Equip(act.MOD_AUTO_EQUIP)
+                    -- Avoid action interference
+                    self.inst:DoTaskInTime(GetTickTime(), function()
+                        PlayerControllerOnLeftClick(self, down)
+                    end)
+                    return
                 elseif act.HASTOCRAFT then
                     for _, prefab in pairs(ToolData[act.HASTOCRAFT].tools) do
                         if CraftFunctions:CanCraft(prefab) then
@@ -65,38 +70,45 @@ local function Init()
 
                                 CraftFunctions:Craft(prefab)
 
-                                if not self:CanLocomote() then
-                                    Sleep(FRAMES * 3)
-                                end
-
-                                 -- @TODO Might wanna use an event based trigger here @TAG PERF, REFACTOR
-                                while CraftFunctions:IsCrafting() do
-                                    Sleep(GetCurrentAnimationLength())
-                                end
-
-                                if not InventoryFunctions:EquipHasTag(act.HASTOCRAFT) then
-                                    for _, item in pairs(InventoryFunctions:GetPlayerInventory(true)) do
-                                        if item:HasTag(act.HASTOCRAFT) then
-                                            SendRPCToServer(RPC.EquipActionItem, item)
-                                            break
-                                        end
-                                    end
-                                end
-                                
-                                Sleep(FRAMES * 3)
-
-                                if InventoryFunctions:EquipHasTag(act.HASTOCRAFT) then
-                                    local act = BufferedAction(self.inst, target, ToolData[act.HASTOCRAFT].action)
-                                    if self:CanLocomote() then
-                                        act.preview_cb = function()
-                                            SendRPCToServer(RPC.LeftClick, act.action.code, position.x, position.z, target)
-                                        end
-                                    else
-                                        SendRPCToServer(RPC.LeftClick, act.action.code, position.x, position.z, target)
+                                local function OnGetTool(inst, data)
+                                    if data and data.item and data.item:HasTag(act.HASTOCRAFT) then
+                                        SendRPCToServer(RPC.EquipActionItem, data.item)
                                     end
 
-                                    self:DoAction(act)
+                                    ThePlayer.components.eventtracker:DetachEvent("OnGetTool")
                                 end
+
+                                ThePlayer.components.eventtracker:AddEvent(
+                                    "gotnewitem",
+                                    "OnGetTool",
+                                    OnGetTool
+                                )
+
+                                local function OnEquipTool(inst, data)
+                                    if data and data.item and data.item:HasTag(act.HASTOCRAFT) then
+                                        local act = BufferedAction(self.inst, target, ToolData[act.HASTOCRAFT].action)
+
+                                        if ThePlayer.components.locomotor == nil then
+                                            self.inst:DoTaskInTime(FRAMES * 3, function()
+                                                SendRPCToServer(RPC.LeftClick, act.action.code, position.x, position.z, target)
+                                            end)
+                                        else
+                                            act.preview_cb = function()
+                                                SendRPCToServer(RPC.LeftClick, act.action.code, position.x, position.z, target)
+                                            end
+                                        end
+
+                                        self:DoAction(act)
+                                    end
+
+                                    ThePlayer.components.eventtracker:DetachEvent("OnEquipTool")
+                                end
+
+                                ThePlayer.components.eventtracker:AddEvent(
+                                    "equip",
+                                    "OnEquipTool",
+                                    OnEquipTool
+                                )
                             end)
                             return
                         end
@@ -164,7 +176,7 @@ local function Init()
     end
 
     local function CreateBufferedAction(action, target)
-        return BufferedAction(target, target, action)
+        return BufferedAction(ThePlayer, target, action)
     end
 
     local function GetToolActions(toolTag, target)
@@ -185,7 +197,7 @@ local function Init()
     function PlayerActionPicker:DoGetMouseActions(...)
         if not InventoryFunctions:IsHeavyLifting() then
             local target = TheInput:GetWorldEntityUnderMouse()
-            if target and CanEntitySeeTarget(self.inst, target) and not InventoryFunctions:GetActiveItem() then
+            if target and not target:HasTag("fire") and CanEntitySeeTarget(self.inst, target) and not InventoryFunctions:GetActiveItem() then
                 local tools, hasToCraft = GetTools(target)
                 for _, tool in pairs(tools) do
                     local lmboverride = not hasToCraft and self:GetEquippedItemActions(target, tool)

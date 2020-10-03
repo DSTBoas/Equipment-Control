@@ -5,7 +5,7 @@ icon_atlas = "modicon.xml"
 icon = "modicon.tex"
 
 author = "Boas"
-version = "2.5"
+version = "2.6"
 forumthread = ""
 
 dont_starve_compatible = false
@@ -62,6 +62,9 @@ local Languages =
             ButtonPreferenceOptions = "Right click to change preference",
             ButtonAutoEquipOptions = "Shift + Right click to change Auto-equip",
             BetaSettingOptions = "Use this feature at your own discretion",
+            ConfirmToEatOptions = "Avoid accidentally eating valuable foods",
+            PickupFilterOptions = "Add entities under your mouse to the Pickup filter",
+            AttackFilterOptions = "Add entities under your mouse to the Attack filter",
             AutoEquipCaneOptions = "Auto-equip your cane when using the movement keys",
             AutoEquipWeaponOptions = "Auto-equip your best weapon in combat",
             AutoEquipGlasscutterOptions = "Auto-equip your glass cutter against nightmare creatures",
@@ -324,7 +327,7 @@ local Languages =
             TOGGLE_AUTO_EQUIP_CANE = "Toggle Auto-equip cane",
             TOGGLE_TELEPOOF_MODE = "Toggle Telepoof mouse through",
             BUTTON_SHOW = "Buttons",
-            BUTTON_ANIMATIONS = "Animations",
+            BUTTON_ANIMATIONS = "Animate buttons",
             BUTTON_SHOW_KEYBIND = "Show keybind",
             BUTTON_PREFERENCE_CHANGE = "Preference shortcut",
             BUTTON_AUTO_EQUIP_CHANGE = "Auto-equip shortcut",
@@ -516,11 +519,11 @@ local function GetKeyboardOptions(hover)
         t[#t + 1] = AddConfigOption(name, "KEY_" .. key, hover)
     end
 
-    local function AddDisabledConfigOption(t)
-        t[#t + 1] = AddConfigOption(CurrentLanguage.option_config.Disabled, false)
+    local function AddDisabledConfigOption(t, hover)
+        t[#t + 1] = AddConfigOption(CurrentLanguage.option_config.Disabled, false, hover)
     end
 
-    AddDisabledConfigOption(keys)
+    AddDisabledConfigOption(keys, hover)
 
     local string = ""
     for i = 1, 26 do
@@ -539,7 +542,7 @@ local function GetKeyboardOptions(hover)
         AddConfigSpecialKey(keys, nameKeys[i], specialKeys[i], hover)
     end
     
-    AddDisabledConfigOption(keys)
+    AddDisabledConfigOption(keys, hover)
 
     return keys
 end
@@ -558,6 +561,9 @@ local function GetDefaultOptions(hover)
 end
 
 local KeyboardOptions = GetKeyboardOptions()
+local ConfirmToEatOptions = GetKeyboardOptions(CurrentLanguage.option_messages.ConfirmToEatOptions)
+local PickupFilterOptions = GetKeyboardOptions(CurrentLanguage.option_messages.PickupFilterOptions)
+local AttackFilterOptions = GetKeyboardOptions(CurrentLanguage.option_messages.AttackFilterOptions)
 
 local SettingOptions = GetDefaultOptions()
 local BetaSettingOptions = GetDefaultOptions(CurrentLanguage.option_messages.BetaSettingOptions)
@@ -995,21 +1001,21 @@ configuration_options =
     AddConfig(
         CurrentLanguage.option_names.CONFIRM_TO_EAT,
         "CONFIRM_TO_EAT",
-        KeyboardOptions,
+        ConfirmToEatOptions,
         "KEY_CTRL",
         AssignKeyMessage
     ),
     AddConfig(
         CurrentLanguage.option_names.PICKUP_FILTER,
         "PICKUP_FILTER",
-        KeyboardOptions,
+        PickupFilterOptions,
         "KEY_F1",
         AssignKeyMessage
     ),
     AddConfig(
         CurrentLanguage.option_names.ATTACK_FILTER,
         "ATTACK_FILTER",
-        KeyboardOptions,
+        AttackFilterOptions,
         "KEY_F2",
         AssignKeyMessage
     ),

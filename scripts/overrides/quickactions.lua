@@ -686,23 +686,23 @@ local function Init()
                 local position = TheInput:GetWorldPosition()
                 local rpc = act.modlmb and RPC.LeftClick or RPC.RightClick
 
-                if self:CanLocomote() then
+                if ThePlayer.components.locomotor == nil then
+                    SendRPCToServer(rpc, act.action.code, position.x, position.z, act.target, nil, nil, rpc == RPC.LeftClick, nil, nil, false)
+                else
                     act.preview_cb = function()
                         SendRPCToServer(rpc, act.action.code, position.x, position.z, act.target, nil, nil, rpc == RPC.LeftClick, nil, nil, false)
                     end
-                else
-                    SendRPCToServer(rpc, act.action.code, position.x, position.z, act.target, nil, nil, rpc == RPC.LeftClick, nil, nil, false)
                 end
 
                 self:DoAction(act)
                 return
             elseif act.modaction == "sceneuse" then
-                if self:CanLocomote() then
+                if ThePlayer.components.locomotor == nil then
+                    SendRPCToServer(RPC.ControllerUseItemOnSceneFromInvTile, act.action.code, act.invobject, act.target)
+                else
                     act.preview_cb = function()
                         SendRPCToServer(RPC.ControllerUseItemOnSceneFromInvTile, act.action.code, act.invobject, act.target)
                     end
-                else
-                    SendRPCToServer(RPC.ControllerUseItemOnSceneFromInvTile, act.action.code, act.invobject, act.target)
                 end
                 self:DoAction(act)
                 return
@@ -718,12 +718,12 @@ local function Init()
                 local position = TheInput:GetWorldPosition()
 
                 self.inst:DoTaskInTime(FRAMES * 4, function()
-                    if self:CanLocomote() then
+                    if ThePlayer.components.locomotor == nil then
+                        SendRPCToServer(RPC.LeftClick, act.action.code, position.x, position.z, act.target)
+                    else
                         act.preview_cb = function()
                             SendRPCToServer(RPC.LeftClick, act.action.code, position.x, position.z, act.target)
                         end
-                    else
-                        SendRPCToServer(RPC.LeftClick, act.action.code, position.x, position.z, act.target)
                     end
 
                     self:DoAction(act)
@@ -749,17 +749,15 @@ local function Init()
                     end
 
                     self.inst:DoTaskInTime(FRAMES * 4, function()
-                        if self:CanLocomote() then
+                        if ThePlayer.components.locomotor == nil then
+                            SendRPCToServer(rpc, act.action.code, position.x, position.z, act.target, nil, nil, attack, nil, nil, false)
+                            SendRPCToServer(RPC.StopControl, CONTROL_PRIMARY)
+                        else
                             -- Some predict walking jazz
                             act.preview_cb = function()
                                 SendRPCToServer(rpc, act.action.code, position.x, position.z, act.target)
                             end
-                        else
-                            SendRPCToServer(rpc, act.action.code, position.x, position.z, act.target, nil, nil, attack, nil, nil, false)
-                            SendRPCToServer(RPC.StopControl, CONTROL_PRIMARY)
                         end
-
-                        act.modaction = nil
 
                         self:DoAction(act)
                         return
@@ -767,12 +765,12 @@ local function Init()
                     return
                 else
                     act.action = act.target:HasTag("fire") and ACTIONS.MANUALEXTINGUISH or ACTIONS.SMOTHER
-                    if self:CanLocomote() then
+                    if ThePlayer.components.locomotor == nil then
+                        SendRPCToServer(RPC.ControllerUseItemOnSceneFromInvTile, act.action.code, act.invobject, act.target)
+                    else
                         act.preview_cb = function()
                             SendRPCToServer(RPC.ControllerUseItemOnSceneFromInvTile, act.action.code, act.invobject, act.target)
-                        end
-                    else
-                        SendRPCToServer(RPC.ControllerUseItemOnSceneFromInvTile, act.action.code, act.invobject, act.target)
+                        end 
                     end
                 end
                 self:DoAction(act)
@@ -782,7 +780,15 @@ local function Init()
 
                 local position = TheInput:GetWorldPosition()
 
-                if self:CanLocomote() then
+                if ThePlayer.components.locomotor == nil then
+                    SendRPCToServer(
+                        RPC.LeftClick,
+                        act.action.code,
+                        position.x,
+                        position.z,
+                        act.target
+                    )
+                else
                     act.preview_cb = function()
                         SendRPCToServer(
                             RPC.LeftClick,
@@ -792,14 +798,6 @@ local function Init()
                             act.target
                         )
                     end
-                else
-                    SendRPCToServer(
-                        RPC.LeftClick,
-                        act.action.code,
-                        position.x,
-                        position.z,
-                        act.target
-                    )
                 end
 
                 local function callback(_, data)
@@ -816,7 +814,15 @@ local function Init()
 
                 local position = TheInput:GetWorldPosition()
 
-                if self:CanLocomote() then
+                if ThePlayer.components.locomotor == nil then
+                    SendRPCToServer(
+                        RPC.LeftClick,
+                        act.action.code,
+                        position.x,
+                        position.z,
+                        act.target
+                    )
+                else
                     act.preview_cb = function()
                         SendRPCToServer(
                             RPC.LeftClick,
@@ -826,14 +832,6 @@ local function Init()
                             act.target
                         )
                     end
-                else
-                    SendRPCToServer(
-                        RPC.LeftClick,
-                        act.action.code,
-                        position.x,
-                        position.z,
-                        act.target
-                    )
                 end
 
                 local function callback(_, data)

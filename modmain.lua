@@ -132,6 +132,7 @@ local function OnPlayerActivated(_, player)
     end
 
     player:AddComponent("actioncontroller")
+    player:AddComponent("eventtracker")
     player:AddComponent("itemtracker")
 
     if GetModConfigData("SORT_INVENTORY") or GetModConfigData("SORT_CHEST") then
