@@ -404,7 +404,7 @@ local function Init()
                     end
                 end
             elseif force_target_distsq <= (self.directwalking and 9 or 36) then
-                local action = GetModifiedAction(self, v, tool, tools)
+                local action = GetModifiedAction(self, force_target, tool, tools)
                 if action ~= nil then
                     return BufferedAction(self.inst, force_target, action, action ~= ACTIONS.SMOTHER and tool or nil)
                 end
