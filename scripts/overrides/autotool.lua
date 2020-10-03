@@ -72,7 +72,7 @@ local function Init()
 
                                 local function OnGetTool(inst, data)
                                     if data and data.item and data.item:HasTag(act.HASTOCRAFT) then
-                                        SendRPCToServer(RPC.EquipActionItem, data.item)
+                                        InventoryFunctions:Equip(data.item)
                                     end
 
                                     ThePlayer.components.eventtracker:DetachEvent("OnGetTool")
@@ -101,6 +101,7 @@ local function Init()
                                         self:DoAction(act)
                                     end
 
+                                    ThePlayer.components.eventtracker:DetachEvent("OnGetTool")
                                     ThePlayer.components.eventtracker:DetachEvent("OnEquipTool")
                                 end
 
@@ -193,11 +194,16 @@ local function Init()
         [ACTIONS.LOOKAT] = true,
     }
 
+    local function IsBurning(target)
+        return target:HasTag("fire")
+            or target:HasTag("smolder")
+    end
+
     local PlayerActionPickerDoGetMouseActions = PlayerActionPicker.DoGetMouseActions
     function PlayerActionPicker:DoGetMouseActions(...)
-        if not InventoryFunctions:IsHeavyLifting() then
+        if not InventoryFunctions:IsHeavyLifting() and not InventoryFunctions:GetActiveItem() then
             local target = TheInput:GetWorldEntityUnderMouse()
-            if target and not target:HasTag("fire") and CanEntitySeeTarget(self.inst, target) and not InventoryFunctions:GetActiveItem() then
+            if target and not IsBurning(target) and CanEntitySeeTarget(self.inst, target) then
                 local tools, hasToCraft = GetTools(target)
                 for _, tool in pairs(tools) do
                     local lmboverride = not hasToCraft and self:GetEquippedItemActions(target, tool)

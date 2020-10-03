@@ -5,7 +5,7 @@ icon_atlas = "modicon.xml"
 icon = "modicon.tex"
 
 author = "Boas"
-version = "2.6"
+version = "2.7"
 forumthread = ""
 
 dont_starve_compatible = false
@@ -65,10 +65,9 @@ local Languages =
             ConfirmToEatOptions = "Avoid accidentally eating valuable foods",
             PickupFilterOptions = "Add entities under your mouse to the Pickup filter",
             AttackFilterOptions = "Add entities under your mouse to the Attack filter",
-            AutoEquipCaneOptions = "Auto-equip your cane when using the movement keys",
+            AutoEquipCaneOptions = "Auto-equip your cane when moving",
             AutoEquipWeaponOptions = "Auto-equip your best weapon in combat",
             AutoEquipGlasscutterOptions = "Auto-equip your glass cutter against nightmare creatures",
-            AutoRefillSlingshotOptions = "Auto-refill your slingshot when out of ammo",
             AutoDetectRepairableOptions = "Auto-unequip repairables before their last use",
             AutoSwitchOptions = "Auto-switch your bone armors to stay invulnerable",
             AutoReFuelOptions = "Auto-refuel your light sources",
@@ -83,12 +82,12 @@ local Languages =
             {
                 [1] =
                 {
-                    "Same",
+                    "Enabled (Same)",
                     "Same: re-equip to the same weapon"
                 },
                 [2] =
                 {
-                    "Best",
+                    "Enabled (Best)",
                     "Best: re-equip to the next best weapon"
                 }
             },
@@ -401,8 +400,8 @@ local Languages =
 
 local CurrentLanguage = Languages.en
 local TheLocale = "en"
-if locale ~= nil then
-    CurrentLanguage = Languages[locale] or Languages.en
+if locale ~= nil and Languages[locale] then
+    CurrentLanguage = Languages[locale]
     TheLocale = locale
 end
 

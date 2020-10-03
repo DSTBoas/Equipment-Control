@@ -8,6 +8,7 @@ local Say = require "util/say"
 -- 
 
 local PRIOTIZE_VALUABLE_ITEMS = GetModConfigData("PRIOTIZE_VALUABLE_ITEMS", MOD_EQUIPMENT_CONTROL.MODNAME)
+local AUTO_EQUIP_TOOL = GetModConfigData("AUTO_EQUIP_TOOL", MOD_EQUIPMENT_CONTROL.MODNAME)
 local Filter_File = "mod_equipment_control_pickup_filter.txt"
 local PriotizedPickups =
 {
@@ -131,6 +132,36 @@ local function GetModifiedEnts(self, exclude, tags)
     return ents
 end
 
+local function GetToolsFromInventory(self, excludeTool)
+    local ret = {}
+
+    if AUTO_EQUIP_TOOL then
+        local toolCategories =
+        {
+            AXE = "CHOP",
+            PICKAXE = "MINE",
+        }
+
+        if excludeTool then
+            for category, tag in pairs(toolCategories) do
+                if excludeTool:HasTag(tag .. "_tool") then
+                    toolCategories[category] = nil
+                end
+            end
+        end
+
+        local tool
+        for category, tag in pairs(toolCategories) do
+            tool = self.inst.components.actioncontroller:GetItemFromCategory(category)
+            if tool then
+                ret[tool] = tag
+            end
+        end
+    end
+
+    return ret
+end
+
 local function Init()
     local PlayerController = ThePlayer and ThePlayer.components.playercontroller
 
@@ -208,6 +239,17 @@ local function Init()
         --no action found
     end
 
+    local function GetModifiedAction(self, target, tool, tools)
+        for modTool, tag in pairs(tools) do
+            if target:HasTag(tag .. "_workable") then
+                InventoryFunctions:Equip(modTool)
+                return ACTIONS[tag]
+            end
+        end
+
+        return GetPickupAction(self, target, tool)
+    end
+
     local TARGET_EXCLUDE_TAGS = { "FX", "NOCLICK", "DECOR", "INLIMBO" }
     local PICKUP_TARGET_EXCLUDE_TAGS = { "catchable", "mineactive", "intense" }
     local HAUNT_TARGET_EXCLUDE_TAGS = { "haunted", "catchable" }
@@ -261,6 +303,7 @@ local function Init()
             end
 
             local tool = self.inst.replica.inventory:GetEquippedItem(EQUIPSLOTS.HANDS)
+            local tools = GetToolsFromInventory(self, tool)
 
             --bug catching (has to go before combat)
             if tool ~= nil and tool:HasTag(ACTIONS.NET.id.."_tool") then
@@ -334,6 +377,7 @@ local function Init()
                     "brushable",
                     "tapped_harvestable",
                 }
+
                 if tool ~= nil then
                     for k, v in pairs(TOOLACTIONS) do
                         if tool:HasTag(k.."_tool") then
@@ -341,20 +385,26 @@ local function Init()
                         end
                     end
                 end
+
+                for _, tag in pairs(tools) do
+                    table.insert(pickup_tags, tag .. "_workable")
+                end
+
                 if self.inst.components.revivablecorpse ~= nil then
                     table.insert(pickup_tags, "corpse")
                 end
+
                 local ents = GetModifiedEnts(self, PICKUP_TARGET_EXCLUDE_TAGS, pickup_tags)
                 for i, v in ipairs(ents) do
                     if v ~= self.inst and v.entity:IsVisible() and CanEntitySeeTarget(self.inst, v) and not IsFiltered(v) then
-                        local action = GetPickupAction(self, v, tool)
+                        local action = GetModifiedAction(self, v, tool, tools)
                         if action ~= nil then
                             return BufferedAction(self.inst, v, action, action ~= ACTIONS.SMOTHER and tool or nil)
                         end
                     end
                 end
             elseif force_target_distsq <= (self.directwalking and 9 or 36) then
-                local action = GetPickupAction(self, force_target, tool)
+                local action = GetModifiedAction(self, v, tool, tools)
                 if action ~= nil then
                     return BufferedAction(self.inst, force_target, action, action ~= ACTIONS.SMOTHER and tool or nil)
                 end
