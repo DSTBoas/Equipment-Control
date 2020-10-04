@@ -33,7 +33,7 @@ local AUTO_EQUIP_WEAPON = GetModConfigData("AUTO_EQUIP_WEAPON", MOD_EQUIPMENT_CO
 
 local function WeaponTrigger(target)
     return AUTO_EQUIP_WEAPON
-       and not target:HasTag("butterfly")
+       and not target:HasTag("butterfly") 
 end
 
 local function GetPrefabFromInventory(prefab)
@@ -46,13 +46,12 @@ local function GetPrefabFromInventory(prefab)
     return nil
 end
 
-local function EquipWeapon()
+local function EquipWeapon(target)
     if not ThePlayer or not ThePlayer.components.actioncontroller then
         return
     end
 
-    local category = ThePlayer.components.actioncontroller:GetAutoEquipCategory()
-    local weapon = ThePlayer.components.actioncontroller:GetItemFromCategory(category)
+    local weapon = ThePlayer.components.actioncontroller:GetAutoEquipCategoryItem(target)
 
     InventoryFunctions:Equip(weapon, true)
 end
@@ -82,21 +81,20 @@ local function Init()
         return
     end
 
-    local OldDoAttackButton = PlayerController.DoAttackButton
-    function PlayerController:DoAttackButton(retarget)
-        local force_attack = TheInput:IsControlPressed(CONTROL_FORCE_ATTACK)
-        local target = self:GetAttackTarget(force_attack, retarget, retarget ~= nil)
+    local OldGetAttackTarget = PlayerController.GetAttackTarget
+    function PlayerController:GetAttackTarget(...)
+        local force_target = OldGetAttackTarget(self, ...)
 
-        if target then
+        if force_target then
             for i = 1, #AutoEquipFns do
-                if AutoEquipFns[i].trigger(target) then
-                    AutoEquipFns[i].fn(target)
+                if AutoEquipFns[i].trigger(force_target) then
+                    AutoEquipFns[i].fn(force_target)
                     break
                 end
             end
         end
 
-        OldDoAttackButton(self, retarget)
+        return force_target
     end
 end
 

@@ -263,7 +263,7 @@ end
 local function GetWeaponDamage(target)
     local weapon = ThePlayer.replica.inventory:GetEquippedItem(EQUIPSLOTS.HANDS)
     return weapon
-       and ItemFunctions:GetDamage(weapon) or GetUnArmedDamage(target)
+       and ItemFunctions:GetDamage(weapon, target) or GetUnArmedDamage(target)
 end
 
 local function GetDamageDealt(target)

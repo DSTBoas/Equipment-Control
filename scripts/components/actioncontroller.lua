@@ -50,9 +50,9 @@ local function GetPercentUsedPriority(item)
     return ItemFunctions:GetPercentUsed(item) * .001
 end
 
-local function GetPriority(category, item, ignorePreferences)
+local function GetPriority(category, item, ignorePreferences, target)
     return not ignorePreferences and GetPreference(category, item)
-        or Categories[category].priority(item) + GetNamePriority(item) - GetPercentUsedPriority(item)
+        or Categories[category].priority(item, target) + GetNamePriority(item) - GetPercentUsedPriority(item)
 end
 
 local function IsAutoUnEquipping(item)
@@ -61,7 +61,7 @@ local function IsAutoUnEquipping(item)
        and ItemFunctions:GetPercentUsed(item) <= ItemFunctions:GetFiniteUses(item)
 end
 
-local function GetItemPriorityTable(category, ignorePreferences)
+local function GetItemPriorityTable(category, ignorePreferences, target)
     local ret = {}
 
     for _, item in pairs(InventoryFunctions:GetPlayerInventory(true)) do
@@ -69,7 +69,7 @@ local function GetItemPriorityTable(category, ignorePreferences)
             ret[#ret + 1] =
             {
                 item = item,
-                priority = GetPriority(category, item, ignorePreferences)
+                priority = GetPriority(category, item, ignorePreferences, target)
             }
         end
     end
@@ -77,13 +77,6 @@ local function GetItemPriorityTable(category, ignorePreferences)
     table.sort(ret, function(a, b)
         return a.priority > b.priority
     end)
-
-    -- if #ret > 0 then
-    --     print("Debug priority table")
-    --     for i, v in pairs(ret) do
-    --         print(v.item, v.priority)
-    --     end
-    -- end
 
     return ret
 end
@@ -125,14 +118,14 @@ function ActionController:SetAutoEquipCategory(category)
     end
 end
 
-function ActionController:GetAutoEquipCategory()
-    return Preferences.AutoEquipCategory
-end
-
-local function GetBestItem(category)
-    local itemPriorityTable = GetItemPriorityTable(category)
+local function GetBestItem(category, target)
+    local itemPriorityTable = GetItemPriorityTable(category, false, target)
     return itemPriorityTable[1] 
        and itemPriorityTable[1].item
+end
+
+function ActionController:GetAutoEquipCategoryItem(target)
+    return GetBestItem(Preferences.AutoEquipCategory, target)
 end
 
 function ActionController:KeybindUseItem(category)

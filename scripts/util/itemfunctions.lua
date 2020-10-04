@@ -167,10 +167,10 @@ local function ApplyStimuli(self, item, damage, target)
                 damage = damage * (TUNING.ELECTRIC_DAMAGE_MULT +
                          (target:GetIsWet() and TUNING.ELECTRIC_WET_DAMAGE_MULT
                          or 0))
-            else
-                damage = damage * (TUNING.ELECTRIC_DAMAGE_MULT +
-                         (TheWorld.state.iswet and TUNING.ELECTRIC_WET_DAMAGE_MULT
-                         or 0))
+            -- else
+            --     damage = damage * (TUNING.ELECTRIC_DAMAGE_MULT +
+            --              (TheWorld.state.iswet and TUNING.ELECTRIC_WET_DAMAGE_MULT
+            --              or 0))
             end
         end
     end
