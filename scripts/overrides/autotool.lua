@@ -4,39 +4,88 @@ local KeybindService = MOD_EQUIPMENT_CONTROL.KEYBINDSERVICE
 
 local CRAFTING_ALLOWED = GetModConfigData("AUTO_EQUIP_TOOL", MOD_EQUIPMENT_CONTROL.MODNAME) == 2
 
-local Axes =
+local CanOverrideAction =
 {
-    "goldenaxe",
-    "axe",
+    [ACTIONS.WALKTO] = true,
+    [ACTIONS.LOOKAT] = true,
 }
 
-local PickAxes =
+local CraftableTools =
 {
-    "goldenpickaxe",
-    "pickaxe",
-}
-
--- This is not the most elegant solution
--- @TODO redo this file @TAG CLEANUP, PERF
-local ToolData =
-{
-    [ACTIONS.CHOP.id .. "_tool"] =
+    CHOP =
     {
-        action = ACTIONS.CHOP,
-        tools = Axes,
+        "goldenaxe",
+        "axe", 
     },
-    [ACTIONS.MINE.id .. "_tool"] =
+    MINE =
     {
-        action = ACTIONS.MINE,
-        tools = PickAxes,
+        "goldenpickaxe",
+        "pickaxe",  
     },
 }
 
-local function GetCurrentAnimationLength()
-    return ThePlayer
-       and ThePlayer.AnimState
-       and ThePlayer.AnimState:GetCurrentAnimationLength()
-        or 0
+local function GetToolAction(target)
+    for toolAction in pairs(CraftableTools) do
+        if target:HasTag(toolAction .. "_workable") then
+            return toolAction
+        end
+    end
+
+    return nil
+end
+
+local function GetTool(toolAction)
+    for _, item in pairs(InventoryFunctions:GetPlayerInventory()) do
+        if item:HasTag(toolAction .. "_tool") then
+            return item
+        end
+    end
+
+    if CRAFTING_ALLOWED then
+        for i = 1, #CraftableTools[toolAction] do
+            if CraftFunctions:CanCraft(CraftableTools[toolAction][i]) then
+                return CraftableTools[toolAction][i], true
+            end
+        end
+    end
+
+    return nil
+end
+
+local function DataValidation(data, prefab)
+    return data
+       and data.item
+       and data.item.prefab == prefab
+end
+
+local function OnEquipToolEvent(inst, data, target, action, prefab)
+    if DataValidation(data, prefab) then
+        local act = BufferedAction(inst, target, action, data.item)
+        local position = target:GetPosition()
+
+        if inst.components.locomotor == nil then
+            inst:DoTaskInTime(FRAMES * 4, function()
+                SendRPCToServer(RPC.LeftClick, act.action.code, position.x, position.z, act.target)
+            end)
+        else
+            act.preview_cb = function()
+                SendRPCToServer(RPC.LeftClick, act.action.code, position.x, position.z, act.target)
+            end
+        end
+
+        inst.components.playercontroller:DoAction(act)
+    end
+
+    inst.components.eventtracker:DetachEvent("OnGetToolEvent")
+    inst.components.eventtracker:DetachEvent("OnEquipToolEvent")
+end
+
+local function OnGetToolEvent(inst, data, prefab)
+    if DataValidation(data, prefab) then
+        InventoryFunctions:Equip(data.item)
+    end
+
+    inst.components.eventtracker:DetachEvent("OnGetToolEvent")
 end
 
 local function Init()
@@ -49,188 +98,73 @@ local function Init()
 
     local PlayerControllerOnLeftClick = PlayerController.OnLeftClick
     function PlayerController:OnLeftClick(down)
-        if down and ThePlayer.components.playercontroller then
-            local act = ThePlayer.components.playercontroller:GetLeftMouseAction()
+        if down then
+            local act = self:GetLeftMouseAction()
             if act then
-                if act.MOD_AUTO_EQUIP then
-                    InventoryFunctions:Equip(act.MOD_AUTO_EQUIP)
+                if act.AUTOEQUIP then
+                    InventoryFunctions:Equip(act.invobject)
+
                     -- Avoid action interference
                     self.inst:DoTaskInTime(GetTickTime(), function()
                         PlayerControllerOnLeftClick(self, down)
                     end)
                     return
-                elseif act.HASTOCRAFT then
-                    for _, prefab in pairs(ToolData[act.HASTOCRAFT].tools) do
-                        if CraftFunctions:CanCraft(prefab) then
-                            local target = TheInput:GetWorldEntityUnderMouse()
-                            local position = TheInput:GetWorldPosition()
+                elseif act.CRAFT then
+                    CraftFunctions:Craft(act.CRAFT)
 
-                            ThePlayer:StartThread(function()
-                                self.inst:ClearBufferedAction()
-
-                                CraftFunctions:Craft(prefab)
-
-                                local function OnGetTool(inst, data)
-                                    if data and data.item and data.item:HasTag(act.HASTOCRAFT) then
-                                        InventoryFunctions:Equip(data.item)
-                                    end
-
-                                    ThePlayer.components.eventtracker:DetachEvent("OnGetTool")
-                                end
-
-                                ThePlayer.components.eventtracker:AddEvent(
-                                    "gotnewitem",
-                                    "OnGetTool",
-                                    OnGetTool
-                                )
-
-                                local function OnEquipTool(inst, data)
-                                    if data and data.item and data.item:HasTag(act.HASTOCRAFT) then
-                                        local act = BufferedAction(self.inst, target, ToolData[act.HASTOCRAFT].action)
-
-                                        if ThePlayer.components.locomotor == nil then
-                                            self.inst:DoTaskInTime(FRAMES * 3, function()
-                                                SendRPCToServer(RPC.LeftClick, act.action.code, position.x, position.z, target)
-                                            end)
-                                        else
-                                            act.preview_cb = function()
-                                                SendRPCToServer(RPC.LeftClick, act.action.code, position.x, position.z, target)
-                                            end
-                                        end
-
-                                        self:DoAction(act)
-                                    end
-
-                                    ThePlayer.components.eventtracker:DetachEvent("OnGetTool")
-                                    ThePlayer.components.eventtracker:DetachEvent("OnEquipTool")
-                                end
-
-                                ThePlayer.components.eventtracker:AddEvent(
-                                    "equip",
-                                    "OnEquipTool",
-                                    OnEquipTool
-                                )
-                            end)
-                            return
-                        end
+                    local function getToolCallback(inst, data)
+                        OnGetToolEvent(inst, data, act.CRAFT)
                     end
+
+                    local function equipToolCallback(inst, data)
+                        OnEquipToolEvent(inst, data, act.target, act.action, act.CRAFT)
+                    end
+
+                    self.inst.components.eventtracker:AddEvent(
+                        "gotnewitem",
+                        "OnGetToolEvent",
+                        getToolCallback
+                    )
+
+                    self.inst.components.eventtracker:AddEvent(
+                        "equip",
+                        "OnEquipToolEvent",
+                        equipToolCallback
+                    )
+                    return
                 end
             end
         end
-
         PlayerControllerOnLeftClick(self, down)
     end
 
-    local MODIFIED_TOOLACTIONS = {}
-
-    for action, val in pairs(TOOLACTIONS) do
-        if action ~= "NET" and action ~= "DIG" then
-            MODIFIED_TOOLACTIONS[action] = val
-        end
-    end
-
-    local function GetToolTags(target)
-        local ret = {}
-
-        for toolAction in pairs(MODIFIED_TOOLACTIONS) do
-            if target:HasTag(toolAction .. "_workable") and not InventoryFunctions:EquipHasTag(toolAction .. "_tool") then
-                ret[#ret + 1] = toolAction .. "_tool"
-            end
-        end
-
-        return ret
-    end
-
-    local function CheckCanCraft(tags)
-        local ret = {}
-
-        for _, tag in pairs(tags) do
-            if ToolData[tag] then
-                for _, tool in pairs(ToolData[tag].tools) do
-                    if CraftFunctions:CanCraft(tool) then
-                        return {tag}
-                    end
-                end
-            end
-        end
-
-        return ret
-    end
-
-    local function GetTools(target)
-        local ret = {}
-
-        local tags = GetToolTags(target)
-        for _, invItem in pairs(InventoryFunctions:GetPlayerInventory()) do
-            for _, tag in pairs(tags) do
-                if invItem:HasTag(tag) then
-                    ret[#ret + 1] = invItem
-                end
-            end
-        end
-
-        if CRAFTING_ALLOWED and #ret == 0 and #tags > 0 then
-            return CheckCanCraft(tags), true
-        end
-
-        return ret
-    end
-
-    local function CreateBufferedAction(action, target)
-        return BufferedAction(ThePlayer, target, action)
-    end
-
-    local function GetToolActions(toolTag, target)
-        for tag, data in pairs(ToolData) do
-            if toolTag == tag then
-                return {CreateBufferedAction(data.action, target)}
-            end
-        end
-    end
-
-    local FilteredActions =
-    {
-        [ACTIONS.WALKTO] = true,
-        [ACTIONS.LOOKAT] = true,
-    }
-
-    local function IsBurning(target)
-        return target:HasTag("fire")
-            or target:HasTag("smolder")
-    end
-
-    local PlayerActionPickerDoGetMouseActions = PlayerActionPicker.DoGetMouseActions
+    local OldDoGetMouseActions = PlayerActionPicker.DoGetMouseActions
     function PlayerActionPicker:DoGetMouseActions(...)
-        if not InventoryFunctions:IsHeavyLifting() and not InventoryFunctions:GetActiveItem() then
+        local lmb, rmb = OldDoGetMouseActions(self, ...)
+
+        if not lmb or CanOverrideAction[lmb.action] then
             local target = TheInput:GetWorldEntityUnderMouse()
-            if target and not IsBurning(target) and CanEntitySeeTarget(self.inst, target) then
-                local tools, hasToCraft = GetTools(target)
-                for _, tool in pairs(tools) do
-                    local lmboverride = not hasToCraft and self:GetEquippedItemActions(target, tool)
-                                        or GetToolActions(tool, target)
 
-                    lmboverride = lmboverride and lmboverride[1]
+            if target then
+                local toolAction = GetToolAction(target)
+                if toolAction then
+                    local tool, craft = GetTool(toolAction)
+                    if tool then
+                        local lmb_override = BufferedAction(self.inst, target, ACTIONS[toolAction], not craft and tool or nil)
 
-                    if lmboverride then
-                        if not hasToCraft then
-                            lmboverride.MOD_AUTO_EQUIP = tool
+                        if not craft then
+                            lmb_override.AUTOEQUIP = tool
                         else
-                            lmboverride.HASTOCRAFT = tool
+                            lmb_override.CRAFT = tool
                         end
 
-                        local rmb = self:GetRightClickActions(TheInput:GetWorldPosition(), target)[1]
-
-                        if rmb and FilteredActions[rmb.action] then 
-                            rmb = nil
-                        end
-
-                        return lmboverride, rmb
+                        return lmb_override, rmb
                     end
                 end
             end
         end
 
-        return PlayerActionPickerDoGetMouseActions(self, ...)
+        return lmb, rmb
     end
 end
 

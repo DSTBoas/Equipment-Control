@@ -5,7 +5,7 @@ icon_atlas = "modicon.xml"
 icon = "modicon.tex"
 
 author = "Boas"
-version = "2.8"
+version = "2.9"
 forumthread = ""
 
 dont_starve_compatible = false
@@ -43,12 +43,12 @@ local Languages =
             Buttons = "Buttons",
             Preference = "Preferences",
             Automation = "Automation",
-            DamageEstimation = "Damage estimation",
-            QuickActions = "Quick actions",
+            DamageEstimation = "Damage Estimation",
+            QuickActions = "Quick Actions",
             Pickup = "Pickup",
             Telepoof = "Telepoof",
             Estimation = "Estimation",
-            Mousethrough = "Improved mousethrough",
+            Mousethrough = "Improved Mousethrough",
             Sorting = "Sorting",
         },
         option_messages =
@@ -369,7 +369,8 @@ local Languages =
             QUICK_ACTION_TRAP = "Reset Trap",
             QUICK_ACTION_BEEFALO = "Shave Beefalo",
             QUICK_ACTION_KLAUS_SACK = "Unlock Loot Stash",
-            QUICK_ACTION_BIRD_CAGE = "Feed Bird",
+            QUICK_ACTION_IMPRISON_BIRD = "Imprison Bird",
+            QUICK_ACTION_FEED_BIRD = "Feed Bird",
             QUICK_ACTION_WAKEUP_BIRD = "Wakeup Bird",
             QUICK_ACTION_WALLS = "Repair Wall",
             QUICK_ACTION_EXTINGUISH = "Extinguish Fire",
@@ -1462,8 +1463,8 @@ configuration_options =
         SettingMessage
     ),
     AddConfig(
-        CurrentLanguage.option_names.QUICK_ACTION_BIRD_CAGE,
-        "QUICK_ACTION_BIRD_CAGE",
+        CurrentLanguage.option_names.QUICK_ACTION_FEED_BIRD,
+        "QUICK_ACTION_FEED_BIRD",
         SettingOptions,
         true,
         SettingMessage
@@ -1471,6 +1472,13 @@ configuration_options =
     AddConfig(
         CurrentLanguage.option_names.QUICK_ACTION_WAKEUP_BIRD,
         "QUICK_ACTION_WAKEUP_BIRD",
+        SettingOptions,
+        true,
+        SettingMessage
+    ),
+    AddConfig(
+        CurrentLanguage.option_names.QUICK_ACTION_IMPRISON_BIRD,
+        "QUICK_ACTION_IMPRISON_BIRD",
         SettingOptions,
         true,
         SettingMessage

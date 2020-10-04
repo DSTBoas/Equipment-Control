@@ -3,50 +3,30 @@ local ItemFunctions = require "util/itemfunctions"
 
 local PREFERRED_CAMPFIRE_FUEL = GetModConfigData("PREFERRED_CAMPFIRE_FUEL", MOD_EQUIPMENT_CONTROL.MODNAME)
 
-local Events = {}
-
-local function AddEvent(self, event, n, callback)
-    self.inst:ListenForEvent(event, callback)
-
-    if not Events[n] then
-        Events[n] = {}
-    end
-
-    Events[n][#Events[n] + 1] =
-    {
-        event = event,
-        eventfn = callback
-    }
-end
-
-local function DetachEvent(self, n)
-    if Events[n] then
-        for _, eventData in pairs(Events[n]) do
-            self.inst:RemoveEventCallback(
-                eventData.event,
-                eventData.eventfn
-            )
-        end
-        Events[n] = nil
-    end
-end
-
 -- 
 -- Events
 -- 
 
-local function OnGetBirdEvent(self, modaction, item, target)
-    if item:HasTag("bird") then
-        SendRPCToServer(RPC.ControllerUseItemOnSceneFromInvTile, ACTIONS.STORE.code, item, target)
-        DetachEvent(self, modaction)
+local function OnGetBirdEvent(inst, data, target)
+    if data and data.item:HasTag("bird") then
+        SendRPCToServer(RPC.ControllerUseItemOnSceneFromInvTile, ACTIONS.STORE.code, data.item, target)
     end
+
+    inst.components.eventtracker:DetachEvent("OnGetBirdEvent")
 end
 
-local function IsValidData(data, trap)
-    return data
-       and data.src_pos
-       and data.slot
-       and data.item == trap
+local function OnTrapActiveItem(inst, modaction, data, trap, pos)
+    if data and data.item and data.item == trap then
+        if InventoryFunctions:HasFreeSlot() then
+            SendRPCToServer(RPC.LeftClick, ACTIONS.DROP.code, pos.x, pos.z)
+        else
+            inst:DoTaskInTime(FRAMES * 3, function()
+                SendRPCToServer(RPC.LeftClick, ACTIONS.DROP.code, pos.x, pos.z)
+            end)
+        end
+    end
+
+    inst.components.eventtracker:DetachEvent(modaction)
 end
 
 local function GetContainerFromSlot(slot, item, ...)
@@ -59,28 +39,16 @@ local function GetContainerFromSlot(slot, item, ...)
     return nil
 end
 
-local function OnTrapActiveItem(self, modaction, data, trap, pos)
-    if data and data.item and data.item == trap then
-        if InventoryFunctions:HasFreeSlot() then
-            SendRPCToServer(RPC.LeftClick, ACTIONS.DROP.code, pos.x, pos.z)
-        else
-            self.inst:DoTaskInTime(FRAMES * 3, function()
-                SendRPCToServer(RPC.LeftClick, ACTIONS.DROP.code, pos.x, pos.z)
-            end)
-        end
-
-        DetachEvent(self, modaction)
-    end
-end
-
-local function OnGetTrapEvent(self, modaction, data, trap)
-    if IsValidData(data, trap) then
+local function OnGetTrapEvent(inst, data, trap)
+    if data and data.item == trap then
         local container = GetContainerFromSlot(data.slot, trap, InventoryFunctions:GetInventory(), InventoryFunctions:GetBackpack())
 
         if container then
-            SendRPCToServer(RPC.TakeActiveItemFromAllOfSlot, data.slot, container ~= self.inst.replica.inventory and container.inst)
+            SendRPCToServer(RPC.TakeActiveItemFromAllOfSlot, data.slot, container ~= inst.replica.inventory and container.inst)
         end
     end
+
+    inst.components.eventtracker:DetachEvent("OnGetTrapEvent")
 end
 
 -- 
@@ -100,6 +68,10 @@ local function GetQuickAction(self, target)
 end
 
 local function GetRMBOverride(self, position, target)
+    if InventoryFunctions:IsHeavyLifting() then
+        return nil
+    end
+
     local isaoetargeting = false
     local wantsaoetargeting = false
 
@@ -232,6 +204,16 @@ local function GetDisplayName(item)
     return str .. item:GetDisplayName()
 end
 
+local function GetBird()
+    for _, item in pairs(InventoryFunctions:GetPlayerInventory()) do
+        if item:HasTag("bird") then
+            return item
+        end
+    end
+
+    return nil
+end
+
 local function GetBirdFood()
     local t = {}
 
@@ -299,9 +281,15 @@ local function GetRepairItem(target)
     return t[1] and t[1].item
 end
 
+local function IsExtinguishItem(item)
+    return item.prefab == "waterballoon"
+        or item:HasTag("extinguisher")
+        or (item:HasTag("repairer") and item:HasTag("frozen"))
+end
+
 local function GetExtinguishItem()
     for _, item in pairs(InventoryFunctions:GetPlayerInventory(true)) do
-        if item:HasTag("repairer") and item:HasTag("frozen") or item:HasTag("extinguisher") or item.prefab == "waterballoon" then
+        if IsExtinguishItem(item) then
             return item
         end
     end
@@ -421,6 +409,11 @@ end
 local function BirdTraderValid(target)
     return IsValidBirdcage(target)
        and not IsSleeping(target)
+end
+
+local function IsBirdcageEmpty(target)
+    return target.prefab == "birdcage"
+       and not target:HasTag("trader")
 end
 
 local function IsBirdcageSleeping(target)
@@ -555,6 +548,24 @@ local function FeedBirdcageQuickAction(self, target)
     return nil
 end
 
+local function ImprisonQuickAction(self, target)
+    local bird = GetBird()
+
+    if bird then
+        local action = BufferedAction(self.inst, target, ACTIONS.STORE, bird)
+
+        action.GetActionString = function()
+            return "Imprison (" .. bird.name .. ")"
+        end
+
+        action.modaction = "sceneuse"
+
+        return action
+    end
+
+    return nil
+end
+
 local function RepairWallQuickAction(self, target)
     local repairItem = GetRepairItem(target)
 
@@ -627,29 +638,17 @@ end
 
 AddQuickAction("QUICK_ACTION_CAMPFIRE", IsCampfire, CampfireQuickAction)
 AddQuickAction("QUICK_ACTION_TRAP", IsTrapSprung, ResetTrapQuickAction)
-AddQuickAction("QUICK_ACTION_BIRD_CAGE", BirdTraderValid, FeedBirdcageQuickAction)
 AddQuickAction("QUICK_ACTION_BEEFALO", HasHair, BeefaloQuickAction)
 AddQuickAction("QUICK_ACTION_WALLS", IsRepairableWall, RepairWallQuickAction)
 AddQuickAction("QUICK_ACTION_EXTINGUISH", IsExtinguishable, ExtinguishQuickAction)
 AddQuickAction("QUICK_ACTION_SLURTLEHOLE", IsSnurtleMound, LightQuickAction)
+AddQuickAction("QUICK_ACTION_FEED_BIRD", BirdTraderValid, FeedBirdcageQuickAction)
 AddQuickAction("QUICK_ACTION_WAKEUP_BIRD", IsBirdcageSleeping, WakeupQuickAction)
+AddQuickAction("QUICK_ACTION_IMPRISON_BIRD", IsBirdcageEmpty, ImprisonQuickAction)
 AddQuickAction("QUICK_ACTION_DIG", IsDigWorkable, DigQuickAction)
 AddQuickAction("QUICK_ACTION_HAMMER", IsHammerWorkable, HammerQuickAction)
 AddQuickAction("QUICK_ACTION_NET", IsNetWorkable, CatchQuickAction)
 AddQuickAction("QUICK_ACTION_KLAUS_SACK", IsKlausSack, KlausSackQuickAction)
-
-local IsCancelControl =
-{
-    [CONTROL_PRIMARY] = true,
-    [CONTROL_SECONDARY] = true,
-    [CONTROL_ATTACK] = true,
-    [CONTROL_ACTION] = true,
-
-    [CONTROL_MOVE_UP] = true,
-    [CONTROL_MOVE_DOWN] = true,
-    [CONTROL_MOVE_LEFT] = true,
-    [CONTROL_MOVE_RIGHT] = true,
-}
 
 local function Init()
     local PlayerController = ThePlayer and ThePlayer.components.playercontroller
@@ -657,16 +656,6 @@ local function Init()
 
     if not PlayerController or not PlayerActionPicker then
         return
-    end
-
-    local PlayerControllerOnControl = PlayerController.OnControl
-    function PlayerController:OnControl(control, down)
-        if down and IsCancelControl[control] then
-            for modevent in pairs(Events) do
-                DetachEvent(self, modevent)
-            end
-        end
-        PlayerControllerOnControl(self, control, down)
     end
 
     local OldOnRightClick = PlayerController.OnRightClick
@@ -680,7 +669,7 @@ local function Init()
         if act and act.modaction then
             if act.modaction == "toolaction" then
                 if not InventoryFunctions:EquipHasTag(act.action.id .. "_tool") then
-                    SendRPCToServer(RPC.EquipActionItem, act.invobject)
+                    InventoryFunctions:Equip(act.invobject)
                 end
 
                 local position = TheInput:GetWorldPosition()
@@ -708,7 +697,7 @@ local function Init()
                 return
             elseif act.modaction == "ignite" and act.invobject and act.target then
                 if self.inst.replica.inventory:GetEquippedItem(EQUIPSLOTS.HANDS) ~= act.invobject then
-                    SendRPCToServer(RPC.EquipActionItem, act.invobject)
+                    InventoryFunctions:Equip(act.invobject)
                 end
 
                 if act.invobject:HasTag("rangedlighter") then
@@ -733,7 +722,7 @@ local function Init()
             elseif act.modaction == "extinguish" and act.invobject and act.target then
                 if act.invobject:HasTag("_equippable") then
                     if self.inst.replica.inventory:GetEquippedItem(EQUIPSLOTS.HANDS) ~= act.invobject then
-                        SendRPCToServer(RPC.EquipActionItem, act.invobject)
+                        InventoryFunctions:Equip(act.invobject)
                     end
 
                     local position = TheInput:GetWorldPosition()
@@ -776,8 +765,6 @@ local function Init()
                 self:DoAction(act)
                 return
             elseif act.modaction == "wakeup" then
-                DetachEvent(self, act.modaction)
-
                 local position = TheInput:GetWorldPosition()
 
                 if ThePlayer.components.locomotor == nil then
@@ -800,18 +787,19 @@ local function Init()
                     end
                 end
 
-                local function callback(_, data)
-                    if data.item then
-                        OnGetBirdEvent(self, act.modaction, data.item, act.target)
-                    end
+                local function callback(inst, data)
+                    OnGetBirdEvent(inst, data, act.target)
                 end
 
-                AddEvent(self, "gotnewitem", act.modaction, callback)
+                ThePlayer.components.eventtracker:AddEvent(
+                    "gotnewitem",
+                    "OnGetBirdEvent",
+                    callback
+                )
+
                 self:DoAction(act)
                 return
             elseif act.modaction == "reset" then
-                DetachEvent(self, act.modaction)
-
                 local position = TheInput:GetWorldPosition()
 
                 if ThePlayer.components.locomotor == nil then
@@ -834,17 +822,27 @@ local function Init()
                     end
                 end
 
-                local function callback(_, data)
-                    OnGetTrapEvent(self, act.modaction, data, act.target)
+                local function callback(inst, data)
+                    OnGetTrapEvent(inst, data, act.target)
                 end
 
                 local pos = act.target:GetPosition()
-                local function callback2(_, data)
-                    OnTrapActiveItem(self, act.modaction, data, act.target, pos)
+                local function callback2(inst, data)
+                    OnTrapActiveItem(inst, act.modaction, data, act.target, pos)
                 end
 
-                AddEvent(self, "gotnewitem", act.modaction, callback)
-                AddEvent(self, "newactiveitem", act.modaction, callback2)
+                ThePlayer.components.eventtracker:AddEvent(
+                    "gotnewitem",
+                    "OnGetTrapEvent",
+                    callback
+                )
+
+                ThePlayer.components.eventtracker:AddEvent(
+                    "newactiveitem",
+                    act.modaction,
+                    callback2
+                )
+
                 self:DoAction(act)
                 return
             end

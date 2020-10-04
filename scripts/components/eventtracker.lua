@@ -1,6 +1,6 @@
 local IsCancelControl = {}
 
-for control = CONTROL_ATTACK, CONTROL_MOVE_RIGHT do
+for control = CONTROL_PRIMARY, CONTROL_MOVE_RIGHT do
     IsCancelControl[control] = true
 end
 
