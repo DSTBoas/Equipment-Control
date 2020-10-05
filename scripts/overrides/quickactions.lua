@@ -176,7 +176,7 @@ local function GetEggPriority(item)
     local priority = 0
 
     if item:HasTag("spoiled") then
-        priority = 4 - (ItemFunctions:GetHungerValue() * 0.01)
+        priority = 4 - (ItemFunctions:GetHunger(item) * 0.01)
     elseif item:HasTag("monstermeat") then
         priority = 3
     elseif item:HasTag("badfood") then
