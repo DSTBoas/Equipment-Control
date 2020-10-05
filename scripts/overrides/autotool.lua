@@ -1,6 +1,5 @@
 local InventoryFunctions = require "util/inventoryfunctions"
 local CraftFunctions = require "util/craftfunctions"
-local KeybindService = MOD_EQUIPMENT_CONTROL.KEYBINDSERVICE
 
 local CRAFTING_ALLOWED = GetModConfigData("AUTO_EQUIP_TOOL", MOD_EQUIPMENT_CONTROL.MODNAME) == 2
 
