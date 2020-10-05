@@ -303,7 +303,6 @@ local function Init()
             end
 
             local tool = self.inst.replica.inventory:GetEquippedItem(EQUIPSLOTS.HANDS)
-            local tools = GetToolsFromInventory(self, tool)
 
             --bug catching (has to go before combat)
             if tool ~= nil and tool:HasTag(ACTIONS.NET.id.."_tool") then
@@ -386,6 +385,7 @@ local function Init()
                     end
                 end
 
+                local tools = GetToolsFromInventory(self, tool)
                 for _, tag in pairs(tools) do
                     table.insert(pickup_tags, tag .. "_workable")
                 end
