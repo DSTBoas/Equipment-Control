@@ -87,7 +87,7 @@ local FuncHealth =
     shadow_knight = GetShadowPiecesHealth,
     shadow_bishop = GetShadowPiecesHealth,
     spiderden = GetSpiderdenHealth,
-    rocky = GetRockyHealth,  
+    rocky = GetRockyHealth,
 }
 
 local StaticHealth =
@@ -226,16 +226,15 @@ local CurrentState = 2
 local function GetDamageMultiplier(player)
     if player.prefab == "wolfgang" then
         local percent = player.replica.hunger:GetPercent()
-        local hunger = player.replica.hunger:GetCurrent()
         local damage_mult = TUNING.WOLFGANG_ATTACKMULT_NORMAL
         if CurrentState == 3 then
-            local mighty_start = (TUNING.WOLFGANG_START_MIGHTY_THRESH/TUNING.WOLFGANG_HUNGER)   
+            local mighty_start = TUNING.WOLFGANG_START_MIGHTY_THRESH / TUNING.WOLFGANG_HUNGER
             local mighty_percent = math.max(0, (percent - mighty_start) / (1 - mighty_start))
             damage_mult = easing.linear(mighty_percent, TUNING.WOLFGANG_ATTACKMULT_MIGHTY_MIN, TUNING.WOLFGANG_ATTACKMULT_MIGHTY_MAX - TUNING.WOLFGANG_ATTACKMULT_MIGHTY_MIN, 1)
         elseif CurrentState == 1 then
-            local wimpy_start = (TUNING.WOLFGANG_START_WIMPY_THRESH/TUNING.WOLFGANG_HUNGER) 
-            local wimpy_percent = math.min(1, percent/wimpy_start )
-            damage_mult = easing.linear(wimpy_percent, TUNING.WOLFGANG_ATTACKMULT_WIMPY_MIN, TUNING.WOLFGANG_ATTACKMULT_WIMPY_MAX - TUNING.WOLFGANG_ATTACKMULT_WIMPY_MIN, 1) 
+            local wimpy_start = TUNING.WOLFGANG_START_WIMPY_THRESH / TUNING.WOLFGANG_HUNGER
+            local wimpy_percent = math.min(1, percent / wimpy_start)
+            damage_mult = easing.linear(wimpy_percent, TUNING.WOLFGANG_ATTACKMULT_WIMPY_MIN, TUNING.WOLFGANG_ATTACKMULT_WIMPY_MAX - TUNING.WOLFGANG_ATTACKMULT_WIMPY_MIN, 1)
         end
 
         return damage_mult
@@ -245,7 +244,8 @@ local function GetDamageMultiplier(player)
 end
 
 local function BeaverBonusDamage(target)
-    return target:HasTag("tree") or target:HasTag("beaverchewable")
+    return target:HasTag("tree")
+        or target:HasTag("beaverchewable")
 end
 
 local function GetUnArmedDamage(target)
@@ -262,8 +262,12 @@ end
 
 local function GetWeaponDamage(target)
     local weapon = ThePlayer.replica.inventory:GetEquippedItem(EQUIPSLOTS.HANDS)
-    return weapon
-       and ItemFunctions:GetDamage(weapon, target) or GetUnArmedDamage(target)
+
+    if not weapon then
+        return GetUnArmedDamage(target)
+    end
+
+    return ItemFunctions:GetDamage(weapon, target)
 end
 
 local function GetDamageDealt(target)
@@ -273,7 +277,7 @@ end
 local function GetPercentHealth(target)
     HealthTracker[target] = HealthTracker[target] - GetDamageDealt(target)
     local maxHealth = GetMaxHealth(target)
-    return HealthTracker[target] / maxHealth, HealthTracker[target], maxHealth 
+    return HealthTracker[target] / maxHealth, HealthTracker[target], maxHealth
 end
 
 local NpcOffset =
@@ -422,7 +426,7 @@ local function GetWolfgangStateFromHunger(currentHunger, lastState)
                         or WolfgangThresh.WIMPY.START
 
     return currentHunger > mightyThresh and WolfgangStates.MIGHTY
-        or currentHunger > wimpyThresh  and WolfgangStates.NORMAL
+        or currentHunger > wimpyThresh and WolfgangStates.NORMAL
         or WolfgangStates.WIMPY
 end
 
