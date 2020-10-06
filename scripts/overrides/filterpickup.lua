@@ -61,7 +61,7 @@ local function KnowsBlueprint(name)
         return false
     end
 
-    return CraftFunctions:CanCraft(prefab)
+    return CraftFunctions:KnowsRecipe(prefab)
 end
 
 local PickupFilter =
