@@ -147,6 +147,7 @@ end
 
 local function IsCompatibleFuel(target, item)
     return item:HasTag("BURNABLE_fuel")
+       and item.prefab ~= "blueprint"
        and not (item:HasTag("deployedplant") and item.prefab ~= "pinecone")
         or target:HasTag("blueflame")
        and item:HasTag("CHEMICAL_fuel")
