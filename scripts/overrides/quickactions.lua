@@ -51,6 +51,25 @@ local function OnGetTrapEvent(inst, data, trap)
     inst.components.eventtracker:DetachEvent("OnGetTrapEvent")
 end
 
+
+local function OnBuildFossil(inst, data, target)
+    if data and data.item and data.item.prefab == "fossil_piece" and target:HasTag("workrepairable") then
+        local act = BufferedAction(inst, target, ACTIONS.REPAIR, data.item)
+
+        if ThePlayer.components.locomotor == nil then
+            SendRPCToServer(RPC.ControllerUseItemOnSceneFromInvTile, act.action.code, act.invobject, act.target)
+        else
+            act.preview_cb = function()
+                SendRPCToServer(RPC.ControllerUseItemOnSceneFromInvTile, act.action.code, act.invobject, act.target)
+            end
+        end
+
+        inst.components.playercontroller:DoAction(act)
+    else
+        inst.components.eventtracker:DetachEvent("OnBuildFossil")
+    end
+end
+
 -- 
 --  QuickActions Logic
 -- 
@@ -58,9 +77,13 @@ end
 local QuickActions = {}
 
 local function GetQuickAction(self, target)
+    local action = nil
     for i = 1, #QuickActions do
         if QuickActions[i].triggerfn(target) then
-            return QuickActions[i].actionfn(self, target)
+            action = QuickActions[i].actionfn(self, target)
+            if action then
+                return action
+            end 
         end
     end
 
@@ -338,6 +361,26 @@ local function GetKlausSackKey()
     return ret[1]
 end
 
+local function GetAtriumKey()
+    for _, item in pairs(InventoryFunctions:GetPlayerInventory()) do
+        if item.prefab == "atrium_key" then
+            return item
+        end
+    end
+
+    return nil
+end
+
+local function GetFossilPiece()
+    for _, item in pairs(InventoryFunctions:GetPlayerInventory()) do
+        if item:HasTag("work_fossil") then
+            return item
+        end
+    end
+
+    return nil
+end
+
 -- 
 -- QuickActions Triggers
 -- 
@@ -348,6 +391,8 @@ end
 
 local function IsHammerWorkable(target)
     return target:HasTag(ACTIONS.HAMMER.id .. "_workable")
+       and not target:HasTag("campfire")
+       and not target.prefab == "birdcage"
 end
 
 local function IsNetWorkable(target)
@@ -423,6 +468,15 @@ end
 
 local function IsKlausSack(target)
     return target:HasTag("klaussacklock")
+end
+
+local function IsFossilStructure(target)
+    return target.prefab == "fossil_stalker"
+       and target:HasTag("workrepairable")
+end
+
+local function IsAtriumGate(target)
+    return target.prefab == "atrium_gate"
 end
 
 -- 
@@ -516,6 +570,20 @@ local function BeefaloQuickAction(self, target)
     return nil
 end
 
+local function SocketKeyQuickAction(self, target)
+    local key = GetAtriumKey()
+
+    if key then
+        local action = BufferedAction(self.inst, target, ACTIONS.GIVE, key)
+
+        action.modaction = "sceneuse"
+
+        return action
+    end
+
+    return nil
+end
+
 local function KlausSackQuickAction(self, target)
     local key = GetKlausSackKey()
 
@@ -523,6 +591,24 @@ local function KlausSackQuickAction(self, target)
         local action = BufferedAction(self.inst, target, ACTIONS.USEKLAUSSACKKEY, key)
 
         action.modaction = "sceneuse"
+
+        return action
+    end
+
+    return nil
+end
+
+local function BuildFossilQuickAction(self, target)
+    local fossil_piece = GetFossilPiece()
+
+    if fossil_piece then
+        local action = BufferedAction(self.inst, target, ACTIONS.REPAIR, fossil_piece)
+
+        action.GetActionString = function()
+            return "Build"
+        end
+
+        action.modaction = "fossil_build"
 
         return action
     end
@@ -645,10 +731,12 @@ AddQuickAction("QUICK_ACTION_SLURTLEHOLE", IsSnurtleMound, LightQuickAction)
 AddQuickAction("QUICK_ACTION_FEED_BIRD", BirdTraderValid, FeedBirdcageQuickAction)
 AddQuickAction("QUICK_ACTION_WAKEUP_BIRD", IsBirdcageSleeping, WakeupQuickAction)
 AddQuickAction("QUICK_ACTION_IMPRISON_BIRD", IsBirdcageEmpty, ImprisonQuickAction)
+AddQuickAction("QUICK_ACTION_BUILD_FOSSIL", IsFossilStructure, BuildFossilQuickAction)
 AddQuickAction("QUICK_ACTION_DIG", IsDigWorkable, DigQuickAction)
 AddQuickAction("QUICK_ACTION_HAMMER", IsHammerWorkable, HammerQuickAction)
 AddQuickAction("QUICK_ACTION_NET", IsNetWorkable, CatchQuickAction)
 AddQuickAction("QUICK_ACTION_KLAUS_SACK", IsKlausSack, KlausSackQuickAction)
+AddQuickAction("QUICK_ACTION_ATRIUM_GATE", IsAtriumGate, SocketKeyQuickAction)
 
 local function Init()
     local PlayerController = ThePlayer and ThePlayer.components.playercontroller
@@ -667,7 +755,28 @@ local function Init()
 
         local act = self:GetRightMouseAction()
         if act and act.modaction then
-            if act.modaction == "toolaction" then
+            if act.modaction == "fossil_build" then
+                if ThePlayer.components.locomotor == nil then
+                    SendRPCToServer(RPC.ControllerUseItemOnSceneFromInvTile, act.action.code, act.invobject, act.target)
+                else
+                    act.preview_cb = function()
+                        SendRPCToServer(RPC.ControllerUseItemOnSceneFromInvTile, act.action.code, act.invobject, act.target)
+                    end
+                end
+
+                local function callback(inst, data)
+                    OnBuildFossil(inst, data, act.target)
+                end
+
+                ThePlayer.components.eventtracker:AddEvent(
+                    "stacksizechange",
+                    "OnBuildFossil",
+                    callback
+                )
+
+                self:DoAction(act)
+                return
+            elseif act.modaction == "toolaction" then
                 if not InventoryFunctions:EquipHasTag(act.action.id .. "_tool") then
                     InventoryFunctions:Equip(act.invobject)
                 end

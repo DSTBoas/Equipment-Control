@@ -41,9 +41,7 @@ local function GetLightSource(recur)
                 Sleep(GetCurrentAnimationLength())
             end
 
-            if InventoryFunctions:GetEquippedItem(EQUIPSLOTS.HANDS) then
-                Sleep(FRAMES * 3)
-            end
+            Sleep(FRAMES * 3)
 
             return GetLightSource(true)
         end
@@ -70,9 +68,18 @@ local function DarkTrigger()
        and ThePlayer.LightWatcher:GetTimeInDark() > 1
 end
 
+local function UnEquip(item)
+    if not InventoryFunctions:IsEquipped(item) or not InventoryFunctions:HasFreeSlot() then
+        return false
+    end
+
+    SendRPCToServer(RPC.ControllerUseItemOnSelfFromInvTile, ACTIONS.UNEQUIP.code, item)
+    return true
+end
+
 local LIGHTS_TAGS = {"lightsource", "daylight"}
 
-local function LightTrigger()
+local function LightTrigger(equippedLight)
     if TheWorld:HasTag("forest") and not TheWorld.state.isnight then
         return true
     end
@@ -86,7 +93,7 @@ local function LightTrigger()
         if not parent or parent ~= ThePlayer then
             radius = lightsource.Light:GetCalculatedRadius() * .7
             if lightsource:GetDistanceSqToPoint(x, y, z) < radius * radius then
-                return true
+                return UnEquip(equippedLight)
             end
         end
     end
@@ -94,13 +101,6 @@ local function LightTrigger()
     return false
 end
 
-local function UnEquip(item)
-    if not InventoryFunctions:IsEquipped(item) or not InventoryFunctions:HasFreeSlot() then
-        return
-    end
-
-    SendRPCToServer(RPC.ControllerUseItemOnSelfFromInvTile, ACTIONS.UNEQUIP.code, item)
-end
 
 local function Init()
     if not ThePlayer or not ThePlayer.LightWatcher then
@@ -113,10 +113,9 @@ local function Init()
                 local lightsource = EquipLight()
                 if lightsource then
                     Sleep(FRAMES * 4)
-                    while InventoryFunctions:IsEquipped(lightsource) and not LightTrigger() do
+                    while InventoryFunctions:IsEquipped(lightsource) and not LightTrigger(lightsource) do
                         Sleep(.25)
                     end
-                    UnEquip(lightsource)
                 end
             end
             Sleep(1)

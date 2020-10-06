@@ -5,7 +5,7 @@ icon_atlas = "modicon.xml"
 icon = "modicon.tex"
 
 author = "Boas"
-version = "3.1"
+version = "3.2"
 forumthread = ""
 
 dont_starve_compatible = false
@@ -315,7 +315,7 @@ local Languages =
         {
             LANGUAGE = "Language",
             DROPKEY = "Drop lantern",
-            CONFIRM_TO_EAT = "Confirm to eat",
+            CONFIRM_TO_EAT = "Eat confirmation",
             PICKUP_FILTER = "Pickup filter",
             ATTACK_FILTER = "Attack filter",
             SORT_INVENTORY = "Sort inventory",
@@ -369,6 +369,8 @@ local Languages =
             QUICK_ACTION_TRAP = "Reset Trap",
             QUICK_ACTION_BEEFALO = "Shave Beefalo",
             QUICK_ACTION_KLAUS_SACK = "Unlock Loot Stash",
+            QUICK_ACTION_BUILD_FOSSIL = "Build Fossil",
+            QUICK_ACTION_ATRIUM_GATE = "Socket Ancient Key",
             QUICK_ACTION_IMPRISON_BIRD = "Imprison Bird",
             QUICK_ACTION_FEED_BIRD = "Feed Bird",
             QUICK_ACTION_WAKEUP_BIRD = "Wakeup Bird",
@@ -1390,7 +1392,7 @@ configuration_options =
         CurrentLanguage.option_names.AUTO_CATCH_BOOMERANG,
         "AUTO_CATCH_BOOMERANG",
         SettingOptions,
-        false,
+        true,
         SettingMessage
     ),
     AddConfig(
@@ -1458,6 +1460,20 @@ configuration_options =
     AddConfig(
         CurrentLanguage.option_names.QUICK_ACTION_KLAUS_SACK,
         "QUICK_ACTION_KLAUS_SACK",
+        SettingOptions,
+        true,
+        SettingMessage
+    ),
+    AddConfig(
+        CurrentLanguage.option_names.QUICK_ACTION_BUILD_FOSSIL,
+        "QUICK_ACTION_BUILD_FOSSIL",
+        SettingOptions,
+        true,
+        SettingMessage
+    ),
+    AddConfig(
+        CurrentLanguage.option_names.QUICK_ACTION_ATRIUM_GATE,
+        "QUICK_ACTION_ATRIUM_GATE",
         SettingOptions,
         true,
         SettingMessage

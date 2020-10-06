@@ -75,7 +75,7 @@ local Overrides =
     {
         "WOODIE_WEREITEM_UNEQUIP",
     },
-    confirmtoeat =
+    eatconfirmation =
     {
         "CONFIRM_TO_EAT",
     },

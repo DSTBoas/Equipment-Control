@@ -38,12 +38,12 @@ end
 
 local function GetNamePriority(item)
     return item.prefab
-       and #item.prefab * .0001
+       and #item.prefab * .001
         or 0
 end
 
 local function GetPercentUsedPriority(item)
-    return ItemFunctions:GetPercentUsed(item) * .001
+    return ItemFunctions:GetPercentUsed(item) * .01
 end
 
 local function GetPriority(category, item, ignorePreferences, target)
@@ -80,8 +80,8 @@ end
 local function GetNextItemInPriorityTable(category, item)
     local t = GetItemPriorityTable(category, true)
     local nextItem = t[#t] and t[#t].item
-    local found = false
 
+    local found = false
     for i = #t, 1, -1 do
         if t[i].item.prefab == item.prefab then
             found = true
