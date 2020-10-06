@@ -1,7 +1,8 @@
 local InventoryFunctions = require "util/inventoryfunctions"
-local KeybindService = MOD_EQUIPMENT_CONTROL.KEYBINDSERVICE
+local CraftFunctions = require "util/craftfunctions"
 local FileSystem = require "util/filesystem"
 local Say = require "util/say"
+local KeybindService = MOD_EQUIPMENT_CONTROL.KEYBINDSERVICE
 
 -- 
 -- Config
@@ -12,6 +13,9 @@ local AUTO_EQUIP_TOOL = GetModConfigData("AUTO_EQUIP_TOOL", MOD_EQUIPMENT_CONTRO
 local Filter_File = "mod_equipment_control_pickup_filter.txt"
 local PriotizedPickups =
 {
+    greengem = .5,
+    yellowgem = .45,
+    orangegem = .4,
     deerclops_eyeball = 2,
     minotaurhorn = 1,
     hivehat = 2,
@@ -34,6 +38,31 @@ local PriotizedPickups =
     ["The Lazy Deserter Blueprint"] = 1,
     ["Strident Trident Blueprint"] = 3,
 }
+
+local BlueprintPrefabs =
+{
+    ["Mushlight Blueprint"] = "mushroom_light",
+    ["Bundling Wrap Blueprint"] = "bundlewrap",
+    ["Red Funcap Blueprint"] = "red_mushroomhat",
+    ["Feathery Canvas Blueprint"] = "malbatross_feathered_weave",
+    ["Winged Sail Kit Blueprint"] = "mast_malbatross_item",
+    ["The Lazy Deserter Blueprint"] = "townportal",
+    ["Strident Trident Blueprint"] = "trident",
+    ["Scaled Furnace Blueprint"] = "dragonflyfurnace",
+    ["Glowcap Blueprint"] = "mushroom_light2",
+    ["Green Funcap Blueprint"] = "green_mushroomhat",
+    ["Blue Funcap Blueprint"] = "blue_mushroomhat",
+}
+
+local function KnowsBlueprint(name)
+    local prefab = BlueprintPrefabs[name]
+
+    if not prefab then
+        return false
+    end
+
+    return CraftFunctions:CanCraft(prefab)
+end
 
 local PickupFilter =
 {
@@ -99,8 +128,16 @@ local function LoadPickupFilter()
     end
 end
 
+local function GetBlueprintPriority(name)
+    if KnowsBlueprint(name) then
+        return -1
+    end
+
+    return PriotizedPickups[name]
+end
+
 local function GetPriority(ent)
-    return ent.prefab == "blueprint" and PriotizedPickups[ent.name]
+    return ent.prefab == "blueprint" and GetBlueprintPriority(ent.name)
         or PriotizedPickups[ent.prefab] 
         or 0
 end
@@ -111,11 +148,12 @@ local function GetModifiedEnts(self, exclude, tags)
 
     if PRIOTIZE_VALUABLE_ITEMS then
         local prio = {}
-        for _, ent in pairs(ents) do
+
+        for i = 1, #ents do
             prio[#prio + 1] =
             {
-                ent = ent,
-                priority = GetPriority(ent),
+                ent = ents[i],
+                priority = GetPriority(ents[i]),
             }
         end
 
@@ -168,6 +206,28 @@ local function Init()
     if not PlayerController then
         return
     end
+
+    -- -- blueprint translation table generation
+    -- local blueprints_names = {}
+    -- for name in pairs(PriotizedPickups) do
+    --     if name:sub(-9, #name) == "Blueprint" then
+    --         blueprints_names[#blueprints_names + 1] = name:sub(1, #name -10)
+    --     end
+    -- end
+
+    -- local str = "\n{\n"
+
+    -- for prefab, name in pairs(STRINGS.NAMES) do
+    --     for i = 1, #blueprints_names do
+    --         if blueprints_names[i] == name then
+    --             str = str .. "\t[\"" .. name .. " Blueprint\"] = \"" .. prefab:lower() .. "\",\n"
+    --         end
+    --     end
+    -- end
+
+    -- str = str .. "}"
+
+    -- print(str)
 
     if GetModConfigData("PICKUP_FILTER", MOD_EQUIPMENT_CONTROL.MODNAME) then
         LoadPickupFilter()

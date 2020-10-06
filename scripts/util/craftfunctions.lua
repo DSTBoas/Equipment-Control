@@ -28,6 +28,12 @@ function CraftFunctions:CanCraft(recipename)
        and builder:CanBuild(recipename)
 end
 
+function CraftFunctions:KnowsRecipe(recipename)
+    local builder = GetBuilder()
+    return builder
+       and builder:KnowsRecipe(recipename)
+end
+
 function CraftFunctions:Craft(recipe)
     recipe = GetValidRecipe(recipe)
 
