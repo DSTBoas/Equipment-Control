@@ -37,9 +37,9 @@ local function GetPreference(category, item)
 end
 
 local function GetNamePriority(item)
-    local length = item.prefab and #item.prefab or 0
-
-    return length * .0001
+    return item.prefab
+       and #item.prefab * .0001
+        or 0
 end
 
 local function GetPercentUsedPriority(item)
