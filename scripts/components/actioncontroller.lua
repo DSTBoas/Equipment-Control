@@ -39,11 +39,7 @@ end
 local function GetNamePriority(item)
     local length = item.prefab and #item.prefab or 0
 
-    if length > 0 then
-        length = length / 1000
-    end
-
-    return length
+    return length * .0001
 end
 
 local function GetPercentUsedPriority(item)
