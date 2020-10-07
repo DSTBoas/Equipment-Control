@@ -81,7 +81,7 @@ local LIGHTS_TAGS = {"lightsource", "daylight"}
 
 local function LightTrigger(equippedLight)
     if TheWorld:HasTag("forest") and not TheWorld.state.isnight then
-        return true
+        return UnEquip(equippedLight)
     end
 
     local x, y, z = ThePlayer.Transform:GetWorldPosition()
