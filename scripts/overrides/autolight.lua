@@ -77,6 +77,16 @@ local function UnEquip(item)
     return true
 end
 
+local function GetFalloff(light)
+    local fallOff = light:GetFalloff()
+
+    if fallOff > 0 and fallOff < 1 then
+        return 1 - fallOff
+    end
+
+    return 1
+end
+
 local LIGHTS_TAGS = {"lightsource", "daylight"}
 
 local function LightTrigger(equippedLight)
@@ -84,15 +94,15 @@ local function LightTrigger(equippedLight)
         return UnEquip(equippedLight)
     end
 
-    local x, _, z = ThePlayer.Transform:GetWorldPosition()
-    local lightsources = TheSim:FindEntities(x, 0, z, 60, nil, nil, LIGHTS_TAGS)
+    local x, y, z = ThePlayer.Transform:GetWorldPosition()
+    local lightsources = TheSim:FindEntities(x, y, z, 60, nil, nil, LIGHTS_TAGS)
 
     local parent, radius
     for i = 1, #lightsources do
         parent = lightsources[i].entity:GetParent()
         if parent ~= ThePlayer then
-            radius = lightsources[i].Light:GetCalculatedRadius() * lightsources[i].Light:GetFalloff()
-            if lightsources[i]:GetDistanceSqToPoint(x, 0, z) < radius * radius then
+            radius = lightsources[i].Light:GetCalculatedRadius() * GetFalloff(lightsources[i].Light)
+            if lightsources[i]:GetDistanceSqToPoint(x, y, z) < radius * radius then
                 return UnEquip(equippedLight)
             end
         end
