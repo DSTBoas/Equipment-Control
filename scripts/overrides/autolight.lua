@@ -84,15 +84,15 @@ local function LightTrigger(equippedLight)
         return UnEquip(equippedLight)
     end
 
-    local x, y, z = ThePlayer.Transform:GetWorldPosition()
-    local lightsources = TheSim:FindEntities(x, y, z, 30, nil, nil, LIGHTS_TAGS)
+    local x, _, z = ThePlayer.Transform:GetWorldPosition()
+    local lightsources = TheSim:FindEntities(x, 0, z, 60, nil, nil, LIGHTS_TAGS)
 
     local parent, radius
-    for _, lightsource in pairs(lightsources) do
-        parent = lightsource.entity:GetParent()
-        if not parent or parent ~= ThePlayer then
-            radius = lightsource.Light:GetCalculatedRadius() * .7
-            if lightsource:GetDistanceSqToPoint(x, y, z) < radius * radius then
+    for i = 1, #lightsources do
+        parent = lightsources[i].entity:GetParent()
+        if parent ~= ThePlayer then
+            radius = lightsources[i].Light:GetCalculatedRadius() * lightsources[i].Light:GetFalloff()
+            if lightsources[i]:GetDistanceSqToPoint(x, 0, z) < radius * radius then
                 return UnEquip(equippedLight)
             end
         end
@@ -100,7 +100,6 @@ local function LightTrigger(equippedLight)
 
     return false
 end
-
 
 local function Init()
     if not ThePlayer or not ThePlayer.LightWatcher then

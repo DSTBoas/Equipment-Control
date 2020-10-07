@@ -980,6 +980,13 @@ configuration_options =
         AssignKeyMessage .. ModNeededMessage
     ),
     AddConfig(
+        CurrentLanguage.option_config.ButtonCategoriesOptions[16],
+        "STAFF",
+        KeyboardOptions,
+        false,
+        AssignKeyMessage
+    ),
+    AddConfig(
         CurrentLanguage.option_config.ButtonCategoriesOptions[13],
         "FOOD",
         KeyboardOptions,

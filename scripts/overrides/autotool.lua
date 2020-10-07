@@ -161,7 +161,7 @@ local function Init()
 
         if ValidateMouseAction(lmb) then
             local target = TheInput:GetWorldEntityUnderMouse()
-            if target then
+            if target and CanEntitySeeTarget(self.inst, target) then
                 local toolAction = GetToolAction(target)
                 if toolAction then
                     local tool, craft = GetTool(toolAction)
