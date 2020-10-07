@@ -14,12 +14,12 @@ local CraftableTools =
     CHOP =
     {
         "goldenaxe",
-        "axe", 
+        "axe",
     },
     MINE =
     {
         "goldenpickaxe",
-        "pickaxe",  
+        "pickaxe",
     },
 }
 
@@ -64,11 +64,23 @@ local function OnEquipToolEvent(inst, data, target, action, prefab)
 
         if inst.components.locomotor == nil then
             inst:DoTaskInTime(FRAMES * 4, function()
-                SendRPCToServer(RPC.LeftClick, act.action.code, position.x, position.z, act.target)
+                SendRPCToServer(
+                    RPC.LeftClick,
+                    act.action.code,
+                    position.x,
+                    position.z,
+                    act.target
+                )
             end)
         else
             act.preview_cb = function()
-                SendRPCToServer(RPC.LeftClick, act.action.code, position.x, position.z, act.target)
+                SendRPCToServer(
+                    RPC.LeftClick,
+                    act.action.code,
+                    position.x,
+                    position.z,
+                    act.target
+                )
             end
         end
 
@@ -137,24 +149,34 @@ local function Init()
         PlayerControllerOnLeftClick(self, down)
     end
 
+    local function ValidateMouseAction(lmb)
+        return not InventoryFunctions:GetActiveItem()
+           and not InventoryFunctions:IsHeavyLifting()
+           and (not lmb or CanOverrideAction[lmb.action])
+    end
+
     local OldDoGetMouseActions = PlayerActionPicker.DoGetMouseActions
     function PlayerActionPicker:DoGetMouseActions(...)
         local lmb, rmb = OldDoGetMouseActions(self, ...)
 
-        if not lmb or CanOverrideAction[lmb.action] then
+        if ValidateMouseAction(lmb) then
             local target = TheInput:GetWorldEntityUnderMouse()
-
             if target then
                 local toolAction = GetToolAction(target)
                 if toolAction then
                     local tool, craft = GetTool(toolAction)
                     if tool then
-                        local lmb_override = BufferedAction(self.inst, target, ACTIONS[toolAction], not craft and tool or nil)
+                        local lmb_override = BufferedAction(
+                                                self.inst,
+                                                target,
+                                                ACTIONS[toolAction],
+                                                not craft and tool or nil
+                                             )
 
-                        if not craft then
-                            lmb_override.AUTOEQUIP = tool
-                        else
+                        if craft then
                             lmb_override.CRAFT = tool
+                        else
+                            lmb_override.AUTOEQUIP = tool
                         end
 
                         return lmb_override, rmb
