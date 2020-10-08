@@ -142,7 +142,7 @@ local function Init()
             self:OnControl(CONTROL_ACTION, true)
         end
 
-        return PlayerControllerOnUpdate(self, ...)
+        PlayerControllerOnUpdate(self, ...)
     end
 
     local PlayerControllerOnLeftClick = PlayerController.OnLeftClick
