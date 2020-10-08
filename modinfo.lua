@@ -369,6 +369,7 @@ local Languages =
             QUICK_ACTION_TRAP = "Reset Trap",
             QUICK_ACTION_BEEFALO = "Shave Beefalo",
             QUICK_ACTION_KLAUS_SACK = "Unlock Loot Stash",
+            QUICK_ACTION_REPAIR_BOAT = "Repair Boat",
             QUICK_ACTION_BUILD_FOSSIL = "Build Fossil",
             QUICK_ACTION_ATRIUM_GATE = "Socket Ancient Key",
             QUICK_ACTION_IMPRISON_BIRD = "Imprison Bird",
@@ -1467,6 +1468,13 @@ configuration_options =
     AddConfig(
         CurrentLanguage.option_names.QUICK_ACTION_KLAUS_SACK,
         "QUICK_ACTION_KLAUS_SACK",
+        SettingOptions,
+        true,
+        SettingMessage
+    ),
+    AddConfig(
+        CurrentLanguage.option_names.QUICK_ACTION_REPAIR_BOAT,
+        "QUICK_ACTION_REPAIR_BOAT",
         SettingOptions,
         true,
         SettingMessage

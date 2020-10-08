@@ -154,7 +154,9 @@ local IgnoredFuels =
 local function IsCompatibleFuel(target, item)
     return item:HasTag("BURNABLE_fuel")
        and not IgnoredFuels[item.prefab]
-       and not (item:HasTag("deployedplant") and item.prefab ~= "pinecone")
+       and not item:HasTag("_equippable")
+       and not item:HasTag("repairer")
+       and not (item:HasTag("deployable") and item.prefab ~= "pinecone")
         or target:HasTag("blueflame")
        and item:HasTag("CHEMICAL_fuel")
 end
@@ -388,6 +390,26 @@ local function GetFossilPiece()
     return nil
 end
 
+local function GetBoatPatch()
+    for _, item in pairs(InventoryFunctions:GetPlayerInventory()) do
+        if item:HasTag("boat_patch") then
+            return item
+        end
+    end
+
+    return nil
+end
+
+local function GetFood()
+    for _, item in pairs(InventoryFunctions:GetPlayerInventory()) do
+        if item:HasTag("fresh") and not item:HasTag("preparedfood") then
+            return item
+        end
+    end
+
+    return nil
+end
+
 -- 
 -- QuickActions Triggers
 -- 
@@ -486,6 +508,10 @@ local function IsAtriumGate(target)
     return target.prefab == "atrium_gate"
 end
 
+local function IsBoatLeak(target)
+    return target:HasTag("boat_leak")
+end
+
 -- 
 -- QuickActions
 --
@@ -526,6 +552,20 @@ local function HammerQuickAction(self, target)
         local action = BufferedAction(self.inst, target, ACTIONS.HAMMER, tool)
 
         action.modaction = "toolaction"
+
+        return action
+    end
+
+    return nil
+end
+
+local function RepairBoatQuickAction(self, target)
+    local patch = GetBoatPatch()
+
+    if patch then
+        local action = BufferedAction(self.inst, target, ACTIONS.REPAIR_LEAK, patch)
+
+        action.modaction = "sceneuse"
 
         return action
     end
@@ -744,6 +784,7 @@ AddQuickAction("QUICK_ACTION_HAMMER", IsHammerWorkable, HammerQuickAction)
 AddQuickAction("QUICK_ACTION_NET", IsNetWorkable, CatchQuickAction)
 AddQuickAction("QUICK_ACTION_KLAUS_SACK", IsKlausSack, KlausSackQuickAction)
 AddQuickAction("QUICK_ACTION_ATRIUM_GATE", IsAtriumGate, SocketKeyQuickAction)
+AddQuickAction("QUICK_ACTION_REPAIR_BOAT", IsBoatLeak, RepairBoatQuickAction)
 
 local function Init()
     local PlayerController = ThePlayer and ThePlayer.components.playercontroller

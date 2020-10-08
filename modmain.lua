@@ -91,6 +91,7 @@ local Overrides =
     },
     filterpickup =
     {
+        "AUTO_EQUIP_TOOL",
         "PICKUP_FILTER",
         "PRIOTIZE_VALUABLE_ITEMS",
         "PICKUP_IGNORE_FLOWERS",
@@ -102,11 +103,20 @@ local Overrides =
     {
         "QUICK_ACTION_CAMPFIRE",
         "QUICK_ACTION_TRAP",
-        "QUICK_ACTION_BIRD_CAGE",
-        "QUICK_ACTION_WAKEUP_BIRD",
+        "QUICK_ACTION_BEEFALO",
         "QUICK_ACTION_WALLS",
         "QUICK_ACTION_EXTINGUISH",
         "QUICK_ACTION_SLURTLEHOLE",
+        "QUICK_ACTION_FEED_BIRD",
+        "QUICK_ACTION_WAKEUP_BIRD",
+        "QUICK_ACTION_IMPRISON_BIRD",
+        "QUICK_ACTION_BUILD_FOSSIL",
+        "QUICK_ACTION_DIG",
+        "QUICK_ACTION_HAMMER",
+        "QUICK_ACTION_NET",
+        "QUICK_ACTION_KLAUS_SACK",
+        "QUICK_ACTION_ATRIUM_GATE",
+        "QUICK_ACTION_REPAIR_BOAT",
     },
 }
 
