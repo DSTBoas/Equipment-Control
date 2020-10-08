@@ -149,13 +149,13 @@ local IgnoredFuels =
 {
     blueprint = true,
     waxwelljournal = true,
+    boatpatch = true,
 }
 
 local function IsCompatibleFuel(target, item)
     return item:HasTag("BURNABLE_fuel")
        and not IgnoredFuels[item.prefab]
        and not item:HasTag("_equippable")
-       and not item:HasTag("repairer")
        and not (item:HasTag("deployable") and item.prefab ~= "pinecone")
         or target:HasTag("blueflame")
        and item:HasTag("CHEMICAL_fuel")
