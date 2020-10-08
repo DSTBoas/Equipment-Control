@@ -400,16 +400,6 @@ local function GetBoatPatch()
     return nil
 end
 
-local function GetFood()
-    for _, item in pairs(InventoryFunctions:GetPlayerInventory()) do
-        if item:HasTag("fresh") and not item:HasTag("preparedfood") then
-            return item
-        end
-    end
-
-    return nil
-end
-
 -- 
 -- QuickActions Triggers
 -- 
