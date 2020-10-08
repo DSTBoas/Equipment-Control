@@ -99,12 +99,50 @@ local function OnGetToolEvent(inst, data, prefab)
     inst.components.eventtracker:DetachEvent("OnGetToolEvent")
 end
 
+local function IsInOneOfAnimation(inst, anims)
+    for i = 1, #anims do
+        if inst.AnimState:IsCurrentAnimation(anims[i]) then
+            return true
+        end
+    end
+
+    return false
+end
+
+local WorkAnimations =
+{
+    "woodie_chop_pre",
+    "woodie_chop_loop",
+    "chop_pre",
+    "chop_loop",
+    "pickaxe_pre",
+    "pickaxe_loop",
+}
+
+local function IsWorking(inst)
+    return inst.AnimState
+       and (IsInOneOfAnimation(inst, WorkAnimations)
+        or inst:HasTag("beaver")
+       and not inst:HasTag("attack")
+       and inst.AnimState:IsCurrentAnimation("atk"))
+end
+
 local function Init()
     local PlayerController = ThePlayer and ThePlayer.components.playercontroller
     local PlayerActionPicker = ThePlayer and ThePlayer.components.playeractionpicker
 
     if not PlayerController or not PlayerActionPicker then
         return
+    end
+
+    local PlayerControllerOnUpdate = PlayerController.OnUpdate
+    function PlayerController:OnUpdate(...)
+        -- Automagic control repeats
+        if IsWorking(self.inst) then
+            self:OnControl(CONTROL_ACTION, true)
+        end
+
+        return PlayerControllerOnUpdate(self, ...)
     end
 
     local PlayerControllerOnLeftClick = PlayerController.OnLeftClick
@@ -146,6 +184,7 @@ local function Init()
                 end
             end
         end
+
         PlayerControllerOnLeftClick(self, down)
     end
 

@@ -5,7 +5,7 @@ icon_atlas = "modicon.xml"
 icon = "modicon.tex"
 
 author = "Boas"
-version = "3.9"
+version = "4.0"
 forumthread = ""
 
 dont_starve_compatible = false
@@ -1365,14 +1365,14 @@ configuration_options =
         CurrentLanguage.option_names.AUTO_EQUIP_LIGHTSOURCE,
         "AUTO_EQUIP_LIGHTSOURCE",
         AutoEquipLightSourceOptions,
-        1,
+        2,
         SettingMessage
     ),
     AddConfig(
         CurrentLanguage.option_names.AUTO_EQUIP_TOOL,
         "AUTO_EQUIP_TOOL",
         AutoEquipToolOptions,
-        1,
+        2,
         SettingMessage
     ),
     AddConfig(
