@@ -65,7 +65,7 @@ end
 local function DarkTrigger()
     return ThePlayer
        and ThePlayer.LightWatcher
-       and ThePlayer.LightWatcher:GetTimeInDark() > 1
+       and ThePlayer.LightWatcher:GetTimeInDark() > 0
 end
 
 local function UnEquip(item)
@@ -77,8 +77,14 @@ local function UnEquip(item)
     return true
 end
 
-local function GetFalloff(light)
-    local fallOff = light:GetFalloff()
+local function GetFalloff(lightsource)
+    local fallOff = lightsource.Light:GetFalloff()
+
+    if lightsource.prefab == "spawnlight_multiplayer" then
+        if fallOff > 0 and fallOff < 1 then
+            return fallOff
+        end
+    end
 
     if fallOff > 0 and fallOff < 1 then
         return 1 - fallOff
@@ -94,15 +100,14 @@ local function LightTrigger(equippedLight)
         return UnEquip(equippedLight)
     end
 
-    local x, y, z = ThePlayer.Transform:GetWorldPosition()
-    local lightsources = TheSim:FindEntities(x, y, z, 60, nil, nil, LIGHTS_TAGS)
+    local x, _, z = ThePlayer.Transform:GetWorldPosition()
+    local lightsources = TheSim:FindEntities(x, 0, z, 60, nil, nil, LIGHTS_TAGS)
 
-    local parent, radius
+    local radius
     for i = 1, #lightsources do
-        parent = lightsources[i].entity:GetParent()
-        if parent ~= ThePlayer then
-            radius = lightsources[i].Light:GetCalculatedRadius() * GetFalloff(lightsources[i].Light)
-            if lightsources[i]:GetDistanceSqToPoint(x, y, z) < radius * radius then
+        if lightsources[i].entity:GetParent() ~= ThePlayer then
+            radius = lightsources[i].Light:GetCalculatedRadius() * GetFalloff(lightsources[i])
+            if lightsources[i]:GetDistanceSqToPoint(x, 0, z) < radius * radius then
                 return UnEquip(equippedLight)
             end
         end
