@@ -121,18 +121,14 @@ local function Init()
         while ThePlayer do
             if ThePlayer.LightWatcher:GetTimeInDark() > 0 then
                 local lightsource = EquipLight()
-
                 if lightsource then
                     Sleep(FRAMES * 4)
-
                     while IsInDarkness() do
                         Sleep(.25)
                     end
-
                     Unequip(lightsource)
                 end
             end
-
             Sleep(.5)
         end
     end, "AutoLightThread")
