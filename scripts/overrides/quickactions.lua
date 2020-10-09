@@ -400,6 +400,27 @@ local function GetBoatPatch()
     return nil
 end
 
+local function GetTradeItem()
+    local ret = {}
+
+    for _, item in pairs(InventoryFunctions:GetPlayerInventory()) do
+        if ItemFunctions:GetGoldValue(item) > 0 then
+            ret[#ret + 1] =
+            {
+                item = item,
+                priority = ItemFunctions:GetGoldValue(item)
+            }
+        end
+    end
+
+    table.sort(ret, function(a, b)
+        return a.priority > b.priority
+    end)
+
+    return ret[1] and ret[1].item
+end
+
+
 -- 
 -- QuickActions Triggers
 -- 
@@ -411,7 +432,7 @@ end
 local function IsHammerWorkable(target)
     return target:HasTag(ACTIONS.HAMMER.id .. "_workable")
        and not target:HasTag("campfire")
-       and not target.prefab == "birdcage"
+       and target.prefab ~= "birdcage"
 end
 
 local function IsNetWorkable(target)
@@ -502,6 +523,10 @@ local function IsBoatLeak(target)
     return target:HasTag("boat_leak")
 end
 
+local function IsPigking(target)
+    return target.prefab == "pigking"
+end
+
 -- 
 -- QuickActions
 --
@@ -554,6 +579,24 @@ local function RepairBoatQuickAction(self, target)
 
     if patch then
         local action = BufferedAction(self.inst, target, ACTIONS.REPAIR_LEAK, patch)
+
+        action.modaction = "sceneuse"
+
+        return action
+    end
+
+    return nil
+end
+
+local function TradePigKingQuickAction(self, target)
+    local item = GetTradeItem()
+
+    if item then
+        local action = BufferedAction(self.inst, target, ACTIONS.GIVE, item)
+
+        action.GetActionString = function()
+            return "Trade " .. item.name .. " (" .. ItemFunctions:GetGoldValue(item) .. ")"
+        end
 
         action.modaction = "sceneuse"
 
@@ -775,6 +818,7 @@ AddQuickAction("QUICK_ACTION_NET", IsNetWorkable, CatchQuickAction)
 AddQuickAction("QUICK_ACTION_KLAUS_SACK", IsKlausSack, KlausSackQuickAction)
 AddQuickAction("QUICK_ACTION_ATRIUM_GATE", IsAtriumGate, SocketKeyQuickAction)
 AddQuickAction("QUICK_ACTION_REPAIR_BOAT", IsBoatLeak, RepairBoatQuickAction)
+AddQuickAction("QUICK_ACTION_PIG_KING", IsPigking, TradePigKingQuickAction)
 
 local function Init()
     local PlayerController = ThePlayer and ThePlayer.components.playercontroller

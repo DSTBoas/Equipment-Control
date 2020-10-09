@@ -77,39 +77,38 @@ local function UnEquip(item)
     return true
 end
 
-local function GetFalloff(lightsource)
-    local fallOff = lightsource.Light:GetFalloff()
+local EmitLookup =
+{
+    yellowamulet = 0.788,
+    lantern = 0.739,
+    minerhat = 0.739,
+    torch = 0.730,
+    lighter = 0.601,
+}
 
-    if lightsource.prefab == "spawnlight_multiplayer" then
-        if fallOff > 0 and fallOff < 1 then
-            return fallOff
+local function GetEmitValue()
+    local ret = 0
+
+    for _, equip in pairs(InventoryFunctions:GetEquips()) do
+        if not equip:HasTag("fueldepleted") and EmitLookup[equip.prefab] then
+            ret = ret + EmitLookup[equip.prefab]
         end
     end
 
-    if fallOff > 0 and fallOff < 1 then
-        return 1 - fallOff
-    end
-
-    return 1
+    return ret
 end
 
-local LIGHTS_TAGS = {"lightsource", "daylight"}
+local LightTresh = .051
 
-local function LightTrigger(equippedLight)
-    if TheWorld:HasTag("forest") and not TheWorld.state.isnight then
-        return UnEquip(equippedLight)
-    end
+local function GetLightDelta()
+    local emitVal = GetEmitValue()
 
-    local x, _, z = ThePlayer.Transform:GetWorldPosition()
-    local lightsources = TheSim:FindEntities(x, 0, z, 60, nil, nil, LIGHTS_TAGS)
-
-    local radius
-    for i = 1, #lightsources do
-        if lightsources[i].entity:GetParent() ~= ThePlayer then
-            radius = lightsources[i].Light:GetCalculatedRadius() * GetFalloff(lightsources[i])
-            if lightsources[i]:GetDistanceSqToPoint(x, 0, z) < radius * radius then
-                return UnEquip(equippedLight)
-            end
+    if emitVal > 0 then
+        local lightValue = string.format("%.3f", ThePlayer.LightWatcher:GetLightValue())
+        lightValue = tonumber(lightValue)
+        local lightDelta = lightValue - emitVal
+        if lightDelta < LightTresh then
+            return true
         end
     end
 
@@ -127,12 +126,13 @@ local function Init()
                 local lightsource = EquipLight()
                 if lightsource then
                     Sleep(FRAMES * 4)
-                    while InventoryFunctions:IsEquipped(lightsource) and not LightTrigger(lightsource) do
+                    while GetLightDelta() do
                         Sleep(.25)
                     end
+                    UnEquip(lightsource)
                 end
             end
-            Sleep(1)
+            Sleep(.5)
         end
     end, "AutoLightThread")
 end

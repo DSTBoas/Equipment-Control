@@ -15,6 +15,7 @@ local ComponentsUsed =
     "projectile",
     "complexprojectile",
     "perishable",
+    "tradable",
 }
 
 local function CacheItem(item)

@@ -43,6 +43,14 @@ local function IsSpoilingFood(cachedItem, val)
        and val > 0
 end
 
+function ItemFunctions:GetGoldValue(item)
+    local cachedItem = self:GetCachedItem(item)
+    return cachedItem
+       and cachedItem.components.tradable
+       and cachedItem.components.tradable.goldvalue
+        or 0
+end
+
 local FOODSTATES =
 {
     FRESH = 1,

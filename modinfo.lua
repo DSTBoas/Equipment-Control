@@ -5,7 +5,7 @@ icon_atlas = "modicon.xml"
 icon = "modicon.tex"
 
 author = "Boas"
-version = "4.0"
+version = "4.1"
 forumthread = ""
 
 dont_starve_compatible = false
@@ -370,8 +370,9 @@ local Languages =
             QUICK_ACTION_BEEFALO = "Shave Beefalo",
             QUICK_ACTION_KLAUS_SACK = "Unlock Loot Stash",
             QUICK_ACTION_REPAIR_BOAT = "Repair Boat",
-            QUICK_ACTION_BUILD_FOSSIL = "Build Fossil",
+            QUICK_ACTION_BUILD_FOSSIL = "Build Odd Skeleton",
             QUICK_ACTION_ATRIUM_GATE = "Socket Ancient Key",
+            QUICK_ACTION_PIG_KING = "Trade Pig King",
             QUICK_ACTION_IMPRISON_BIRD = "Imprison Bird",
             QUICK_ACTION_FEED_BIRD = "Feed Bird",
             QUICK_ACTION_WAKEUP_BIRD = "Wakeup Bird",
@@ -1489,6 +1490,13 @@ configuration_options =
     AddConfig(
         CurrentLanguage.option_names.QUICK_ACTION_ATRIUM_GATE,
         "QUICK_ACTION_ATRIUM_GATE",
+        SettingOptions,
+        true,
+        SettingMessage
+    ),
+    AddConfig(
+        CurrentLanguage.option_names.QUICK_ACTION_PIG_KING,
+        "QUICK_ACTION_PIG_KING",
         SettingOptions,
         true,
         SettingMessage

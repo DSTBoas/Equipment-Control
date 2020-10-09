@@ -30,6 +30,8 @@ local function GetItemFromCategory(category)
 end
 
 local function AutoReEquip(item)
+    item = item.entity:GetParent()
+
     if AUTO_RE_EQUIP_WEAPON == AutoEquipEnum.BEST and ItemFunctions:IsMeleeWeapon(item) then
         item = GetItemFromCategory("WEAPON")
         InventoryFunctions:Equip(item)
@@ -505,7 +507,7 @@ local ItemTracker = Class(function(self, inst)
     self.inst:ListenForEvent("deactivateworld", OnDeactivateWorld, TheWorld)
 
     if AUTO_RE_EQUIP_WEAPON then
-        AddTracker(IsWeapon, "onremove", AutoReEquip)
+        AddTracker(IsWeapon, "onremove", AutoReEquip, true)
     end
 
     if GetModConfigData("AUTO_RE_EQUIP_ARMOR", MOD_EQUIPMENT_CONTROL.MODNAME) then
