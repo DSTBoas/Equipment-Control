@@ -33,7 +33,7 @@ local AUTO_EQUIP_WEAPON = GetModConfigData("AUTO_EQUIP_WEAPON", MOD_EQUIPMENT_CO
 
 local function WeaponTrigger(target)
     return AUTO_EQUIP_WEAPON
-       and target:HasTag("butterfly")
+       and not target:HasTag("butterfly")
 end
 
 local function GetPrefabFromInventory(prefab)
