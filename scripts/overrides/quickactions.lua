@@ -525,6 +525,7 @@ end
 
 local function IsPigking(target)
     return target.prefab == "pigking"
+       and target:HasTag("trader")
 end
 
 -- 
