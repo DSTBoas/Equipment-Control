@@ -46,11 +46,10 @@ local function OnGetTrapEvent(inst, data, trap)
         if container then
             SendRPCToServer(RPC.TakeActiveItemFromAllOfSlot, data.slot, container ~= inst.replica.inventory and container.inst)
         end
+
+        inst.components.eventtracker:DetachEvent("OnGetTrapEvent")
     end
-
-    inst.components.eventtracker:DetachEvent("OnGetTrapEvent")
 end
-
 
 local function OnBuildFossil(inst, data, target)
     if data and data.item and data.item.prefab == "fossil_piece" and target:HasTag("workrepairable") then
@@ -868,14 +867,20 @@ local function Init()
                 local rpc = act.modlmb and RPC.LeftClick or RPC.RightClick
 
                 if ThePlayer.components.locomotor == nil then
-                    SendRPCToServer(rpc, act.action.code, position.x, position.z, act.target, nil, nil, rpc == RPC.LeftClick, nil, nil, false)
+                    -- Avoid action interference
+                    self.inst:DoTaskInTime(GetTickTime(), function()
+                         SendRPCToServer(rpc, act.action.code, position.x, position.z, act.target, nil, nil, rpc == RPC.LeftClick, nil, nil, false)
+                    end)
                 else
-                    act.preview_cb = function()
-                        SendRPCToServer(rpc, act.action.code, position.x, position.z, act.target, nil, nil, rpc == RPC.LeftClick, nil, nil, false)
-                    end
-                end
+                    -- Avoid action interference
+                    self.inst:DoTaskInTime(GetTickTime(), function()
+                        act.preview_cb = function()
+                            SendRPCToServer(rpc, act.action.code, position.x, position.z, act.target, nil, nil, rpc == RPC.LeftClick, nil, nil, false)
+                        end
 
-                self:DoAction(act)
+                        self:DoAction(act)
+                    end)
+                end
                 return
             elseif act.modaction == "sceneuse" then
                 if ThePlayer.components.locomotor == nil then
