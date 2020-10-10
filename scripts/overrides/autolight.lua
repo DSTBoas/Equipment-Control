@@ -62,13 +62,7 @@ local function EquipLight()
     return item
 end
 
-local function DarkTrigger()
-    return ThePlayer
-       and ThePlayer.LightWatcher
-       and ThePlayer.LightWatcher:GetTimeInDark() > 0
-end
-
-local function UnEquip(item)
+local function Unequip(item)
     if not InventoryFunctions:IsEquipped(item) or not InventoryFunctions:HasFreeSlot() then
         return false
     end
@@ -98,13 +92,16 @@ local function GetEmitValue()
     return ret
 end
 
-local LightTresh = .051
+local LightTresh = .051 -- .05 from /prefabs/player_common
 
-local function GetLightDelta()
+local function IsInDarkness()
     local emitVal = GetEmitValue()
 
     if emitVal > 0 then
-        local lightValue = string.format("%.3f", ThePlayer.LightWatcher:GetLightValue())
+        local lightValue = string.format(
+                                "%.3f",
+                                ThePlayer.LightWatcher:GetLightValue()
+                           )
         lightValue = tonumber(lightValue)
         local lightDelta = lightValue - emitVal
         if lightDelta < LightTresh then
@@ -122,14 +119,14 @@ local function Init()
 
     StartThread(function()
         while ThePlayer do
-            if DarkTrigger() then
+            if ThePlayer.LightWatcher:GetTimeInDark() > 0 then
                 local lightsource = EquipLight()
                 if lightsource then
                     Sleep(FRAMES * 4)
-                    while GetLightDelta() do
+                    while IsInDarkness() do
                         Sleep(.25)
                     end
-                    UnEquip(lightsource)
+                    Unequip(lightsource)
                 end
             end
             Sleep(.5)
