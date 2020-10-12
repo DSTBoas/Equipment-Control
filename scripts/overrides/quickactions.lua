@@ -846,13 +846,6 @@ local function Init()
         return
     end
 
-    local function GetCurrentAnimationLength()
-        return ThePlayer
-           and ThePlayer.AnimState
-           and ThePlayer.AnimState:GetCurrentAnimationLength()
-            or 0
-    end
-
     local TrackingThread =
     {
         Thread = nil,
