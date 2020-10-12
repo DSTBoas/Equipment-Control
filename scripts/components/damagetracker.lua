@@ -10,7 +10,7 @@ local function GetKlausHealth(target)
         return TUNING.KLAUS_HEALTH * (TUNING.KLAUS_ENRAGE_SCALE * TUNING.KLAUS_ENRAGE_SCALE * TUNING.KLAUS_ENRAGE_SCALE)
     end
 
-    return target._unchained:value() and 15000 or 10000
+    return target._unchained:value() and 5000 or 10000
 end
 
 local ChessPieceScaling =
@@ -101,7 +101,6 @@ local TagToHealth =
     bishop = TUNING.BISHOP_HEALTH,
     hound = TUNING.HOUND_HEALTH,
     koalefant = TUNING.KOALEFANT_HEALTH,
-    deergemresistance = TUNING.DEER_GEMMED_HEALTH,
 }
 
 local StaticHealth =
@@ -128,6 +127,8 @@ local StaticHealth =
     spider_dropper = TUNING.SPIDER_WARRIOR_HEALTH,
     wobster_sheller_land = TUNING.WOBSTER.HEALTH,
     wobster_moonglass_land = TUNING.WOBSTER.HEALTH,
+    deer_red = TUNING.DEER_GEMMED_HEALTH,
+    deer_blue = TUNING.DEER_GEMMED_HEALTH,
 }
 
 local InCompatible =
@@ -264,14 +265,22 @@ local function GetUnArmedDamage(target)
     return TUNING.UNARMED_DAMAGE
 end
 
+local MostRecentDamage = 0
+
 local function GetWeaponDamage(target)
+    if ThePlayer.AnimState:IsCurrentAnimation("item_in") then
+        return MostRecentDamage
+    end
+
     local weapon = ThePlayer.replica.inventory:GetEquippedItem(EQUIPSLOTS.HANDS)
 
     if not weapon then
         return GetUnArmedDamage(target)
     end
 
-    return ItemFunctions:GetDamage(weapon, target)
+    MostRecentDamage = ItemFunctions:GetDamage(weapon, target)
+
+    return MostRecentDamage
 end
 
 local function GetDamageDealt(target)
@@ -294,6 +303,7 @@ end
 local IsTransformHealing =
 {
     pigman = true,
+    klaus = true,
 }
 
 local function GetPercentHealth(target)
@@ -394,6 +404,10 @@ local function CanHitNightmare(target)
 end
 
 local function ValidateRange(target)
+    if not target then
+        return false
+    end
+
     if IsNightmareCreature(target) then
         return CanHitNightmare(target)
     end
@@ -403,7 +417,7 @@ local function ValidateRange(target)
        and target.replica.combat:CanBeAttacked(ThePlayer)
 end
 
-local function IsInOneOfAnimation(inst, anims)
+local function IsInOneOfAnimations(inst, anims)
     for i = 1, #anims do
         if inst.AnimState:IsCurrentAnimation(anims[i]) then
             return true
@@ -420,16 +434,22 @@ local AttackAnimations =
     "punch_a",
     "punch_b",
     "punch_c",
+    "item_in",
 }
 
+local function GetTarget(inst)
+    return inst.replica.combat:GetTarget()
+        or inst.player_classified.lastcombattarget:value()
+end
+
 local function OnPerformAction(inst)
-    if IsInOneOfAnimation(inst, AttackAnimations) then
-        local target = inst.replica.combat:GetTarget()
+    if IsInOneOfAnimations(inst, AttackAnimations) then
+        local target = GetTarget(inst)
+
         if target and not InCompatible[target.prefab] and ValidateRange(target) then
             if not HealthTracker[target] then
                 HealthTracker[target] = 0
             end
-
             UpdateHealthbar(target)
         end
     end
