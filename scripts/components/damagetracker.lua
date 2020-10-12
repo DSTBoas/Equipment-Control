@@ -90,6 +90,20 @@ local FuncHealth =
     rocky = GetRockyHealth,
 }
 
+local TagToHealth =
+{
+    werepig = TUNING.WEREPIG_HEALTH,
+    bird = TUNING.BIRD_HEALTH,
+    warg = TUNING.WARG_HEALTH,
+    leif = TUNING.LEIF_HEALTH,
+    rook = TUNING.ROOK_HEALTH,
+    knight = TUNING.KNIGHT_HEALTH,
+    bishop = TUNING.BISHOP_HEALTH,
+    hound = TUNING.HOUND_HEALTH,
+    koalefant = TUNING.KOALEFANT_HEALTH,
+    deergemresistance = TUNING.DEER_GEMMED_HEALTH,
+}
+
 local StaticHealth =
 {
     -- Constants
@@ -104,37 +118,16 @@ local StaticHealth =
     -- TUNING
     mermking = TUNING.MERM_KING_HEALTH,
     mermguard = TUNING.MERM_GUARD_HEALTH,
-    deer_red = TUNING.DEER_GEMMED_HEALTH,
-    deer_blue = TUNING.DEER_GEMMED_HEALTH,
     lightninggoat = TUNING.LIGHTNING_GOAT_HEALTH,
-    koalefant_summer = TUNING.KOALEFANT_HEALTH,
-    koalefant_winter = TUNING.KOALEFANT_HEALTH,
     nightmarebeak = TUNING.TERRORBEAK_HEALTH,
     crawlingnightmare = TUNING.CRAWLINGHORROR_HEALTH,
     killerbee = TUNING.BEE_HEALTH,
     pigman = TUNING.PIG_HEALTH,
     catcoon = TUNING.CATCOON_LIFE,
     grassgekko = TUNING.GRASSGEKKO_LIFE,
-    rook_nightmare = TUNING.ROOK_HEALTH,
-    knight_nightmare = TUNING.KNIGHT_HEALTH,
-    bishop_nightmare = TUNING.BISHOP_HEALTH,
     spider_dropper = TUNING.SPIDER_WARRIOR_HEALTH,
     wobster_sheller_land = TUNING.WOBSTER.HEALTH,
     wobster_moonglass_land = TUNING.WOBSTER.HEALTH,
-    moonpig = TUNING.WEREPIG_HEALTH,
-    leif_sparse = TUNING.LEIF_HEALTH,
-    claywarg = TUNING.WARG_HEALTH,
-    clayhound = TUNING.HOUND_HEALTH,
-    gingerbreadwarg = TUNING.WARG_HEALTH,
-
-    -- / Birds
-    crow = TUNING.BIRD_HEALTH,
-    robin = TUNING.BIRD_HEALTH,
-    robin_winter = TUNING.BIRD_HEALTH,
-    puffin = TUNING.BIRD_HEALTH,
-    canary = TUNING.BIRD_HEALTH,
-    quagmire_pigeon = TUNING.BIRD_HEALTH,
-    -- / Birds
 }
 
 local InCompatible =
@@ -143,8 +136,19 @@ local InCompatible =
     crabking = true,
 }
 
+local function GetTagHealth(inst)
+    for tag, health in pairs(TagToHealth) do
+        if inst:HasTag(tag) then
+            return health
+        end
+    end
+
+    return nil
+end
+
 local function GetMaxHealth(inst)
    return FuncHealth[inst.prefab] and FuncHealth[inst.prefab](inst)
+       or GetTagHealth(inst)
        or StaticHealth[inst.prefab]
        or type(TUNING[inst.prefab:upper() .. "_HEALTH"]) == "number" and TUNING[inst.prefab:upper() .. "_HEALTH"]
        or 0
@@ -274,10 +278,37 @@ local function GetDamageDealt(target)
     return (GetWeaponDamage(target) * GetDamageMultiplier(ThePlayer)) * GetDamageAbsorption(target)
 end
 
+local function GetHealthBarMaxHealth(target)
+    return target
+       and target.components.modhealthbar
+       and target.components.modhealthbar:GetMaxHealth()
+        or 0
+end
+
+local function SetNewMaxHealth(target)
+    if target and target.components.modhealthbar then
+        target.components.modhealthbar:SetMaxHealth(GetMaxHealth(target))
+    end
+end
+
+local IsTransformHealing =
+{
+    pigman = true,
+}
+
 local function GetPercentHealth(target)
-    HealthTracker[target] = HealthTracker[target] - GetDamageDealt(target)
     local maxHealth = GetMaxHealth(target)
-    return HealthTracker[target] / maxHealth, HealthTracker[target], maxHealth
+
+    if GetHealthBarMaxHealth(target) ~= maxHealth then
+        if IsTransformHealing[target.prefab] then
+            HealthTracker[target] = 0
+        end
+
+        SetNewMaxHealth(target)
+    end
+
+    HealthTracker[target] = HealthTracker[target] + GetDamageDealt(target)
+    return (maxHealth - HealthTracker[target]) / maxHealth, HealthTracker[target], maxHealth
 end
 
 local NpcOffset =
@@ -292,6 +323,7 @@ local NpcOffset =
     minotaur = 5,
     tallbird = 6,
     beequeen = 7,
+    klaus = 7,
     dragonfly = 8,
     crabking = 9,
     deerclops = 10,
@@ -306,6 +338,7 @@ local TagToOffset =
     merm = 3,
     knight = 3.5,
     beefalo = 4,
+    koalefant = 4,
     deer = 4,
     warg = 4,
     lightninggoat = 4,
@@ -327,13 +360,14 @@ end
 local function UpdateHealthbar(target)
     if not target.components.modhealthbar then
         target:AddComponent("modhealthbar")
+        SetNewMaxHealth(target)
         local offset = GetHealthBarOffset(target)
         target.components.modhealthbar:SetPosition(Vector3(0, offset, 0))
     end
     
-    local percent, health, maxHealth = GetPercentHealth(target)
+    local percent, damage, maxHealth = GetPercentHealth(target)
 
-    target.components.modhealthbar:SetValue(percent, health, maxHealth)
+    target.components.modhealthbar:SetValue(percent, damage, maxHealth)
 end
 
 local function CalcHitRangeSq(target)
@@ -369,27 +403,31 @@ local function ValidateRange(target)
        and target.replica.combat:CanBeAttacked(ThePlayer)
 end
 
-local function GetAnimation(ent)
-    return string.match(ent:GetDebugString(), "AnimState:.*anim:%s+(%S+)") -- Credit for the regex goes to @Victor | Steam handle: DemonBlink
+local function IsInOneOfAnimation(inst, anims)
+    for i = 1, #anims do
+        if inst.AnimState:IsCurrentAnimation(anims[i]) then
+            return true
+        end
+    end
+
+    return false
 end
 
 local AttackAnimations =
 {
-    atk = true,
-    punch = true,
-    punch_a = true,
-    punch_b = true,
-    punch_c = true,
+    "atk",
+    "punch",
+    "punch_a",
+    "punch_b",
+    "punch_c",
 }
 
 local function OnPerformAction(inst)
-    local currentAnimation = GetAnimation(inst)
-
-    if AttackAnimations[currentAnimation] then
+    if IsInOneOfAnimation(inst, AttackAnimations) then
         local target = inst.replica.combat:GetTarget()
         if target and not InCompatible[target.prefab] and ValidateRange(target) then
             if not HealthTracker[target] then
-                HealthTracker[target] = GetMaxHealth(target)
+                HealthTracker[target] = 0
             end
 
             UpdateHealthbar(target)

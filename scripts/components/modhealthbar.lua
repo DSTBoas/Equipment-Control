@@ -59,6 +59,7 @@ end
 local HealthBar = Class(function(self, inst)
     self.inst = inst
 
+    self.maxhealth = 0
     ----------------------------------
 
     self.bar_atlas = "images/hud.xml"
@@ -98,11 +99,19 @@ local function SetVisible(self, visible)
     end
 end
 
-function HealthBar:SetValue(percent, health, maxhealth)
+function HealthBar:SetMaxHealth(maxhealth)
+    self.maxhealth = maxhealth
+end
+
+function HealthBar:GetMaxHealth()
+    return self.maxhealth
+end
+
+function HealthBar:SetValue(percent, damage, maxHealth)
     if percent > 0 then
         local newwidth = self.bar.fill_width * percent
         local hp = math.max(1, math.floor(percent * 100))
-        self.bar.Label:SetText(math.floor(health) .. " / " .. maxhealth)
+        self.bar.Label:SetText(math.floor(maxHealth - damage) .. " / " .. maxHealth)
         self.bar.Image:SetSize(newwidth, self.bar.fill_height)
         self.bar.Image:SetUIOffset(self.bar_ui_offset.x + (newwidth - self.bar.fill_width) * .5, self.bar_ui_offset.y, self.bar_ui_offset.z)
         SetVisible(self, self.enabled)
