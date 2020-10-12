@@ -1,4 +1,5 @@
 local InventoryFunctions = require "util/inventoryfunctions"
+local CraftFunctions = require "util/craftfunctions"
 local ItemFunctions = require "util/itemfunctions"
 
 local PREFERRED_CAMPFIRE_FUEL = GetModConfigData("PREFERRED_CAMPFIRE_FUEL", MOD_EQUIPMENT_CONTROL.MODNAME)
@@ -527,6 +528,10 @@ local function IsPigking(target)
        and target:HasTag("trader")
 end
 
+local function IsDirtpile(target)
+    return target.prefab == "dirtpile"
+end
+
 -- 
 -- QuickActions
 --
@@ -798,6 +803,18 @@ local function WakeupQuickAction(self, target)
     return action
 end
 
+local function TrackQuickAction(self, target)
+    local action = BufferedAction(self.inst, target, ACTIONS.ACTIVATE)
+
+    action.GetActionString = function()
+        return "Track Animal"
+    end
+
+    action.modaction = "track"
+
+    return action
+end
+
 -- 
 -- Add QuickActions
 -- 
@@ -819,6 +836,7 @@ AddQuickAction("QUICK_ACTION_KLAUS_SACK", IsKlausSack, KlausSackQuickAction)
 AddQuickAction("QUICK_ACTION_ATRIUM_GATE", IsAtriumGate, SocketKeyQuickAction)
 AddQuickAction("QUICK_ACTION_REPAIR_BOAT", IsBoatLeak, RepairBoatQuickAction)
 AddQuickAction("QUICK_ACTION_PIG_KING", IsPigking, TradePigKingQuickAction)
+AddQuickAction("QUICK_ACTION_DIRTPILE", IsDirtpile, TrackQuickAction)
 
 local function Init()
     local PlayerController = ThePlayer and ThePlayer.components.playercontroller
@@ -826,6 +844,54 @@ local function Init()
 
     if not PlayerController or not PlayerActionPicker then
         return
+    end
+
+    local function GetCurrentAnimationLength()
+        return ThePlayer
+           and ThePlayer.AnimState
+           and ThePlayer.AnimState:GetCurrentAnimationLength()
+            or 0
+    end
+
+    local TrackingThread =
+    {
+        Thread = nil,
+        Override = nil,
+    }
+
+    local function StopTrackingThread()
+        if TrackingThread.Thread then
+            KillThreadsWithID("TrackingThread")
+            TrackingThread.Thread = nil
+        end
+        if TrackingThread.Override then
+            PlayerController.OnControl = TrackingThread.Override
+            TrackingThread.Override = nil
+        end
+    end
+
+    local CancelControls =
+    {
+        [CONTROL_PRIMARY] = true,
+        [CONTROL_ACTION] = true,
+        [CONTROL_ATTACK] = true,
+        [CONTROL_MOVE_UP] = true,
+        [CONTROL_MOVE_DOWN] = true,
+        [CONTROL_MOVE_LEFT] = true,
+        [CONTROL_MOVE_RIGHT] = true,
+    }
+
+    local function IsWalkButtonDown()
+        return TheInput:IsControlPressed(CONTROL_MOVE_UP)
+            or TheInput:IsControlPressed(CONTROL_MOVE_DOWN)
+            or TheInput:IsControlPressed(CONTROL_MOVE_LEFT)
+            or TheInput:IsControlPressed(CONTROL_MOVE_RIGHT)
+    end
+
+    local function IsMoving(inst)
+        return inst.sg
+           and inst.sg:HasStateTag("moving")
+            or inst:HasTag("moving")
     end
 
     local OldOnRightClick = PlayerController.OnRightClick
@@ -837,7 +903,59 @@ local function Init()
 
         local act = self:GetRightMouseAction()
         if act and act.modaction then
-            if act.modaction == "fossil_build" then
+            if act.modaction == "track" then
+                if IsWalkButtonDown() then
+                    return
+                end
+                StopTrackingThread()
+                TrackingThread.Thread = StartThread(function()
+                    local recur = 0
+
+                    local function TrackLoop()
+                        local track = GetClosestInstWithTag("dirtpile", self.inst, 60)
+                        if track then
+                            local act = BufferedAction(self.inst, track, ACTIONS.ACTIVATE)
+                            local position = track:GetPosition()
+
+                            if ThePlayer.components.locomotor == nil then
+                                SendRPCToServer(RPC.LeftClick, act.action.code, position.x, position.z, track)
+                            else
+                                act.preview_cb = function()
+                                    SendRPCToServer(RPC.LeftClick, act.action.code, position.x, position.z, track)
+                                end
+                            end
+                            self:DoAction(act)
+
+                            while (not IsMoving(self.inst) and not CraftFunctions:IsCrafting()) do
+                                Sleep(FRAMES)
+                            end
+                            
+                            while (IsMoving(self.inst) or CraftFunctions:IsCrafting()) do
+                                Sleep(FRAMES)
+                            end
+
+                            recur = recur + 1
+                            if recur > 12 then
+                                return
+                            end
+
+                            TrackLoop()
+                        end
+                    end
+
+                    TrackingThread.Override = self.OnControl
+                    function self:OnControl(control, down)
+                        TrackingThread.Override(self, control, down)
+                        if down and CancelControls[control] then
+                            StopTrackingThread()
+                        end
+                    end
+
+                    TrackLoop()
+                    StopTrackingThread()
+                end, "TrackingThread")
+                return
+            elseif act.modaction == "fossil_build" then
                 if ThePlayer.components.locomotor == nil then
                     SendRPCToServer(RPC.ControllerUseItemOnSceneFromInvTile, act.action.code, act.invobject, act.target)
                 else
@@ -892,7 +1010,7 @@ local function Init()
                 end
                 self:DoAction(act)
                 return
-            elseif act.modaction == "ignite" and act.invobject and act.target then
+            elseif act.modaction == "ignite" then
                 if self.inst.replica.inventory:GetEquippedItem(EQUIPSLOTS.HANDS) ~= act.invobject then
                     InventoryFunctions:Equip(act.invobject)
                 end
@@ -916,7 +1034,7 @@ local function Init()
                     return
                 end)
                 return
-            elseif act.modaction == "extinguish" and act.invobject and act.target then
+            elseif act.modaction == "extinguish" then
                 if act.invobject:HasTag("_equippable") then
                     if self.inst.replica.inventory:GetEquippedItem(EQUIPSLOTS.HANDS) ~= act.invobject then
                         InventoryFunctions:Equip(act.invobject)
@@ -956,7 +1074,7 @@ local function Init()
                     else
                         act.preview_cb = function()
                             SendRPCToServer(RPC.ControllerUseItemOnSceneFromInvTile, act.action.code, act.invobject, act.target)
-                        end 
+                        end
                     end
                 end
                 self:DoAction(act)

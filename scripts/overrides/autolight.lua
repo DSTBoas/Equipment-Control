@@ -4,13 +4,6 @@ local CraftFunctions = require "util/craftfunctions"
 local PREFERRED_AUTO_LIGHT = GetModConfigData("PREFERRED_AUTO_LIGHT", MOD_EQUIPMENT_CONTROL.MODNAME)
 local CRAFTING_ALLOWED = GetModConfigData("AUTO_EQUIP_LIGHTSOURCE", MOD_EQUIPMENT_CONTROL.MODNAME) == 2
 
-local function GetCurrentAnimationLength()
-    return ThePlayer
-       and ThePlayer.AnimState
-       and ThePlayer.AnimState:GetCurrentAnimationLength()
-        or 0
-end
-
 local function GetLightSource(recur)
     if ThePlayer.components.playercontroller then
         local lightsources = ThePlayer.components.actioncontroller:GetItemsFromCategory("LIGHTSOURCE")
@@ -38,7 +31,7 @@ local function GetLightSource(recur)
 
              -- @TODO Might wanna use an event based trigger here @TAG PERF, REFACTOR
             while CraftFunctions:IsCrafting() do
-                Sleep(GetCurrentAnimationLength())
+                Sleep(FRAMES)
             end
 
             Sleep(FRAMES * 3)
