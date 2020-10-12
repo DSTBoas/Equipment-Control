@@ -404,10 +404,6 @@ local function CanHitNightmare(target)
 end
 
 local function ValidateRange(target)
-    if not target then
-        return false
-    end
-
     if IsNightmareCreature(target) then
         return CanHitNightmare(target)
     end
