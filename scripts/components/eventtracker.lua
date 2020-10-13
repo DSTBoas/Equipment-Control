@@ -50,11 +50,12 @@ end
 function EventTracker:DetachEvent(modaction)
     if self.events[modaction] then
         for _, eventData in pairs(self.events[modaction]) do
-            -- Might wanna check
-            eventData.inst:RemoveEventCallback(
-                eventData.event,
-                eventData.callback
-            )
+            if eventData.inst then
+                eventData.inst:RemoveEventCallback(
+                    eventData.event,
+                    eventData.callback
+                )
+            end
         end
         self.events[modaction] = nil
     end
