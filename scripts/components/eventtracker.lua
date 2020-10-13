@@ -41,7 +41,6 @@ local EventTracker = Class(function(self, inst)
     local OldOnControl = PlayerController.OnControl
     local function NewOnControl(_self, control, down)
         if ControlValidation(_self, control, down) then
-            print("Cancelling all events", control)
             for event in pairs(self.events) do
                 self:DetachEvent(event)
             end
