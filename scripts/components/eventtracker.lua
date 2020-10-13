@@ -28,8 +28,12 @@ local EventTracker = Class(function(self, inst)
     PlayerController.OnControl = NewOnControl
 end)
 
-function EventTracker:AddEvent(event, modaction, callback)
-    self.inst:ListenForEvent(event, callback)
+function EventTracker:AddEvent(event, modaction, callback, inst)
+    if not inst then
+        inst = self.inst
+    end
+
+    inst:ListenForEvent(event, callback)
 
     if not self.events[modaction] then
         self.events[modaction] = {}
@@ -37,6 +41,7 @@ function EventTracker:AddEvent(event, modaction, callback)
 
     self.events[modaction][#self.events[modaction] + 1] =
     {
+        inst = inst,
         event = event,
         callback = callback,
     }
@@ -45,7 +50,8 @@ end
 function EventTracker:DetachEvent(modaction)
     if self.events[modaction] then
         for _, eventData in pairs(self.events[modaction]) do
-            self.inst:RemoveEventCallback(
+            -- Might wanna check
+            eventData.inst:RemoveEventCallback(
                 eventData.event,
                 eventData.callback
             )

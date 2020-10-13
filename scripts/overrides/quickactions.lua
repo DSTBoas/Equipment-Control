@@ -70,6 +70,34 @@ local function OnBuildFossil(inst, data, target)
     end
 end
 
+local function StartTracking()
+    ThePlayer.components.eventtracker:DetachEvent("StartTracking")
+    ThePlayer:DoTaskInTime(FRAMES * 4, function()
+        local track = GetClosestInstWithTag("dirtpile", ThePlayer, 60)
+
+        if track then
+            ThePlayer.components.eventtracker:AddEvent(
+                "onremove",
+                "StartTracking",
+                StartTracking,
+                track
+            )
+            local act = BufferedAction(ThePlayer, track, ACTIONS.ACTIVATE)
+            local position = track:GetPosition()
+
+            if ThePlayer.components.locomotor == nil then
+                SendRPCToServer(RPC.LeftClick, act.action.code, position.x, position.z, track)
+            else
+                act.preview_cb = function()
+                    SendRPCToServer(RPC.LeftClick, act.action.code, position.x, position.z, track)
+                end
+            end
+
+            ThePlayer.components.playercontroller:DoAction(act)
+        end
+    end)
+end
+
 -- 
 --  QuickActions Logic
 -- 
@@ -529,7 +557,7 @@ local function IsPigking(target)
 end
 
 local function IsDirtpile(target)
-    return target.prefab == "dirtpile"
+    return target:HasTag("dirtpile")
 end
 
 -- 
@@ -846,45 +874,11 @@ local function Init()
         return
     end
 
-    local TrackingThread =
-    {
-        Thread = nil,
-        Override = nil,
-    }
-
-    local function StopTrackingThread()
-        if TrackingThread.Thread then
-            KillThreadsWithID("TrackingThread")
-            TrackingThread.Thread = nil
-        end
-        if TrackingThread.Override then
-            PlayerController.OnControl = TrackingThread.Override
-            TrackingThread.Override = nil
-        end
-    end
-
-    local CancelControls =
-    {
-        [CONTROL_PRIMARY] = true,
-        [CONTROL_ACTION] = true,
-        [CONTROL_ATTACK] = true,
-        [CONTROL_MOVE_UP] = true,
-        [CONTROL_MOVE_DOWN] = true,
-        [CONTROL_MOVE_LEFT] = true,
-        [CONTROL_MOVE_RIGHT] = true,
-    }
-
     local function IsWalkButtonDown()
         return TheInput:IsControlPressed(CONTROL_MOVE_UP)
             or TheInput:IsControlPressed(CONTROL_MOVE_DOWN)
             or TheInput:IsControlPressed(CONTROL_MOVE_LEFT)
             or TheInput:IsControlPressed(CONTROL_MOVE_RIGHT)
-    end
-
-    local function IsMoving(inst)
-        return inst.sg
-           and inst.sg:HasStateTag("moving")
-            or inst:HasTag("moving")
     end
 
     local OldOnRightClick = PlayerController.OnRightClick
@@ -900,53 +894,8 @@ local function Init()
                 if IsWalkButtonDown() then
                     return
                 end
-                StopTrackingThread()
-                TrackingThread.Thread = StartThread(function()
-                    local recur = 0
 
-                    local function TrackLoop()
-                        local track = GetClosestInstWithTag("dirtpile", self.inst, 60)
-                        if track then
-                            local act = BufferedAction(self.inst, track, ACTIONS.ACTIVATE)
-                            local position = track:GetPosition()
-
-                            if ThePlayer.components.locomotor == nil then
-                                SendRPCToServer(RPC.LeftClick, act.action.code, position.x, position.z, track)
-                            else
-                                act.preview_cb = function()
-                                    SendRPCToServer(RPC.LeftClick, act.action.code, position.x, position.z, track)
-                                end
-                            end
-                            self:DoAction(act)
-
-                            while (not IsMoving(self.inst) and not CraftFunctions:IsCrafting()) do
-                                Sleep(FRAMES)
-                            end
-                            
-                            while (IsMoving(self.inst) or CraftFunctions:IsCrafting()) do
-                                Sleep(FRAMES)
-                            end
-
-                            recur = recur + 1
-                            if recur > 12 then
-                                return
-                            end
-
-                            TrackLoop()
-                        end
-                    end
-
-                    TrackingThread.Override = self.OnControl
-                    function self:OnControl(control, down)
-                        TrackingThread.Override(self, control, down)
-                        if down and CancelControls[control] then
-                            StopTrackingThread()
-                        end
-                    end
-
-                    TrackLoop()
-                    StopTrackingThread()
-                end, "TrackingThread")
+                StartTracking()
                 return
             elseif act.modaction == "fossil_build" then
                 if ThePlayer.components.locomotor == nil then

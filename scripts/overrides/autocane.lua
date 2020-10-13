@@ -1,4 +1,5 @@
 local InventoryFunctions = require "util/inventoryfunctions"
+local ConfigFunctions = require "util/configfunctions"
 local KeybindService = MOD_EQUIPMENT_CONTROL.KEYBINDSERVICE
 
 local CanWalkTo =
@@ -108,7 +109,7 @@ local function Init()
 end
 
 KeybindService:AddKey("TOGGLE_AUTO_EQUIP_CANE", function()
-    AUTO_EQUIP_CANE = DoToggle("Auto-equip cane", AUTO_EQUIP_CANE)
+    AUTO_EQUIP_CANE = ConfigFunctions:DoToggle("Auto-equip cane", AUTO_EQUIP_CANE)
 end)
 
 return Init

@@ -11,29 +11,14 @@ _G.MOD_EQUIPMENT_CONTROL = MOD_EQUIPMENT_CONTROL
 
 require("categories")
 
-local Say = require("util/say")
-
-local function DoToggle(str, bool)
-    bool = not bool
-    Say(
-        string.format(
-            str .. " (%s)",
-            bool and MOD_EQUIPMENT_CONTROL.STRINGS.TOGGLE.ENABLED
-            or MOD_EQUIPMENT_CONTROL.STRINGS.TOGGLE.DISABLED
-        )
-    )
-    return bool
-end
-_G.DoToggle = DoToggle
-
-local function EntityScriptPostConstruct(entityscript)
-    local OldRegisterComponentActions = entityscript.RegisterComponentActions 
-    function entityscript:RegisterComponentActions(name)
+local function EntityScriptPostConstruct(self)
+    local OldRegisterComponentActions = self.RegisterComponentActions 
+    function self:RegisterComponentActions(...)
         if _G.MOD_EQUIPMENT_CONTROL.SPAWNING then
             return
         end
 
-        return OldRegisterComponentActions(self, name)
+        OldRegisterComponentActions(self, ...)
     end
 end
 AddGlobalClassPostConstruct("entityscript", "EntityScript", EntityScriptPostConstruct)

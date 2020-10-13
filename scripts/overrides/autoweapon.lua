@@ -1,4 +1,5 @@
 local InventoryFunctions = require "util/inventoryfunctions"
+local ConfigFunctions = require "util/configfunctions"
 local KeybindService = MOD_EQUIPMENT_CONTROL.KEYBINDSERVICE
 
 -- 
@@ -116,7 +117,7 @@ local function Init()
 end
 
 KeybindService:AddKey("TOGGLE_AUTO_EQUIP", function()
-    AUTO_EQUIP_WEAPON = DoToggle("Auto-equip weapon", AUTO_EQUIP_WEAPON)
+    AUTO_EQUIP_WEAPON = ConfigFunctions:DoToggle("Auto-equip weapon", AUTO_EQUIP_WEAPON)
 end)
 
 return Init

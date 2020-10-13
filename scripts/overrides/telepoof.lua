@@ -1,3 +1,4 @@
+local ConfigFunctions = require "util/configfunctions"
 local KeybindService = MOD_EQUIPMENT_CONTROL.KEYBINDSERVICE
 
 local TELEPOOF_ENABLED = GetModConfigData("TELEPOOF_ENABLED", MOD_EQUIPMENT_CONTROL.MODNAME)
@@ -96,7 +97,7 @@ local function Init()
 end
 
 KeybindService:AddKey("TOGGLE_TELEPOOF", function()
-    TELEPOOF_ENABLED = DoToggle("Telepoof", TELEPOOF_ENABLED)
+    TELEPOOF_ENABLED = ConfigFunctions:DoToggle("Telepoof", TELEPOOF_ENABLED)
     ToggleBlink(TELEPOOF_ENABLED)
 end)
 
