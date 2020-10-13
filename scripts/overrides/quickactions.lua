@@ -70,32 +70,52 @@ local function OnBuildFossil(inst, data, target)
     end
 end
 
-local function StartTracking()
-    ThePlayer.components.eventtracker:DetachEvent("StartTracking")
-    ThePlayer:DoTaskInTime(FRAMES * 4, function()
-        local track = GetClosestInstWithTag("dirtpile", ThePlayer, 60)
+local TrackTimeOut = FRAMES * 10
 
+local function GetTrack()
+    local time = GetTime()
+    
+    local track
+    while GetTime() - time < TrackTimeOut do
+        track = GetClosestInstWithTag("dirtpile", ThePlayer, 60)
         if track then
-            ThePlayer.components.eventtracker:AddEvent(
-                "onremove",
-                "StartTracking",
-                StartTracking,
-                track
-            )
-            local act = BufferedAction(ThePlayer, track, ACTIONS.ACTIVATE)
-            local position = track:GetPosition()
-
-            if ThePlayer.components.locomotor == nil then
-                SendRPCToServer(RPC.LeftClick, act.action.code, position.x, position.z, track)
-            else
-                act.preview_cb = function()
-                    SendRPCToServer(RPC.LeftClick, act.action.code, position.x, position.z, track)
-                end
-            end
-
-            ThePlayer.components.playercontroller:DoAction(act)
+            break
         end
-    end)
+        Sleep(FRAMES)
+    end
+
+    return track
+end
+
+local function DoTracking()
+    ThePlayer.components.eventtracker:DetachEvent("DoTracking")
+    StartThread(function()
+        local track = GetTrack()
+
+        if not track then
+            return
+        end
+
+        ThePlayer.components.eventtracker:AddEvent(
+            "onremove",
+            "DoTracking",
+            DoTracking,
+            track
+        )
+
+        local act = BufferedAction(ThePlayer, track, ACTIONS.ACTIVATE)
+        local position = track:GetPosition()
+
+        if ThePlayer.components.locomotor == nil then
+            SendRPCToServer(RPC.LeftClick, act.action.code, position.x, position.z, track)
+        else
+            act.preview_cb = function()
+                SendRPCToServer(RPC.LeftClick, act.action.code, position.x, position.z, track)
+            end
+        end
+
+        ThePlayer.components.playercontroller:DoAction(act)
+    end, "TrackingThread")
 end
 
 -- 
@@ -894,8 +914,8 @@ local function Init()
                 if IsWalkButtonDown() then
                     return
                 end
-
-                StartTracking()
+                KillThreadsWithID("TrackingThread")
+                DoTracking()
                 return
             elseif act.modaction == "fossil_build" then
                 if ThePlayer.components.locomotor == nil then

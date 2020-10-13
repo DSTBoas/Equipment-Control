@@ -4,6 +4,28 @@ for control = CONTROL_PRIMARY, CONTROL_MOVE_RIGHT do
     IsCancelControl[control] = true
 end
 
+local function ControlValidation(self, control, down)
+    if not down or TheFrontEnd.forceProcessText then
+        return false
+    end
+
+    if control == CONTROL_SECONDARY then
+        return self:GetRightMouseAction()
+    end
+
+    if control == CONTROL_PRIMARY then
+        return not TheInput:GetHUDEntityUnderMouse()
+    end
+
+    return IsCancelControl[control]
+end
+
+local function OnDeactivateWorld(self)
+    for event in pairs(self.events) do
+        self:DetachEvent(event)
+    end
+end
+
 local EventTracker = Class(function(self, inst)
     local PlayerController = inst and inst.components.playercontroller
 
@@ -14,17 +36,19 @@ local EventTracker = Class(function(self, inst)
     self.inst = inst
     self.events = {}
 
-    local OldOnControl = PlayerController.OnControl
+    self.inst:ListenForEvent("deactivateworld", function() OnDeactivateWorld(self) end, TheWorld)
 
+    local OldOnControl = PlayerController.OnControl
     local function NewOnControl(_self, control, down)
-        if down and IsCancelControl[control] then
+        if ControlValidation(_self, control, down) then
+            print("Cancelling all events", control)
             for event in pairs(self.events) do
                 self:DetachEvent(event)
             end
         end
+
         OldOnControl(_self, control, down)
     end
-
     PlayerController.OnControl = NewOnControl
 end)
 
