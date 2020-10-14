@@ -73,11 +73,36 @@ local Languages =
             AutoReFuelOptions = "Auto-refuel your lights",
             AutoReEquipArmorOptions = "Auto-re-equip to the next best armor",
             AutoReGearOptions = "Auto-regear when transforming back to Woodie",
+            TelepoofHoverOptions = "Hovertext is hidden when Telepoof is disabled",
+            TelepoofDisabledOptions = "Telepoof is disabled by default",
         },
         option_config =
         {
             Disabled = "Disabled",
             Enabled = "Enabled",
+            TelepoofDoubleclickOptions =
+            {
+                [1] =
+                {
+                    "Default",
+                    "Double-click speed is 1/2 of a second"
+                },
+                [2] =
+                {
+                    "Fast",
+                    "Double-click speed is 1/3 of a second"
+                },
+                [3] =
+                {
+                    "Ludicrous",
+                    "Double-click speed is 1/4 of a second"
+                },
+                [4] =
+                {
+                    "Plaid",
+                    "Double-click speed is 1/5 of a second"
+                },
+            },
             AutoReEquipOptions =
             {
                 [1] =
@@ -274,13 +299,6 @@ local Languages =
                 [11] = "Rot",
                 [12] = "Nitre",
             },
-            TelepoofDoubleClickOptions =
-            {
-                [1] = "Default",
-                [2] = "Fast",
-                [3] = "Ludicrous",
-                [4] = "Plaid",
-            },
             SortPriorityOptions =
             {
                 [1] = "1",
@@ -326,7 +344,7 @@ local Languages =
             TOGGLE_AUTO_EQUIP_CANE = "Toggle Auto-equip cane",
             TOGGLE_TELEPOOF_MODE = "Toggle Telepoof mouse through",
             BUTTON_SHOW = "Show buttons",
-            BUTTON_ANIMATIONS = "Animate buttons",
+            BUTTON_ANIMATIONS = "Button animations",
             BUTTON_SHOW_KEYBIND = "Display keybind on button",
             BUTTON_PREFERENCE_CHANGE = "Preference shortcut",
             BUTTON_AUTO_EQUIP_CHANGE = "Auto-equip shortcut",
@@ -385,9 +403,9 @@ local Languages =
             PICKUP_IGNORE_SUCCULENTS = "Never pick Succulents",
             PICKUP_IGNORE_FERNS = "Never pick Ferns",
             PICKUP_IGNORE_MARSH_BUSH = "Never pick Spiky Bush",
-            TELEPOOF_ENABLED = "Enabled by default",
+            TELEPOOF_DISABLED = "Disabled by default",
             TELEPOOF_DOUBLECLICK = "Double-click speed",
-            TELEPOOF_HOVER = "Hovertext",
+            TELEPOOF_HOVER = "Hide hovertext",
             ORANGESTAFF_MOUSETHROUGH = "Star Caller Staff",
             YELLOWSTAFF_MOUSETHROUGH = "The Lazy Explorer",
             LANTERN_ESTIMATION = "Lantern fuel estimation",
@@ -571,6 +589,9 @@ local PickupFilterOptions = GetKeyboardOptions(CurrentLanguage.option_messages.P
 local AttackFilterOptions = GetKeyboardOptions(CurrentLanguage.option_messages.AttackFilterOptions)
 
 local SettingOptions = GetDefaultOptions()
+local TelepoofHoverOptions = GetDefaultOptions(CurrentLanguage.option_messages.TelepoofHoverOptions)
+local TelepoofDisabledOptions = GetDefaultOptions(CurrentLanguage.option_messages.TelepoofDisabledOptions)
+
 local BetaSettingOptions = GetDefaultOptions(CurrentLanguage.option_messages.BetaSettingOptions)
 
 local AutoEquipCaneOptions = GetDefaultOptions(CurrentLanguage.option_messages.AutoEquipCaneOptions)
@@ -582,6 +603,15 @@ local AutoSwitchOptions = GetDefaultOptions(CurrentLanguage.option_messages.Auto
 local AutoReFuelOptions = GetDefaultOptions(CurrentLanguage.option_messages.AutoReFuelOptions)
 local AutoReEquipArmorOptions = GetDefaultOptions(CurrentLanguage.option_messages.AutoReEquipArmorOptions)
 local AutoReGearOptions = GetDefaultOptions(CurrentLanguage.option_messages.AutoReGearOptions)
+
+local TelepoofDoubleclickOptions =
+{
+    AddConfigOption(CurrentLanguage.option_config.Disabled, false),
+    AddConfigOption(CurrentLanguage.option_config.TelepoofDoubleclickOptions[1][1], .5, CurrentLanguage.option_config.TelepoofDoubleclickOptions[1][2]),
+    AddConfigOption(CurrentLanguage.option_config.TelepoofDoubleclickOptions[2][1], .3, CurrentLanguage.option_config.TelepoofDoubleclickOptions[2][2]),
+    AddConfigOption(CurrentLanguage.option_config.TelepoofDoubleclickOptions[3][1], .25, CurrentLanguage.option_config.TelepoofDoubleclickOptions[3][2]),
+    AddConfigOption(CurrentLanguage.option_config.TelepoofDoubleclickOptions[4][1], .2, CurrentLanguage.option_config.TelepoofDoubleclickOptions[4][2]),
+}
 
 local AutoReEquipOptions =
 {
@@ -789,15 +819,6 @@ local ScythePreferenceOptions =
     AddDisabledOption(),
     AddConfigOption(CurrentLanguage.option_config.ScythePreferenceOptions[1], "scythe_golden"),
     AddConfigOption(CurrentLanguage.option_config.ScythePreferenceOptions[2], "scythe"),
-}
-
-local TelepoofDoubleClickOptions =
-{
-    AddDisabledOption(),
-    AddConfigOption(CurrentLanguage.option_config.TelepoofDoubleClickOptions[1], .5),
-    AddConfigOption(CurrentLanguage.option_config.TelepoofDoubleClickOptions[2], .3),
-    AddConfigOption(CurrentLanguage.option_config.TelepoofDoubleClickOptions[3], .25),
-    AddConfigOption(CurrentLanguage.option_config.TelepoofDoubleClickOptions[4], .2),
 }
 
 local SortPriorityOptions =
@@ -1593,23 +1614,23 @@ configuration_options =
 
     AddSectionTitle(CurrentLanguage.option_titles.Telepoof),
     AddConfig(
-        CurrentLanguage.option_names.TELEPOOF_ENABLED,
-        "TELEPOOF_ENABLED",
-        SettingOptions,
-        true,
+        CurrentLanguage.option_names.TELEPOOF_DISABLED,
+        "TELEPOOF_DISABLED",
+        TelepoofDisabledOptions,
+        false,
         SettingMessage
     ),
     AddConfig(
         CurrentLanguage.option_names.TELEPOOF_HOVER,
         "TELEPOOF_HOVER",
-        SettingOptions,
-        true,
+        TelepoofHoverOptions,
+        false,
         SettingMessage
     ),
     AddConfig(
         CurrentLanguage.option_names.TELEPOOF_DOUBLECLICK,
         "TELEPOOF_DOUBLECLICK",
-        TelepoofDoubleClickOptions,
+        TelepoofDoubleclickOptions,
         .5,
         SettingMessage
     ),
