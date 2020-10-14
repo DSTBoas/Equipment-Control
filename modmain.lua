@@ -102,6 +102,8 @@ local Overrides =
         "QUICK_ACTION_KLAUS_SACK",
         "QUICK_ACTION_ATRIUM_GATE",
         "QUICK_ACTION_REPAIR_BOAT",
+        "QUICK_ACTION_PIG_KING",
+        "QUICK_ACTION_DIRTPILE",
     },
 }
 

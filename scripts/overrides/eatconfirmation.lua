@@ -39,7 +39,7 @@ local KeyToNames =
     DELETE = "Delete",
     HOME = "Home",
     END = "End",
-    PAGEUP ="Page up",
+    PAGEUP = "Page up",
     PAGEDOWN = "Page down",
 }
 
