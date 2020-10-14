@@ -66,9 +66,9 @@ local Overrides =
     },
     telepoof =
     {
-        "TELEPOOF_ENABLED",
-        "TELEPOOF_DOUBLECLICK",
+        "TELEPOOF_DISABLED",
         "TELEPOOF_HOVER",
+        "TELEPOOF_DOUBLECLICK",
     },
     filterattack =
     {
