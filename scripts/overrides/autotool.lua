@@ -93,7 +93,13 @@ end
 
 local function OnGetToolEvent(inst, data, prefab)
     if DataValidation(data, prefab) then
-        InventoryFunctions:Equip(data.item)
+        if TheWorld.ismastersim then
+            inst:DoTaskInTime(0, function()
+                InventoryFunctions:Equip(data.item)
+            end)
+        else
+            InventoryFunctions:Equip(data.item)
+        end
     end
 
     inst.components.eventtracker:DetachEvent("OnGetToolEvent")
@@ -135,14 +141,30 @@ local function Init()
         return
     end
 
-    local PlayerControllerOnUpdate = PlayerController.OnUpdate
-    function PlayerController:OnUpdate(...)
-        -- Automagic control repeats
-        if IsWorking(self.inst) then
-            self:OnControl(CONTROL_ACTION, true)
-        end
+    if TheWorld.ismastersim then
+        local PlayerControllerIsAnyOfControlsPressed = PlayerController.IsAnyOfControlsPressed
+        function PlayerController:IsAnyOfControlsPressed(...)
+            -- Automagic control repeats
+            if IsWorking(self.inst) then
+                for _, control in ipairs({...}) do
+                    if control == CONTROL_ACTION then
+                        return true
+                    end
+                end
+            end
 
-        PlayerControllerOnUpdate(self, ...)
+            PlayerControllerIsAnyOfControlsPressed(self, ...)
+        end
+    else
+        local PlayerControllerOnUpdate = PlayerController.OnUpdate
+        function PlayerController:OnUpdate(...)
+            -- Automagic control repeats
+            if IsWorking(self.inst) then
+                self:OnControl(CONTROL_ACTION, true)
+            end
+
+            PlayerControllerOnUpdate(self, ...)
+        end
     end
 
     local PlayerControllerOnLeftClick = PlayerController.OnLeftClick
@@ -159,6 +181,9 @@ local function Init()
                     end)
                     return
                 elseif act.CRAFT then
+                    if ThePlayer.sg ~= nil then
+                        ThePlayer:ClearBufferedAction()
+                    end
                     CraftFunctions:Craft(act.CRAFT)
 
                     local function getToolCallback(inst, data)
@@ -166,7 +191,7 @@ local function Init()
                     end
 
                     local function equipToolCallback(inst, data)
-                        OnEquipToolEvent(inst, data, act.target, act.action, act.CRAFT)
+                        OnEquipToolEvent(inst, data, act.target, act.DOACTION, act.CRAFT)
                     end
 
                     self.inst.components.eventtracker:AddEvent(
@@ -194,6 +219,12 @@ local function Init()
            and (not lmb or CanOverrideAction[lmb.action])
     end
 
+    local MockEntity = EntityScript(TheSim:CreateEntity())
+    local ModCraftAction = Action()
+    ModCraftAction.stroverridefn = function(act)
+        return "Craft " .. STRINGS.NAMES[string.upper(act.CRAFT)]
+    end
+
     local OldDoGetMouseActions = PlayerActionPicker.DoGetMouseActions
     function PlayerActionPicker:DoGetMouseActions(...)
         local lmb, rmb = OldDoGetMouseActions(self, ...)
@@ -208,11 +239,12 @@ local function Init()
                         local lmb_override = BufferedAction(
                                                 self.inst,
                                                 target,
-                                                ACTIONS[toolAction],
-                                                not craft and tool or nil
+                                                craft and ModCraftAction or ACTIONS[toolAction],
+                                                craft and MockEntity or tool
                                              )
 
                         if craft then
+                            lmb_override.DOACTION = ACTIONS[toolAction]
                             lmb_override.CRAFT = tool
                         else
                             lmb_override.AUTOEQUIP = tool

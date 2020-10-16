@@ -295,11 +295,7 @@ end
 local function IsReturningToPlayer(item)
     local rotation = item.Transform:GetRotation()
     local angleToPoint = item:GetAngleToPoint(ThePlayer.Transform:GetWorldPosition())
-    return math.abs(rotation - angleToPoint) < 40
-end
-
-local function IsCatchable(item)
-    return item:HasTag("catchable")
+    return math.abs(rotation - angleToPoint) < 5
 end
 
 local function RangeCheck(target)
@@ -307,7 +303,7 @@ local function RangeCheck(target)
 end
 
 local function AutoCatchPeriodic(item)
-    if not IsCatchable(item) or AutoCatchTimeout(item) then
+    if not item:HasTag("catchable") or AutoCatchTimeout(item) then
         StopAutoCatch(item)
         return
     end
@@ -320,7 +316,8 @@ local function AutoCatchPeriodic(item)
     end
 
     if RangeCheck(item) then
-        SendRPCToServer(RPC.ActionButton, ACTIONS.CATCH.code, item)
+        local pos = item:GetPosition()
+        SendRPCToServer(RPC.LeftClick, ACTIONS.CATCH.code, pos.x, pos.z, item, nil, nil, nil, nil, nil, false)
     end
 end
             
@@ -328,7 +325,7 @@ local function AutoCatchBoomerang(item)
     item = item.entity:GetParent()
 
     if ThePlayer.AnimState:IsCurrentAnimation("throw") then
-        if AutoCatch.tasks[item] ~= nil then
+        if AutoCatch.tasks[item] then
             return
         end
 
