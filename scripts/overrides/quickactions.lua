@@ -1,5 +1,4 @@
 local InventoryFunctions = require "util/inventoryfunctions"
-local CraftFunctions = require "util/craftfunctions"
 local ItemFunctions = require "util/itemfunctions"
 
 local PREFERRED_CAMPFIRE_FUEL = GetModConfigData("PREFERRED_CAMPFIRE_FUEL", MOD_EQUIPMENT_CONTROL.MODNAME)
@@ -18,13 +17,23 @@ end
 
 local function OnTrapActiveItem(inst, modaction, data, trap, pos)
     if data and data.item and data.item == trap then
-        if InventoryFunctions:HasFreeSlot() then
-            SendRPCToServer(RPC.LeftClick, ACTIONS.DROP.code, pos.x, pos.z)
+        local act = BufferedAction(inst, nil, ACTIONS.DROP, trap, pos)
+
+        if ThePlayer.components.locomotor == nil then
+            if InventoryFunctions:HasFreeSlot() then
+                SendRPCToServer(RPC.LeftClick, ACTIONS.DROP.code, pos.x, pos.z, nil, nil, nil, nil, nil, nil, false)
+            else
+                inst:DoTaskInTime(FRAMES * 3, function()
+                    SendRPCToServer(RPC.LeftClick, ACTIONS.DROP.code, pos.x, pos.z, nil, nil, nil, nil, nil, nil, false)
+                end)
+            end
         else
-            inst:DoTaskInTime(FRAMES * 3, function()
-                SendRPCToServer(RPC.LeftClick, ACTIONS.DROP.code, pos.x, pos.z)
-            end)
+            act.preview_cb = function()
+                SendRPCToServer(RPC.LeftClick, act.action.code, pos.x, pos.z, nil, true, nil, nil, nil, nil, false)
+            end
         end
+
+        inst.components.playercontroller:DoAction(act)        
     end
 
     inst.components.eventtracker:DetachEvent(modaction)
@@ -40,12 +49,26 @@ local function GetContainerFromSlot(slot, item, ...)
     return nil
 end
 
-local function OnGetTrapEvent(inst, data, trap)
-    if data and data.item == trap then
-        local container = GetContainerFromSlot(data.slot, trap, InventoryFunctions:GetInventory(), InventoryFunctions:GetBackpack())
+local function TrapToActiveItem(inst, slot, trap)
+    local container = GetContainerFromSlot(slot, trap, InventoryFunctions:GetInventory(), InventoryFunctions:GetBackpack())
 
-        if container then
-            SendRPCToServer(RPC.TakeActiveItemFromAllOfSlot, data.slot, container ~= inst.replica.inventory and container.inst)
+    if container then
+        if TheWorld.ismastersim then
+            container:TakeActiveItemFromAllOfSlot(slot)
+        else
+            SendRPCToServer(RPC.TakeActiveItemFromAllOfSlot, slot, container ~= inst.replica.inventory and container.inst)
+        end
+    end
+end
+
+local function OnGetTrapEvent(inst, data, trap)
+    if data and data.item and data.item == trap then
+        if TheWorld.ismastersim then
+            inst:DoTaskInTime(FRAMES, function()
+                TrapToActiveItem(inst, data.slot, trap)
+            end)
+        else
+            TrapToActiveItem(inst, data.slot, trap)
         end
 
         inst.components.eventtracker:DetachEvent("OnGetTrapEvent")
