@@ -5,7 +5,7 @@ icon_atlas = "modicon.xml"
 icon = "modicon.tex"
 
 author = "Boas"
-version = "4.9"
+version = "5.0"
 forumthread = ""
 
 dont_starve_compatible = false
@@ -406,6 +406,7 @@ local Languages =
             TELEPOOF_DISABLED = "Disabled by default",
             TELEPOOF_DOUBLECLICK = "Double-click speed",
             TELEPOOF_HOVER = "Hide hovertext",
+            TELEPOOF_WORTOX = "Wortox support",
             ORANGESTAFF_MOUSETHROUGH = "Star Caller Staff",
             YELLOWSTAFF_MOUSETHROUGH = "The Lazy Explorer",
             LANTERN_ESTIMATION = "Lantern fuel estimation",
@@ -1618,6 +1619,13 @@ configuration_options =
         "TELEPOOF_DISABLED",
         TelepoofDisabledOptions,
         false,
+        SettingMessage
+    ),
+    AddConfig(
+        CurrentLanguage.option_names.TELEPOOF_WORTOX,
+        "TELEPOOF_WORTOX",
+        SettingOptions,
+        true,
         SettingMessage
     ),
     AddConfig(

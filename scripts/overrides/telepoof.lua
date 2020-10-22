@@ -3,21 +3,31 @@ local KeybindService = MOD_EQUIPMENT_CONTROL.KEYBINDSERVICE
 
 local TELEPOOF_DISABLED = GetModConfigData("TELEPOOF_DISABLED", MOD_EQUIPMENT_CONTROL.MODNAME)
 local TELEPOOF_DOUBLECLICK = GetModConfigData("TELEPOOF_DOUBLECLICK", MOD_EQUIPMENT_CONTROL.MODNAME)
+local TELEPOOF_WORTOX = GetModConfigData("TELEPOOF_WORTOX", MOD_EQUIPMENT_CONTROL.MODNAME)
 local TELEPOOF_CLICKS = 2
 
 if TELEPOOF_DOUBLECLICK and type(TELEPOOF_DOUBLECLICK) ~= "number" then
     TELEPOOF_DOUBLECLICK = .5
 end
 
-local OldBlinkGeneric = STRINGS.ACTIONS.BLINK.GENERIC
+local StoredMouseHovers =
+{
+    GENERIC = STRINGS.ACTIONS.BLINK.GENERIC,
+}
+
+if TELEPOOF_WORTOX then
+    StoredMouseHovers.SOUL = STRINGS.ACTIONS.BLINK.SOUL
+end
 
 local function SetBlinkText(delta)
     TELEPOOF_CLICKS = TELEPOOF_CLICKS + delta
     if not TELEPOOF_DISABLED then
-        ACTIONS.BLINK.str.GENERIC = string.format(
-                                        OldBlinkGeneric .. " (%s)",
-                                        TELEPOOF_CLICKS
-                                    )
+        for ref, old in pairs(StoredMouseHovers) do
+            STRINGS.ACTIONS.BLINK[ref] = string.format(
+                old .. " (%s)",
+                TELEPOOF_CLICKS
+            )
+        end
     end
 end
 
@@ -26,18 +36,23 @@ local function ToggleBlink(bool)
         if TELEPOOF_DOUBLECLICK then
             SetBlinkText(0)
         else
-            ACTIONS.BLINK.str.GENERIC = OldBlinkGeneric
+            for ref, old in pairs(StoredMouseHovers) do
+                STRINGS.ACTIONS.BLINK[ref] = old
+            end
         end
     else
-        ACTIONS.BLINK.str.GENERIC = OldBlinkGeneric .. " (Disabled)"
+        for ref, old in pairs(StoredMouseHovers) do
+            STRINGS.ACTIONS.BLINK[ref] = old .. " (Disabled)"
+        end
     end
 end
 
 local function ValidateAction(self)
     local act = self:GetRightMouseAction()
+
     return act
        and act.action == ACTIONS.BLINK
-       and act.action.strfn(act) ~= "SOUL"
+       and (TELEPOOF_WORTOX or act.action.strfn(act) ~= "SOUL")
 end
 
 local function Init()
@@ -78,8 +93,10 @@ local function Init()
             if TELEPOOF_DISABLED
             and self.RMBaction
             and self.RMBaction.action == ACTIONS.BLINK
-            and self.RMBaction.invobject
-            and self.RMBaction.invobject.prefab == "orangestaff" then
+            and (self.RMBaction.invobject
+            and self.RMBaction.invobject.prefab == "orangestaff"
+             or TELEPOOF_WORTOX
+            and self.RMBaction.action.strfn(self.RMBaction) == "SOUL") then
                 return
             end
 

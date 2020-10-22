@@ -66,6 +66,7 @@ local Overrides =
     },
     telepoof =
     {
+        "TOGGLE_TELEPOOF",
         "TELEPOOF_DISABLED",
         "TELEPOOF_HOVER",
         "TELEPOOF_DOUBLECLICK",
