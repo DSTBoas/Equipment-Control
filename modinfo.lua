@@ -486,7 +486,6 @@ local ButtonCategoriesOptions =
 
 
 local AssignKeyMessage = "Assign a key"
-local ModNeededMessage = " (Mod required)"
 local PreferenceMessage = "Select your preference"
 local SettingMessage = "Set to your liking"
 local BetaSettingMessage = "(beta) " .. SettingMessage
@@ -887,11 +886,11 @@ configuration_options =
         PreferenceMessage
     ),
     AddConfig(
-        "Preferred Scythe",
+        "[M] Preferred Scythe",
         "PREFERRED_SCYTHE",
         ScythePreferenceOptions,
         false,
-        PreferenceMessage .. ModNeededMessage
+        PreferenceMessage
     ),
     AddConfig(
         "Preferred Staff",

@@ -4,8 +4,8 @@ local require = _G.require
 local MOD_EQUIPMENT_CONTROL = {}
 MOD_EQUIPMENT_CONTROL.MODNAME = modname
 MOD_EQUIPMENT_CONTROL.SPECIALFOOD = require("util/specialfood")
-MOD_EQUIPMENT_CONTROL.KEYBINDSERVICE = require("util/keybindservice" .. modname)
-MOD_EQUIPMENT_CONTROL.STRINGS = require("strings")
+MOD_EQUIPMENT_CONTROL.KEYBINDSERVICE = require("util/keybindservice")(modname)
+MOD_EQUIPMENT_CONTROL.STRINGS = require("equipment_control_strings")
 MOD_EQUIPMENT_CONTROL.SPAWNING = false
 _G.MOD_EQUIPMENT_CONTROL = MOD_EQUIPMENT_CONTROL
 

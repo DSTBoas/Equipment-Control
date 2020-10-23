@@ -1,7 +1,7 @@
 require "util/keyhandlers"
 
 local ModKeybindService = Class(function(self, modname)
-    self.modname = modname
+    self.modname = modname or "Development"
 end)
 
 function ModKeybindService:GetKeyFromConfig(conf)
