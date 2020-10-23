@@ -20,6 +20,7 @@ end
 
 function ItemFunctions:GetPerish(item)
     local classified = self:GetClassified(item)
+
     return classified
        and classified.perish:value() / 62
         or 0
@@ -27,6 +28,7 @@ end
 
 function ItemFunctions:GetPercentUsed(item)
     local classified = self:GetClassified(item)
+
     return classified
        and classified.percentused:value()
         or 0
@@ -45,6 +47,7 @@ end
 
 function ItemFunctions:GetGoldValue(item)
     local cachedItem = self:GetCachedItem(item)
+
     return cachedItem
        and cachedItem.components.tradable
        and cachedItem.components.tradable.goldvalue
@@ -154,8 +157,8 @@ function ItemFunctions:GetWalkspeedMult(item)
         or 0
 end
 
-local function GetHambatDamage(item)
-    local damage = TUNING.HAMBAT_DAMAGE * item.replica.inventoryitem.classified.perish:value() / 62
+local function GetHambatDamage(self, item)
+    local damage = TUNING.HAMBAT_DAMAGE * self:GetPerish(item)
 
     return Remap(
                 damage,
@@ -167,19 +170,17 @@ local function GetHambatDamage(item)
 end
 
 local function ApplyStimuli(self, item, damage, target)
+    if not target then
+        return damage
+    end
+
     local cachedItem = self:GetCachedItem(item)
 
     if cachedItem and cachedItem.components.weapon and cachedItem.components.weapon.stimuli then
         if cachedItem.components.weapon.stimuli == "electric" then
-            if target then
-                damage = damage * (TUNING.ELECTRIC_DAMAGE_MULT +
-                         (target:GetIsWet() and TUNING.ELECTRIC_WET_DAMAGE_MULT
-                         or 0))
-            -- else
-            --     damage = damage * (TUNING.ELECTRIC_DAMAGE_MULT +
-            --              (TheWorld.state.iswet and TUNING.ELECTRIC_WET_DAMAGE_MULT
-            --              or 0))
-            end
+            damage = damage * (TUNING.ELECTRIC_DAMAGE_MULT +
+                     (target:GetIsWet() and TUNING.ELECTRIC_WET_DAMAGE_MULT
+                     or 0))
         end
     end
 
@@ -188,7 +189,7 @@ end
 
 function ItemFunctions:GetDamage(item, target, noStimuli)
     if item.prefab == "hambat" then
-        return GetHambatDamage(item)
+        return GetHambatDamage(self, item)
     end
 
     local damage = 0
@@ -225,6 +226,7 @@ end
 
 function ItemFunctions:GetAttackRange(item)
     local cachedItem = self:GetCachedItem(item)
+
     return cachedItem
        and cachedItem.components.weapon
        and cachedItem.components.weapon.attackrange
@@ -244,6 +246,7 @@ end
 
 function ItemFunctions:GetMaxFuel(item)
     local cachedItem = self:GetCachedItem(item)
+
     return cachedItem
        and cachedItem.components.fueled
        and cachedItem.components.fueled.maxfuel
@@ -273,6 +276,7 @@ end
 
 function ItemFunctions:IsTerraformer(item)
     local cachedItem = self:GetCachedItem(item)
+
     return cachedItem
        and cachedItem.components.terraformer
 end
@@ -284,6 +288,7 @@ end
 
 function ItemFunctions:IsProjectile(item)
     local cachedItem = self:GetCachedItem(item)
+
     return cachedItem
        and (cachedItem.components.projectile
            or cachedItem.components.complexprojectile)
@@ -291,12 +296,14 @@ end
 
 function ItemFunctions:IsTool(item)
     local cachedItem = self:GetCachedItem(item)
+
     return cachedItem
        and cachedItem.components.tool
 end
 
 function ItemFunctions:IsWeapon(item)
     local cachedItem = self:GetCachedItem(item)
+
     return cachedItem
        and cachedItem.components.weapon
        and not cachedItem.components.weapon:CanRangedAttack()
@@ -322,6 +329,7 @@ end
 
 function ItemFunctions:IsStaff(item)
     local cachedItem = self:GetCachedItem(item)
+
     return cachedItem
        and cachedItem.components.spellcaster
         or item.prefab:sub(-5, #item.prefab) == "staff"
@@ -353,6 +361,7 @@ end
 
 function ItemFunctions:IsHealingItem(item)
     local cachedItem = self:GetCachedItem(item)
+
     return cachedItem
        and cachedItem.components.healer
 end
