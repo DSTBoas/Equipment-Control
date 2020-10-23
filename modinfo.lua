@@ -143,7 +143,7 @@ local function GetKeyboardOptions(hover)
     end
 
     local function AddDisabledConfigOption(t, hover)
-        t[#t + 1] = AddConfigOption(CurrentLanguage.option_config.Disabled, false, hover)
+        t[#t + 1] = AddConfigOption("Disabled", false, hover)
     end
 
     AddDisabledConfigOption(keys, hover)
@@ -583,7 +583,7 @@ configuration_options =
         "SCYTHE",
         KeyboardOptions,
         false,
-        AssignKeyMessage .. ModNeededMessage
+        AssignKeyMessage
     ),
     AddConfig(
         "Staff",
@@ -946,7 +946,7 @@ configuration_options =
         SettingMessage
     ),
     AddConfig(
-        AUTO_RE_EQUIP_ARMOR = "Auto-re-equip armor",
+        "Auto-re-equip armor",
         "AUTO_RE_EQUIP_ARMOR",
         AutoReEquipArmorOptions,
         true,
