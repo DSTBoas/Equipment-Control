@@ -5,7 +5,7 @@ icon_atlas = "modicon.xml"
 icon = "modicon.tex"
 
 author = "Boas"
-version = "5.2"
+version = "5.3"
 forumthread = ""
 
 dont_starve_compatible = false
@@ -1074,7 +1074,7 @@ configuration_options =
     ),
     AddConfig(
         "Unlock Loot Stash",
-        "QUICK_cACTION_KLAUS_SACK",
+        "QUICK_ACTION_KLAUS_SACK",
         SettingOptions,
         true,
         SettingMessage
