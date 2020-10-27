@@ -1198,7 +1198,7 @@ configuration_options =
 
     AddSectionTitle("Telepoof"),
     AddConfig(
-        "Disable by default",
+        "Disabled by default",
         "TELEPOOF_DISABLED",
         TelepoofDisabledOptions,
         false,
