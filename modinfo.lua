@@ -1,11 +1,11 @@
 name = "Equipment Control"
-description = "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tMade with 󰀍"
+description = "If you have suggestions/ideas/bugs let me know in this mod's comment section on steam\n\n\n\n\n\n\n\n\n\n\n\n\n\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tMade with 󰀍"
 
 icon_atlas = "modicon.xml"
 icon = "modicon.tex"
 
 author = "Boas"
-version = "5.1"
+version = "5.2"
 forumthread = ""
 
 dont_starve_compatible = false
@@ -192,7 +192,11 @@ local SettingOptions = GetDefaultOptions()
 local BetaSettingOptions = GetDefaultOptions("Experimental feature use at your own risk!")
 
 local TelepoofHoverOptions = GetDefaultOptions("Hovertext is hidden when Telepoof is disabled")
-local TelepoofDisabledOptions = GetDefaultOptions("Telepoof is disabled by default")
+local TelepoofDisabledOptions = GetDefaultOptions("Telepoofing is disabled when you enter the game")
+
+local FlyingBirdsOptions = GetDefaultOptions("Ignore flying birds when clicking")
+local YellowStaffOptions = GetDefaultOptions("Allows you to cast Dwarf Stars closer together")
+local OrangeStaffOptions = GetDefaultOptions("Stops structures from blocking Telepoof location")
 
 local AutoEquipCaneOptions = GetDefaultOptions("Auto-equip your cane when moving")
 local AutoEquipWeaponOptions = GetDefaultOptions("Auto-equip your best weapon in combat")
@@ -204,7 +208,7 @@ local AutoReEquipArmorOptions = GetDefaultOptions("Auto-re-equip to the next bes
 local AutoReGearOptions = GetDefaultOptions("Auto-regear when transforming back to Woodie")
 
 local ButtonPreferenceOptions = GetDefaultOptions("Right click to change preference")
-local ButtonAutoEquipOptions = GetDefaultOptions("Shift + Right click to change Auto-equip")
+local ButtonAutoEquipOptions = GetDefaultOptions("Hold Shift + Right click to change Auto-equip")
 
 local TelepoofDoubleclickOptions =
 {
@@ -218,8 +222,8 @@ local TelepoofDoubleclickOptions =
 local AutoReEquipOptions =
 {
     AddDisabledOption(),
-    AddConfigOption("Enabled (Same)", 1, "Re-equip to the same weapon"),
-    AddConfigOption("Enabled (Best)", 2, "Re-equip to the next best weapon"),
+    AddConfigOption("Enabled (Same)", 1, "Auto-re-equip to the same weapon"),
+    AddConfigOption("Enabled (Best)", 2, "Auto-re-equip to the next best weapon"),
 }
 
 local AutoEquipLightSourceOptions =
@@ -483,7 +487,6 @@ local ButtonCategoriesOptions =
     AddConfigOption("Ranged", "RANGED"),
     AddConfigOption("Staff", "STAFF"),
 }
-
 
 local AssignKeyMessage = "Assign a key"
 local PreferenceMessage = "Select your preference"
@@ -1071,7 +1074,7 @@ configuration_options =
     ),
     AddConfig(
         "Unlock Loot Stash",
-        "QUICK_ACTION_KLAUS_SACK",
+        "QUICK_cACTION_KLAUS_SACK",
         SettingOptions,
         true,
         SettingMessage
@@ -1195,17 +1198,10 @@ configuration_options =
 
     AddSectionTitle("Telepoof"),
     AddConfig(
-        "Disabled by default",
+        "Disable by default",
         "TELEPOOF_DISABLED",
         TelepoofDisabledOptions,
         false,
-        SettingMessage
-    ),
-    AddConfig(
-        "Wortox support",
-        "TELEPOOF_WORTOX",
-        SettingOptions,
-        true,
         SettingMessage
     ),
     AddConfig(
@@ -1222,20 +1218,34 @@ configuration_options =
         .5,
         SettingMessage
     ),
+    AddConfig(
+        "Double-click Soul Hop",
+        "TELEPOOF_WORTOX",
+        SettingOptions,
+        true,
+        SettingMessage
+    ),
 
 
     AddSectionTitle("Improved Mousethrough"),
     AddConfig(
+        "Flying Birds",
+        "FLYING_BIRDS_MOUSETHROUGH",
+        FlyingBirdsOptions,
+        true,
+        SettingMessage
+    ),
+    AddConfig(
         "Star Caller Staff",
-        "ORANGESTAFF_MOUSETHROUGH",
-        SettingOptions,
+        "YELLOWSTAFF_MOUSETHROUGH",
+        YellowStaffOptions,
         true,
         SettingMessage
     ),
     AddConfig(
         "The Lazy Explorer",
-        "YELLOWSTAFF_MOUSETHROUGH",
-        SettingOptions,
+        "ORANGESTAFF_MOUSETHROUGH",
+        OrangeStaffOptions,
         true,
         SettingMessage
     ),

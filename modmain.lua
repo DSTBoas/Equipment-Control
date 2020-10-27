@@ -35,6 +35,7 @@ local Overrides =
 {
     autocane =
     {
+        "TOGGLE_AUTO_EQUIP_CANE",
         "AUTO_EQUIP_CANE",
     },
     autolight =
@@ -43,6 +44,7 @@ local Overrides =
     },
     autoweapon =
     {
+        "TOGGLE_AUTO_EQUIP",
         "AUTO_EQUIP_WEAPON",
         "AUTO_EQUIP_GLASSCUTTER",
     },
@@ -53,6 +55,7 @@ local Overrides =
     mousethrough =
     {
         "AUTO_EQUIP_TOOL",
+        "FLYING_BIRDS_MOUSETHROUGH",
         "ORANGESTAFF_MOUSETHROUGH",
         "YELLOWSTAFF_MOUSETHROUGH",
     },

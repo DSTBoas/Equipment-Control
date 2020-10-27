@@ -16,7 +16,6 @@ local FuncToPriority = {}
 local TagToPriority =
 {
     player = 0,
-    flight = -1,
 }
 
 local function GetFilterPriority(ent)
@@ -91,10 +90,16 @@ local function Init()
     end
 
     if GetModConfigData("YELLOWSTAFF_MOUSETHROUGH", MOD_EQUIPMENT_CONTROL.MODNAME) then
-        FuncToPriority.blocker = function()
+        local func = function()
             return IsEquipped("yellowstaff") and -1
                 or 1
-        end
+        end   
+        FuncToPriority.daylight = func
+        FuncToPriority.blocker = func
+    end
+
+    if GetModConfigData("FLYING_BIRDS_MOUSETHROUGH", MOD_EQUIPMENT_CONTROL.MODNAME) then
+        TagToPriority.flight = -1
     end
 
     function TheInput:OnUpdate()
