@@ -103,7 +103,6 @@ local function Init()
     ThePlayer.player_classified:ListenForEvent("isghostmodedirty", function()
         RemoveEvents()
     end)
-
 end
 
 return Init
