@@ -1,11 +1,11 @@
 name = "Equipment Control"
-description = "If you have suggestions/ideas/bugs let me know in this mod's comment section on steam\n\n\n\n\n\n\n\n\n\n\n\n\n\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tMade with 󰀍"
+description = "If you have suggestions/ideas/bugs let me know in this mod's comment section on Steam\n\n\n\n\n\n\n\n\n\n\n\n\n\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tMade with 󰀍"
 
 icon_atlas = "modicon.xml"
 icon = "modicon.tex"
 
 author = "Boas"
-version = "5.3"
+version = "5.4"
 forumthread = ""
 
 dont_starve_compatible = false
@@ -192,11 +192,11 @@ local SettingOptions = GetDefaultOptions()
 local BetaSettingOptions = GetDefaultOptions("Experimental feature use at your own risk!")
 
 local TelepoofHoverOptions = GetDefaultOptions("Hovertext is hidden when Telepoof is disabled")
-local TelepoofDisabledOptions = GetDefaultOptions("Telepoofing is disabled when you enter the game")
+local TelepoofDisabledOptions = GetDefaultOptions("Telepoof is disabled when you enter the game")
 
-local FlyingBirdsOptions = GetDefaultOptions("Ignore flying birds when clicking")
+local FlyingBirdsOptions = GetDefaultOptions("Flying birds are unclickable")
 local YellowStaffOptions = GetDefaultOptions("Allows you to cast Dwarf Stars closer together")
-local OrangeStaffOptions = GetDefaultOptions("Stops structures from blocking Telepoof location")
+local OrangeStaffOptions = GetDefaultOptions("Allows you to Telepoof through walls")
 
 local AutoEquipCaneOptions = GetDefaultOptions("Auto-equip your cane when moving")
 local AutoEquipWeaponOptions = GetDefaultOptions("Auto-equip your best weapon in combat")
@@ -1227,9 +1227,9 @@ configuration_options =
     ),
 
 
-    AddSectionTitle("Improved Mousethrough"),
+    AddSectionTitle("Mousethrough"),
     AddConfig(
-        "Flying Birds",
+        "Unclickable flying birds",
         "FLYING_BIRDS_MOUSETHROUGH",
         FlyingBirdsOptions,
         true,
