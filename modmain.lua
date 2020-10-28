@@ -109,6 +109,10 @@ local Overrides =
         "QUICK_ACTION_PIG_KING",
         "QUICK_ACTION_DIRTPILE",
     },
+    autocandybag =
+    {
+        "AUTO_CANDYBAG",
+    },
 }
 
 for override, confs in pairs(Overrides) do

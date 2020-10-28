@@ -5,7 +5,7 @@ icon_atlas = "modicon.xml"
 icon = "modicon.tex"
 
 author = "Boas"
-version = "5.4"
+version = "5.5"
 forumthread = ""
 
 dont_starve_compatible = false
@@ -903,7 +903,7 @@ configuration_options =
         PreferenceMessage
     ),
     AddConfig(
-        "Preferred Auto-equip light fuel",
+        "Preferred Auto-equip light",
         "PREFERRED_AUTO_LIGHT",
         LightsourcePreferenceOptions,
         false,
@@ -1312,6 +1312,16 @@ configuration_options =
         "Keep in slot 1",
         "OVERRIDE_SLOT1_SORT",
         SortOverrideOptions,
+        false,
+        SettingMessage
+    ),
+
+
+    AddSectionTitle("Miscellaneous"),
+    AddConfig(
+        "Automatic Candy Bag",
+        "AUTO_CANDYBAG",
+        SettingOptions,
         false,
         SettingMessage
     ),

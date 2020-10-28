@@ -140,6 +140,12 @@ function InventoryFunctions:GetClassified()
        and inventory.classified
 end
 
+function InventoryFunctions:GetOverflowContainer()
+    local inventory = self:GetInventory()
+    return inventory
+       and inventory:GetOverflowContainer()
+end
+
 function InventoryFunctions:IsBusyClassified()
     local classified = self:GetClassified()
     return classified
@@ -186,6 +192,12 @@ function InventoryFunctions:TakeActiveItemFromAllOfSlot(slot)
     local inventory = self:GetInventory()
     return inventory
        and inventory:TakeActiveItemFromAllOfSlot(slot)
+end
+
+function InventoryFunctions:MoveItemFromAllOfSlot(slot, container)
+    local inventory = self:GetInventory()
+    return inventory
+       and inventory:MoveItemFromAllOfSlot(slot, container)
 end
 
 return InventoryFunctions
