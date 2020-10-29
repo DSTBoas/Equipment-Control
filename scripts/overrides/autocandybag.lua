@@ -12,9 +12,9 @@ local function AddEvent(event, callback)
     }
 end
 
-local function RemoveEvents(inst)
+local function RemoveEvents()
     for i = 1, #EventManager do
-        inst:RemoveEventCallback(
+        ThePlayer:RemoveEventCallback(
             EventManager[i].event,
             EventManager[i].callback
         )
@@ -72,7 +72,7 @@ end
 
 local function OnCandyBagUnequip(inst, data)
     if data and data.eslot == EQUIPSLOTS.BODY then
-        RemoveEvents(inst)
+        RemoveEvents()
     end
 end
 
