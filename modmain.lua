@@ -82,6 +82,7 @@ local Overrides =
     {
         "AUTO_EQUIP_TOOL",
         "PICKUP_FILTER",
+        "IGNORE_KNOWN_BLUEPRINT",
         "PRIOTIZE_VALUABLE_ITEMS",
         "PICKUP_IGNORE_FLOWERS",
         "PICKUP_IGNORE_FERNS",
