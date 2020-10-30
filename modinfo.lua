@@ -5,7 +5,7 @@ icon_atlas = "modicon.xml"
 icon = "modicon.tex"
 
 author = "Boas"
-version = "5.6"
+version = "5.7"
 forumthread = ""
 
 dont_starve_compatible = false
@@ -203,7 +203,6 @@ local AutoEquipWeaponOptions = GetDefaultOptions("Auto-equip your best weapon in
 local AutoEquipGlasscutterOptions = GetDefaultOptions("Auto-equip your glass cutter against nightmare creatures")
 local AutoDetectRepairableOptions = GetDefaultOptions("Auto-unequip repairables before their last use")
 local AutoSwitchOptions = GetDefaultOptions("Auto-switch your bone armors to stay invulnerable")
-local AutoReFuelOptions = GetDefaultOptions("Auto-refuel your lights")
 local AutoReEquipArmorOptions = GetDefaultOptions("Auto-re-equip to the next best armor")
 local AutoReGearOptions = GetDefaultOptions("Auto-regear when transforming back to Woodie")
 
@@ -1011,20 +1010,10 @@ configuration_options =
         SettingMessage
     ),
     AddConfig(
-        "Auto-refuel lights",
+        "Auto-refuel light",
         "AUTO_REFUEL_LIGHT_SOURCES",
-        AutoReFuelOptions,
-        false,
-        SettingMessage
-    ),
-
-
-    AddSectionTitle("Damage Estimation"),
-    AddConfig(
-        "Damage estimation",
-        "DAMAGE_ESTIMATION",
         SettingOptions,
-        true,
+        false,
         SettingMessage
     ),
 
@@ -1165,7 +1154,17 @@ configuration_options =
         SettingOptions,
         true,
         SettingMessage
-    ), 
+    ),
+    AddConfig(
+        "Ignore known Blueprints",
+        "IGNORE_KNOWN_BLUEPRINT",
+        SettingOptions,
+        true,
+        SettingMessage
+    ),
+
+
+    AddSectionTitle("Picking"),
     AddConfig(
         "Never pick Flowers",
         "PICKUP_IGNORE_FLOWERS",
@@ -1318,6 +1317,13 @@ configuration_options =
 
 
     AddSectionTitle("Miscellaneous"),
+    AddConfig(
+        "Damage estimation",
+        "DAMAGE_ESTIMATION",
+        SettingOptions,
+        true,
+        SettingMessage
+    ),
     AddConfig(
         "Automatic Candy Bag",
         "AUTO_CANDYBAG",

@@ -9,7 +9,9 @@ local KeybindService = MOD_EQUIPMENT_CONTROL.KEYBINDSERVICE
 -- 
 
 local PRIOTIZE_VALUABLE_ITEMS = GetModConfigData("PRIOTIZE_VALUABLE_ITEMS", MOD_EQUIPMENT_CONTROL.MODNAME)
+local IGNORE_KNOWN_BLUEPRINT = GetModConfigData("IGNORE_KNOWN_BLUEPRINT", MOD_EQUIPMENT_CONTROL.MODNAME)
 local AUTO_EQUIP_TOOL = GetModConfigData("AUTO_EQUIP_TOOL", MOD_EQUIPMENT_CONTROL.MODNAME)
+
 local Filter_File = "mod_equipment_control_pickup_filter.txt"
 local PriotizedPickups =
 {
@@ -138,13 +140,40 @@ end
 
 local function GetPriority(ent)
     return ent.prefab == "blueprint" and GetBlueprintPriority(ent.name)
-        or PriotizedPickups[ent.prefab] 
+        or PriotizedPickups[ent.prefab]
         or 0
+end
+
+local BlueprintNameToPrefab = {}
+
+local function GetBlueprintPrefab(blueprint)
+    if BlueprintNameToPrefab[blueprint.name] then
+        return BlueprintNameToPrefab[blueprint.name]
+    end
+
+    local blueprintName = blueprint.name:sub(1, #blueprint.name - 10)
+
+    for prefab, name in pairs(STRINGS.NAMES) do
+        if name == blueprintName then
+            BlueprintNameToPrefab[blueprint.name] = prefab:lower()
+            return BlueprintNameToPrefab[blueprint.name]
+        end
+    end
+
+    return nil
 end
 
 local function GetModifiedEnts(self, exclude, tags)
     local x, y, z = self.inst.Transform:GetWorldPosition()
     local ents = TheSim:FindEntities(x, y, z, self.directwalking and 3 or 6, nil, exclude, tags)
+
+    if IGNORE_KNOWN_BLUEPRINT then
+        for i = #ents, 1, -1 do
+            if ents[i].prefab == "blueprint" and CraftFunctions:KnowsRecipe(GetBlueprintPrefab(ents[i])) then
+                table.remove(ents, i)
+            end
+        end
+    end
 
     if PRIOTIZE_VALUABLE_ITEMS then
         local prio = {}
@@ -157,11 +186,12 @@ local function GetModifiedEnts(self, exclude, tags)
             }
         end
 
+        ents = {}
+
         table.sort(prio, function(a, b)
             return a.priority > b.priority
         end)
 
-        ents = {}
         for i = 1, #prio do
             ents[#ents + 1] = prio[i].ent
         end
