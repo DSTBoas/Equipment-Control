@@ -5,7 +5,7 @@ icon_atlas = "modicon.xml"
 icon = "modicon.tex"
 
 author = "Boas"
-version = "5.7"
+version = "5.8"
 forumthread = ""
 
 dont_starve_compatible = false
@@ -205,6 +205,7 @@ local AutoDetectRepairableOptions = GetDefaultOptions("Auto-unequip repairables 
 local AutoSwitchOptions = GetDefaultOptions("Auto-switch your bone armors to stay invulnerable")
 local AutoReEquipArmorOptions = GetDefaultOptions("Auto-re-equip to the next best armor")
 local AutoReGearOptions = GetDefaultOptions("Auto-regear when transforming back to Woodie")
+local AutoCandyBagOptions = GetDefaultOptions("Auto-store candy & trinkets in the Candy Bag")
 
 local ButtonPreferenceOptions = GetDefaultOptions("Right click to change preference")
 local ButtonAutoEquipOptions = GetDefaultOptions("Hold Shift + Right click to change Auto-equip")
@@ -1010,6 +1011,13 @@ configuration_options =
         SettingMessage
     ),
     AddConfig(
+        "Auto-store candy bag",
+        "AUTO_CANDYBAG",
+        AutoCandyBagOptions,
+        true,
+        SettingMessage
+    ),
+    AddConfig(
         "Auto-refuel light",
         "AUTO_REFUEL_LIGHT_SOURCES",
         SettingOptions,
@@ -1322,13 +1330,6 @@ configuration_options =
         "DAMAGE_ESTIMATION",
         SettingOptions,
         true,
-        SettingMessage
-    ),
-    AddConfig(
-        "Automatic Candy Bag",
-        "AUTO_CANDYBAG",
-        SettingOptions,
-        false,
         SettingMessage
     ),
 }

@@ -1,14 +1,5 @@
 local InventoryFunctions = require "util/inventoryfunctions"
 
-local function PlayerCanPerformAction()
-    return not InventoryFunctions:IsBusyClassified()
-       and ThePlayer
-       and not ThePlayer:HasTag("busy")
-       and not (ThePlayer.sg ~= nil and ThePlayer.sg:HasStateTag("busy"))
-       and ThePlayer.components.playeractionpicker ~= nil
-       and ThePlayer.components.playercontroller ~= nil
-end
-
 local TransformationUnEquips = {}
 
 local function Equip(inst)
@@ -29,7 +20,7 @@ local function Equip(inst)
 end
 
 local function UnEquip()
-    if PlayerCanPerformAction() then
+    if not InventoryFunctions:IsBusyClassified() then
         local equips = {}
 
         for _, item in pairs(InventoryFunctions:GetEquips()) do
