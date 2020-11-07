@@ -1,6 +1,10 @@
 local InventoryFunctions = require "util/inventoryfunctions"
 local ItemFunctions = require "util/itemfunctions"
 
+-- 
+-- Config
+-- 
+
 local PREFERRED_CAMPFIRE_FUEL = GetModConfigData("PREFERRED_CAMPFIRE_FUEL", MOD_EQUIPMENT_CONTROL.MODNAME)
 
 -- 
@@ -146,6 +150,8 @@ end
 -- 
 -- Helpers
 -- 
+
+-- @TODO Refactor helpers into multi purpose funcs
 
 local function GetItemFromInventory(prefab)
     for _, item in pairs(InventoryFunctions:GetPlayerInventory()) do
@@ -408,7 +414,6 @@ local QuickAction = Class(function(self, data)
         data = {}
     end
 
-    self.action = data.action
     self.toolaction = data.toolaction
     self.modaction = data.modaction
     self.itemfn = data.itemfn
@@ -418,6 +423,7 @@ local QuickAction = Class(function(self, data)
     self.stringfn = data.stringfn
 end)
 
+-- @TODO This still needs a priority system of sorts
 local QuickActions =
 {
     QUICK_ACTION_REPAIR_BOAT = QuickAction({item = "boatpatch", modaction = "sceneuse"}),
@@ -429,6 +435,7 @@ local QuickActions =
     QUICK_ACTION_IMPRISON_BIRD = QuickAction({itemfn = GetBird, modaction = "sceneuse"}),
     QUICK_ACTION_ATRIUM_GATE = QuickAction({item = "atrium_key", modaction = "sceneuse"}),
     QUICK_ACTION_KLAUS_SACK = QuickAction({itemfn = GetKlausSackKey, modaction = "sceneuse"}),
+    QUICK_ACTION_EXTINGUISH = QuickAction({itemfn = GetExtinguishItem, modaction = "extinguish"}),
     QUICK_ACTION_WAKEUP_BIRD = QuickAction({modaction = "wakeup"}),
     QUICK_ACTION_TRAP = QuickAction({modaction = "reset"}),
     QUICK_ACTION_DIRTPILE = QuickAction({modaction = "track"}),
@@ -437,7 +444,6 @@ local QuickActions =
     QUICK_ACTION_HAMMER = QuickAction({rmb = true, toolaction = ACTIONS.HAMMER, modaction = "toolaction"}),
     QUICK_ACTION_NET = QuickAction({toolaction = ACTIONS.NET, modaction = "toolaction"}),
     QUICK_ACTION_SLURTLEHOLE = QuickAction({itemfn = GetIgniteItem, modaction = "ignite"}),
-    QUICK_ACTION_EXTINGUISH = QuickAction({itemfn = GetExtinguishItem, modaction = "extinguish"}),
 }
 
 QuickActions.QUICK_ACTION_REPAIR_BOAT.fn = function(target)
@@ -548,6 +554,7 @@ end
 
 QuickActions.QUICK_ACTION_HAMMER.fn = function(target)
     return target:HasTag(ACTIONS.HAMMER.id .. "_workable")
+       and not IsExtinguishable(target)
        and not target:HasTag("campfire")
        and target.prefab ~= "birdcage"
 end
@@ -570,7 +577,8 @@ QuickActions.QUICK_ACTION_EXTINGUISH.stringfn = function(item)
     return "Extinguish (" .. item.name .. ")"
 end
 
--- Do config
+-- @TODO Might wanna do this somewhere else
+-- Remove disabled QuickActions
 for config in pairs(QuickActions) do
     if not GetModConfigData(config, MOD_EQUIPMENT_CONTROL.MODNAME) then
         QuickActions[config] = nil
