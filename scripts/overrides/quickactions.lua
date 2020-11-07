@@ -19,7 +19,7 @@ local function OnTrapActiveItem(inst, modaction, data, trap, pos)
     if data and data.item and data.item == trap then
         local act = BufferedAction(inst, nil, ACTIONS.DROP, trap, pos)
 
-        if ThePlayer.components.locomotor == nil then
+        if inst.components.locomotor == nil then
             if InventoryFunctions:HasFreeSlot() then
                 SendRPCToServer(RPC.LeftClick, ACTIONS.DROP.code, pos.x, pos.z, nil, nil, nil, nil, nil, nil, false)
             else
@@ -79,7 +79,7 @@ local function OnBuildFossil(inst, data, target)
     if data and data.item and data.item.prefab == "fossil_piece" and target:HasTag("workrepairable") then
         local act = BufferedAction(inst, target, ACTIONS.REPAIR, data.item)
 
-        if ThePlayer.components.locomotor == nil then
+        if inst.components.locomotor == nil then
             SendRPCToServer(RPC.ControllerUseItemOnSceneFromInvTile, act.action.code, act.invobject, act.target)
         else
             act.preview_cb = function()
@@ -101,9 +101,11 @@ local function GetTrack()
     local track
     while GetTime() - time < TrackTimeOut do
         track = GetClosestInstWithTag("dirtpile", ThePlayer, 60)
+
         if track then
             break
         end
+
         Sleep(FRAMES)
     end
 
@@ -142,123 +144,12 @@ local function DoTracking()
 end
 
 -- 
---  QuickActions Logic
+-- Helpers
 -- 
 
-local QuickActions = {}
-
-local function GetQuickAction(self, target)
-    local action = nil
-    for i = 1, #QuickActions do
-        if QuickActions[i].triggerfn(target) then
-            action = QuickActions[i].actionfn(self, target)
-            if action then
-                return action
-            end 
-        end
-    end
-
-    return nil
-end
-
-local function GetRMBOverride(self, position, target)
-    if InventoryFunctions:IsHeavyLifting() then
-        return nil
-    end
-
-    local isaoetargeting = false
-    local wantsaoetargeting = false
-
-    if position == nil and not self.inst.replica.inventory:GetActiveItem() then
-        isaoetargeting = self.inst.components.playercontroller:IsAOETargeting()
-        wantsaoetargeting = not isaoetargeting and self.inst.components.playercontroller:HasAOETargeting()
-
-        if target == nil and not isaoetargeting then
-            target = TheInput:GetWorldEntityUnderMouse()
-        end
-        position = isaoetargeting and self.inst.components.playercontroller:GetAOETargetingPos() or TheInput:GetWorldPosition()
-
-        local cansee
-        if target == nil then
-            local x, y, z = position:Get()
-            cansee = CanEntitySeePoint(self.inst, x, y, z)
-        else
-            cansee = target == self.inst or CanEntitySeeTarget(self.inst, target)
-        end
-
-        if cansee and target then
-            local rmb_override = GetQuickAction(self, target)
-
-            if rmb_override then
-                return rmb_override
-            end
-        end
-    end
-
-    return nil
-end
-
---
--- AddQuickAction
---
-
-local function AddQuickAction(config, triggerfn, actionfn)
-    if GetModConfigData(config, MOD_EQUIPMENT_CONTROL.MODNAME) then
-        QuickActions[#QuickActions + 1] =
-        {
-            triggerfn = triggerfn,
-            actionfn = actionfn,
-        }
-    end
-end
-
---
--- QuickActions Helpers
---
-
-local IgnoredFuels =
-{
-    blueprint = true,
-    waxwelljournal = true,
-    boatpatch = true,
-}
-
-local function IsCompatibleFuel(target, item)
-    return item:HasTag("BURNABLE_fuel")
-       and not IgnoredFuels[item.prefab]
-       and not item:HasTag("_equippable")
-       and not (item:HasTag("deployable") and item.prefab ~= "pinecone")
-        or target:HasTag("blueflame")
-       and item:HasTag("CHEMICAL_fuel")
-end
-
-local function GetActionFromFuel(item)
-    return item:GetIsWet() and ACTIONS.ADDWETFUEL
-        or ACTIONS.ADDFUEL
-end
-
-local function GetFuelAndAction(target)
-    local ret = {}
-
+local function GetItemFromInventory(prefab)
     for _, item in pairs(InventoryFunctions:GetPlayerInventory()) do
-        if IsCompatibleFuel(target, item) then
-            ret[#ret + 1] = item
-            if item.prefab == PREFERRED_CAMPFIRE_FUEL then
-                return item, GetActionFromFuel(item)
-            end
-        end
-    end
-
-    if ret[1] then
-        return ret[1], GetActionFromFuel(ret[1])
-    end
-
-    return nil
-end
-
-local function GetRazor()
-    for _, item in pairs(InventoryFunctions:GetPlayerInventory()) do
-        if item.prefab == "razor" then
+        if item.prefab == prefab then
             return item
         end
     end
@@ -266,14 +157,31 @@ local function GetRazor()
     return nil
 end
 
-local invalid_foods =
-{
-    "bird_egg",
-    "rottenegg",
-    "monstermeat",
-    -- "cookedmonstermeat",
-    -- "monstermeat_dried",
-}
+local function IsSleeping(target)
+    return target.AnimState:IsCurrentAnimation("sleep_pre")
+        or target.AnimState:IsCurrentAnimation("sleep_loop")
+        or target.AnimState:IsCurrentAnimation("sleep_pst")
+end
+
+local function GetBestGoldValueItem()
+    local ret = {}
+
+    for _, item in pairs(InventoryFunctions:GetPlayerInventory()) do
+        if ItemFunctions:GetGoldValue(item) > 0 then
+            ret[#ret + 1] =
+            {
+                item = item,
+                priority = ItemFunctions:GetGoldValue(item)
+            }
+        end
+    end
+
+    table.sort(ret, function(a, b)
+        return a.priority > b.priority
+    end)
+
+    return ret[1] and ret[1].item
+end
 
 local function GetEggPriority(item)
     local priority = 0
@@ -296,26 +204,14 @@ local function GetEggPriority(item)
     return priority
 end
 
-local function GetDisplayName(item)
-    local str = ""
-
-    local adjective = item:GetAdjective()
-    if adjective then
-        str = adjective .. " "
-    end
-
-    return str .. item:GetDisplayName()
-end
-
-local function GetBird()
-    for _, item in pairs(InventoryFunctions:GetPlayerInventory()) do
-        if item:HasTag("bird") then
-            return item
-        end
-    end
-
-    return nil
-end
+local invalid_foods =
+{
+    "bird_egg",
+    "rottenegg",
+    "monstermeat",
+    -- "cookedmonstermeat",
+    -- "monstermeat_dried",
+}
 
 local function GetBirdFood()
     local t = {}
@@ -335,6 +231,42 @@ local function GetBirdFood()
     end)
 
     return t[1] and t[1].item
+end
+
+local function GetKlausSackKey()
+    local ret = {}
+
+    for _, item in pairs(InventoryFunctions:GetPlayerInventory()) do
+        if item:HasTag("klaussackkey") then
+            ret[#ret + 1] = item
+            if item.prefab =="klaussackkey" then
+                return item
+            end
+        end
+    end
+
+    return ret[1]
+end
+
+local function GetDisplayName(item)
+    local str = ""
+
+    local adjective = item:GetAdjective()
+    if adjective then
+        str = adjective .. " "
+    end
+
+    return str .. item:GetDisplayName()
+end
+
+local function GetBird()
+    for _, item in pairs(InventoryFunctions:GetPlayerInventory()) do
+        if item:HasTag("bird") then
+            return item
+        end
+    end
+
+    return nil
 end
 
 local function GetWallElement(target)
@@ -384,30 +316,49 @@ local function GetRepairItem(target)
     return t[1] and t[1].item
 end
 
-local function IsExtinguishItem(item)
-    return item.prefab == "waterballoon"
-        or item:HasTag("extinguisher")
-        or (item:HasTag("repairer") and item:HasTag("frozen"))
+local function IsExtinguishable(target)
+    return not target:HasTag("campfire")
+       and (target:HasTag("fire") or target:HasTag("smolder"))
 end
 
-local function GetExtinguishItem()
-    for _, item in pairs(InventoryFunctions:GetPlayerInventory(true)) do
-        if IsExtinguishItem(item) then
-            return item
+local IgnoredFuels =
+{
+    blueprint = true,
+    waxwelljournal = true,
+    boatpatch = true,
+}
+
+local function IsCompatibleFuel(target, item)
+    return item:HasTag("BURNABLE_fuel")
+       and not IgnoredFuels[item.prefab]
+       and not item:HasTag("_equippable")
+       and not (item:HasTag("deployable") and item.prefab ~= "pinecone")
+        or target:HasTag("blueflame")
+       and item:HasTag("CHEMICAL_fuel")
+end
+
+local function GetFuelItem(target)
+    local ret = {}
+
+    for _, item in pairs(InventoryFunctions:GetPlayerInventory()) do
+        if IsCompatibleFuel(target, item) then
+            ret[#ret + 1] = item
+            if item.prefab == PREFERRED_CAMPFIRE_FUEL then
+                return item
+            end
         end
     end
 
-    return nil
+    return ret[1]
 end
 
-local function GetIgniteItem()
-    for _, item in pairs(InventoryFunctions:GetPlayerInventory(true)) do
-        if item:HasTag("lighter") or item:HasTag("rangedlighter") then
-            return item
-        end
-    end
+local function IsHighFire(inst)
+    local x, y, z = inst.Transform:GetWorldPosition()
+    local fire = (TheSim:FindEntities(x, y, z, .5, {"HASHEATER", "fx"}))[1]
 
-    return nil
+    return fire
+       and fire.AnimState
+       and fire.AnimState:IsCurrentAnimation("level4")
 end
 
 local function GetToolFromInventory(action)
@@ -426,24 +377,9 @@ local function GetToolFromInventory(action)
     return nil
 end
 
-local function GetKlausSackKey()
-    local ret = {}
-
+local function GetIgniteItem()
     for _, item in pairs(InventoryFunctions:GetPlayerInventory()) do
-        if item:HasTag("klaussackkey") then
-            ret[#ret + 1] = item
-            if item.prefab =="klaussackkey" then
-                return item
-            end
-        end
-    end
-
-    return ret[1]
-end
-
-local function GetAtriumKey()
-    for _, item in pairs(InventoryFunctions:GetPlayerInventory()) do
-        if item.prefab == "atrium_key" then
+        if item:HasTag("lighter") or item:HasTag("rangedlighter") then
             return item
         end
     end
@@ -451,9 +387,15 @@ local function GetAtriumKey()
     return nil
 end
 
-local function GetFossilPiece()
-    for _, item in pairs(InventoryFunctions:GetPlayerInventory()) do
-        if item:HasTag("work_fossil") then
+local function IsExtinguishItem(item)
+    return item.prefab == "waterballoon"
+        or item:HasTag("extinguisher")
+        or (item:HasTag("repairer") and item:HasTag("frozen"))
+end
+
+local function GetExtinguishItem()
+    for _, item in pairs(InventoryFunctions:GetPlayerInventory(true)) do
+        if IsExtinguishItem(item) then
             return item
         end
     end
@@ -461,79 +403,48 @@ local function GetFossilPiece()
     return nil
 end
 
-local function GetBoatPatch()
-    for _, item in pairs(InventoryFunctions:GetPlayerInventory()) do
-        if item:HasTag("boat_patch") then
-            return item
-        end
+local QuickAction = Class(function(self, data)
+    if data == nil then
+        data = {}
     end
 
-    return nil
+    self.action = data.action
+    self.toolaction = data.toolaction
+    self.modaction = data.modaction
+    self.itemfn = data.itemfn
+    self.item = data.item
+    self.rmb = data.rmb or false
+    self.fn = function() return false end
+    self.stringfn = data.stringfn
+end)
+
+local QuickActions =
+{
+    QUICK_ACTION_REPAIR_BOAT = QuickAction({item = "boatpatch", modaction = "sceneuse"}),
+    QUICK_ACTION_WALLS = QuickAction({itemfn = GetRepairItem, modaction = "sceneuse"}),
+    QUICK_ACTION_CAMPFIRE = QuickAction({itemfn = GetFuelItem, modaction = "sceneuse"}),
+    QUICK_ACTION_BEEFALO = QuickAction({item = "razor", modaction = "sceneuse"}),
+    QUICK_ACTION_PIG_KING = QuickAction({itemfn = GetBestGoldValueItem, modaction = "sceneuse"}),
+    QUICK_ACTION_FEED_BIRD = QuickAction({itemfn = GetBirdFood, modaction = "sceneuse"}),
+    QUICK_ACTION_IMPRISON_BIRD = QuickAction({itemfn = GetBird, modaction = "sceneuse"}),
+    QUICK_ACTION_ATRIUM_GATE = QuickAction({item = "atrium_key", modaction = "sceneuse"}),
+    QUICK_ACTION_KLAUS_SACK = QuickAction({itemfn = GetKlausSackKey, modaction = "sceneuse"}),
+    QUICK_ACTION_WAKEUP_BIRD = QuickAction({modaction = "wakeup"}),
+    QUICK_ACTION_TRAP = QuickAction({modaction = "reset"}),
+    QUICK_ACTION_DIRTPILE = QuickAction({modaction = "track"}),
+    QUICK_ACTION_BUILD_FOSSIL = QuickAction({rmb = true, item = "fossil_piece", modaction = "fossil_build"}),
+    QUICK_ACTION_DIG = QuickAction({rmb = true, toolaction = ACTIONS.DIG, modaction = "toolaction"}),
+    QUICK_ACTION_HAMMER = QuickAction({rmb = true, toolaction = ACTIONS.HAMMER, modaction = "toolaction"}),
+    QUICK_ACTION_NET = QuickAction({toolaction = ACTIONS.NET, modaction = "toolaction"}),
+    QUICK_ACTION_SLURTLEHOLE = QuickAction({itemfn = GetIgniteItem, modaction = "ignite"}),
+    QUICK_ACTION_EXTINGUISH = QuickAction({itemfn = GetExtinguishItem, modaction = "extinguish"}),
+}
+
+QuickActions.QUICK_ACTION_REPAIR_BOAT.fn = function(target)
+    return target:HasTag("boat_leak")
 end
 
-local function GetTradeItem()
-    local ret = {}
-
-    for _, item in pairs(InventoryFunctions:GetPlayerInventory()) do
-        if ItemFunctions:GetGoldValue(item) > 0 then
-            ret[#ret + 1] =
-            {
-                item = item,
-                priority = ItemFunctions:GetGoldValue(item)
-            }
-        end
-    end
-
-    table.sort(ret, function(a, b)
-        return a.priority > b.priority
-    end)
-
-    return ret[1] and ret[1].item
-end
-
-
--- 
--- QuickActions Triggers
--- 
-
-local function IsDigWorkable(target)
-    return target:HasTag(ACTIONS.DIG.id .. "_workable")
-end
-
-local function IsHammerWorkable(target)
-    return target:HasTag(ACTIONS.HAMMER.id .. "_workable")
-       and not target:HasTag("campfire")
-       and target.prefab ~= "birdcage"
-end
-
-local function IsNetWorkable(target)
-    return target:HasTag(ACTIONS.NET.id .. "_workable")
-end
-
-local function IsHighFire(inst)
-    local x, y, z = inst.Transform:GetWorldPosition()
-    local fire = (TheSim:FindEntities(x, y, z, .5, {"HASHEATER", "fx"}))[1]
-
-    return fire
-       and fire.AnimState
-       and fire.AnimState:IsCurrentAnimation("level4")
-end
-
-local function IsCampfire(target)
-    return target:HasTag("campfire")
-       and not IsHighFire(target)
-end
-
-local function IsSnurtleMound(target)
-    return target.prefab == "slurtlehole"
-end
-
-local function IsExtinguishable(target)
-    return not target:HasTag("campfire")
-       and (target:HasTag("fire") or target:HasTag("smolder"))
-end
-
-local function IsRepairableWall(target)
+QuickActions.QUICK_ACTION_WALLS.fn = function(target)
     return target:HasTag("wall")
        and not (target.AnimState:IsCurrentAnimation("fullA")
                 or target.AnimState:IsCurrentAnimation("fullB")
@@ -541,373 +452,248 @@ local function IsRepairableWall(target)
                 or IsExtinguishable(target))
 end
 
-local function IsTrapSprung(target)
-    return target:HasTag("trapsprung")
+QuickActions.QUICK_ACTION_WALLS.stringfn = function(item)
+    return "Repair (" .. item.name .. ")"
 end
 
-local function IsSleeping(target)
-    return target.AnimState:IsCurrentAnimation("sleep_pre")
-        or target.AnimState:IsCurrentAnimation("sleep_loop")
-        or target.AnimState:IsCurrentAnimation("sleep_pst")
+QuickActions.QUICK_ACTION_CAMPFIRE.fn = function(target)
+    return target:HasTag("campfire")
+       and not IsHighFire(target)
 end
 
-local function HasHair(target)
+QuickActions.QUICK_ACTION_CAMPFIRE.stringfn = function(item)
+    return "Add Fuel (" .. item.name .. ")"
+end
+
+QuickActions.QUICK_ACTION_BEEFALO.fn = function(target)
     return target:HasTag("beefalo")
        and IsSleeping(target)
        and target.AnimState:GetBuild() ~= "beefalo_shaved_build"
 end
 
-local function IsValidBirdcage(target)
-    return target.prefab == "birdcage"
-       and target:HasTag("trader")
-end
-
-local function BirdTraderValid(target)
-    return IsValidBirdcage(target)
-       and not IsSleeping(target)
-end
-
-local function IsBirdcageEmpty(target)
-    return target.prefab == "birdcage"
-       and not target:HasTag("trader")
-end
-
-local function IsBirdcageSleeping(target)
-    return IsValidBirdcage(target)
-       and IsSleeping(target)
-end
-
-local function IsKlausSack(target)
-    return target:HasTag("klaussacklock")
-end
-
-local function IsFossilStructure(target)
-    return target.prefab == "fossil_stalker"
-       and target:HasTag("workrepairable")
-end
-
-local function IsAtriumGate(target)
-    return target.prefab == "atrium_gate"
-end
-
-local function IsBoatLeak(target)
-    return target:HasTag("boat_leak")
-end
-
-local function IsPigking(target)
+QuickActions.QUICK_ACTION_PIG_KING.fn = function(target)
     return target.prefab == "pigking"
        and target:HasTag("trader")
 end
 
-local function IsDirtpile(target)
+QuickActions.QUICK_ACTION_PIG_KING.stringfn = function(item)
+    return "Trade " .. item.name .. " (" .. ItemFunctions:GetGoldValue(item) .. ")"
+end
+
+QuickActions.QUICK_ACTION_FEED_BIRD.fn = function(target)
+    return target.prefab == "birdcage"
+       and target:HasTag("trader")
+       and not IsSleeping(target)
+end
+
+QuickActions.QUICK_ACTION_FEED_BIRD.stringfn = function(item)
+    return "Feed (" .. GetDisplayName(item) .. ")"
+end
+
+QuickActions.QUICK_ACTION_IMPRISON_BIRD.fn = function(target)
+    return target.prefab == "birdcage"
+       and not target:HasTag("trader")
+end
+
+QuickActions.QUICK_ACTION_IMPRISON_BIRD.stringfn = function(item)
+    return "Imprison (" .. item.name .. ")"
+end
+
+QuickActions.QUICK_ACTION_KLAUS_SACK.fn = function(target)
+    return target:HasTag("klaussacklock")
+end
+
+QuickActions.QUICK_ACTION_ATRIUM_GATE.fn = function(target)
+    return target.prefab == "atrium_gate"
+end
+
+QuickActions.QUICK_ACTION_WAKEUP_BIRD.fn = function(target)
+    return target.prefab == "birdcage"
+       and target:HasTag("trader")
+       and IsSleeping(target)
+end
+
+QuickActions.QUICK_ACTION_WAKEUP_BIRD.stringfn = function()
+    return "Wakeup"
+end
+
+QuickActions.QUICK_ACTION_TRAP.fn = function(target)
+    return target:HasTag("trapsprung")
+end
+
+QuickActions.QUICK_ACTION_TRAP.stringfn = function()
+    return "Reset"
+end
+
+QuickActions.QUICK_ACTION_DIRTPILE.fn = function(target)
     return target:HasTag("dirtpile")
 end
 
--- 
--- QuickActions
---
-
-local function CatchQuickAction(self, target)
-    local tool = GetToolFromInventory(ACTIONS.NET)
-
-    if tool then
-        local action = BufferedAction(self.inst, target, ACTIONS.NET, tool)
-
-        action.modlmb = true
-        action.modaction = "toolaction"
-
-        return action
-    end
-
-    return nil
+QuickActions.QUICK_ACTION_DIRTPILE.stringfn = function()
+    return "Track Animal"
 end
 
-local function DigQuickAction(self, target)
-    local tool = GetToolFromInventory(ACTIONS.DIG)
-
-    if tool then
-        local action = BufferedAction(self.inst, target, ACTIONS.DIG, tool)
-
-        action.modaction = "toolaction"
-
-        return action
-    end
-
-    return nil
+QuickActions.QUICK_ACTION_BUILD_FOSSIL.fn = function(target)
+    return target.prefab == "fossil_stalker"
+       and target:HasTag("workrepairable")
 end
 
-local function HammerQuickAction(self, target)
-    local tool = GetToolFromInventory(ACTIONS.HAMMER)
-
-    if tool then
-        local action = BufferedAction(self.inst, target, ACTIONS.HAMMER, tool)
-
-        action.modaction = "toolaction"
-
-        return action
-    end
-
-    return nil
+QuickActions.QUICK_ACTION_BUILD_FOSSIL.stringfn = function()
+    return "Build"
 end
 
-local function RepairBoatQuickAction(self, target)
-    local patch = GetBoatPatch()
-
-    if patch then
-        local action = BufferedAction(self.inst, target, ACTIONS.REPAIR_LEAK, patch)
-
-        action.modaction = "sceneuse"
-
-        return action
-    end
-
-    return nil
+QuickActions.QUICK_ACTION_DIG.fn = function(target)
+    return target:HasTag(ACTIONS.DIG.id .. "_workable")
 end
 
-local function TradePigKingQuickAction(self, target)
-    local item = GetTradeItem()
+QuickActions.QUICK_ACTION_HAMMER.fn = function(target)
+    return target:HasTag(ACTIONS.HAMMER.id .. "_workable")
+       and not target:HasTag("campfire")
+       and target.prefab ~= "birdcage"
+end
+
+QuickActions.QUICK_ACTION_NET.fn = function(target)
+    return target:HasTag(ACTIONS.NET.id .. "_workable")
+end
+
+QuickActions.QUICK_ACTION_SLURTLEHOLE.fn = function(target)
+    return target.prefab == "slurtlehole"
+end
+
+QuickActions.QUICK_ACTION_SLURTLEHOLE.stringfn = function(item)
+    return "Light (" .. item.name .. ")"
+end
+
+QuickActions.QUICK_ACTION_EXTINGUISH.fn = IsExtinguishable
+
+QuickActions.QUICK_ACTION_EXTINGUISH.stringfn = function(item)
+    return "Extinguish (" .. item.name .. ")"
+end
+
+-- Do config
+for config in pairs(QuickActions) do
+    if not GetModConfigData(config, MOD_EQUIPMENT_CONTROL.MODNAME) then
+        QuickActions[config] = nil
+    end
+end
+
+local function QuickActionFactory(self, target, quickAction)
+    local item
+
+    if quickAction.item then
+        item = GetItemFromInventory(quickAction.item)
+
+        if not item then
+            return nil
+        end
+    elseif quickAction.itemfn then
+        item = quickAction.itemfn(target)
+
+        if not item then
+            return nil
+        end
+    elseif quickAction.toolaction then
+        item = GetToolFromInventory(quickAction.toolaction)
+
+        if not item then
+            return nil
+        end
+    end
+
+    local act
 
     if item then
-        local action = BufferedAction(self.inst, target, ACTIONS.GIVE, item)
+        if item:HasTag("_equippable") then
+            act = self:GetEquippedItemActions(target, item, quickAction.rmb or item.prefab == "waterballoon")[1]
+        else
+            act = self:GetUseItemActions(target, item, quickAction.rmb)[1]
+        end
+    else
+        act = self:GetSceneActions(target)[1]
+    end
 
-        action.GetActionString = function()
-            return "Trade " .. item.name .. " (" .. ItemFunctions:GetGoldValue(item) .. ")"
+    if not act then
+        return nil
+    end
+
+    local buffAction = BufferedAction(self.inst, target, act.action, item)
+    
+    if quickAction.stringfn then
+        buffAction.GetActionString = function()
+            return quickAction.stringfn(item)
+        end
+    end
+
+    buffAction.modaction = quickAction.modaction
+
+    return buffAction
+end
+
+local function GetQuickAction(self, target)
+    local ret
+
+    for _, quickAction in pairs(QuickActions) do
+        if quickAction.fn(target) then
+            ret = QuickActionFactory(self, target, quickAction)
+
+            if ret then
+                return ret
+            end
+        end
+    end
+
+    return nil
+end
+
+local function GetRMBOverride(self, position, target)
+    if InventoryFunctions:IsHeavyLifting() then
+        return nil
+    end
+
+    local isaoetargeting = false
+    local wantsaoetargeting = false
+
+    if position == nil and not self.inst.replica.inventory:GetActiveItem() then
+        isaoetargeting = self.inst.components.playercontroller:IsAOETargeting()
+        wantsaoetargeting = not isaoetargeting and self.inst.components.playercontroller:HasAOETargeting()
+
+        if target == nil and not isaoetargeting then
+            target = TheInput:GetWorldEntityUnderMouse()
+        end
+        position = isaoetargeting and self.inst.components.playercontroller:GetAOETargetingPos() or TheInput:GetWorldPosition()
+
+        local cansee
+        if target == nil then
+            local x, y, z = position:Get()
+            cansee = CanEntitySeePoint(self.inst, x, y, z)
+        else
+            cansee = target == self.inst or CanEntitySeeTarget(self.inst, target)
         end
 
-        action.modaction = "sceneuse"
+        if cansee and target then
+            local rmb_override = GetQuickAction(self, target)
 
-        return action
-    end
-
-    return nil
-end
-
-local function CampfireQuickAction(self, target)
-    local fuel, fuelAct = GetFuelAndAction(target)
-
-    if fuel then
-        local action = BufferedAction(self.inst, target, fuelAct, fuel)
-
-        action.GetActionString = function()
-            return "Add Fuel (" .. fuel.name .. ")"
+            if rmb_override then
+                return rmb_override
+            end
         end
-
-        action.modaction = "sceneuse"
-
-        return action
     end
 
     return nil
 end
 
-local function ResetTrapQuickAction(self, target)
-    local action = BufferedAction(self.inst, target, ACTIONS.CHECKTRAP)
-
-    action.GetActionString = function()
-        return "Reset"
-    end
-
-    action.modaction = "reset"
-
-    return action
+local function IsWalkButtonDown()
+    return TheInput:IsControlPressed(CONTROL_MOVE_UP)
+        or TheInput:IsControlPressed(CONTROL_MOVE_DOWN)
+        or TheInput:IsControlPressed(CONTROL_MOVE_LEFT)
+        or TheInput:IsControlPressed(CONTROL_MOVE_RIGHT)
 end
 
-local function BeefaloQuickAction(self, target)
-    local razor = GetRazor()
-
-    if razor then
-        local action = BufferedAction(self.inst, target, ACTIONS.SHAVE, razor)
-
-        action.modaction = "sceneuse"
-
-        return action
-    end
-
-    return nil
-end
-
-local function SocketKeyQuickAction(self, target)
-    local key = GetAtriumKey()
-
-    if key then
-        local action = BufferedAction(self.inst, target, ACTIONS.GIVE, key)
-
-        action.modaction = "sceneuse"
-
-        return action
-    end
-
-    return nil
-end
-
-local function KlausSackQuickAction(self, target)
-    local key = GetKlausSackKey()
-
-    if key then
-        local action = BufferedAction(self.inst, target, ACTIONS.USEKLAUSSACKKEY, key)
-
-        action.modaction = "sceneuse"
-
-        return action
-    end
-
-    return nil
-end
-
-local function BuildFossilQuickAction(self, target)
-    local fossil_piece = GetFossilPiece()
-
-    if fossil_piece then
-        local action = BufferedAction(self.inst, target, ACTIONS.REPAIR, fossil_piece)
-
-        action.GetActionString = function()
-            return "Build"
-        end
-
-        action.modaction = "fossil_build"
-
-        return action
-    end
-
-    return nil
-end
-
-local function FeedBirdcageQuickAction(self, target)
-    local food = GetBirdFood()
-
-    if food then
-        local action = BufferedAction(self.inst, target, ACTIONS.GIVE, food)
-
-        action.GetActionString = function()
-            return "Feed (" .. GetDisplayName(food) .. ")"
-        end
-
-        action.modaction = "sceneuse"
-
-        return action
-    end
-
-    return nil
-end
-
-local function ImprisonQuickAction(self, target)
-    local bird = GetBird()
-
-    if bird then
-        local action = BufferedAction(self.inst, target, ACTIONS.STORE, bird)
-
-        action.GetActionString = function()
-            return "Imprison (" .. bird.name .. ")"
-        end
-
-        action.modaction = "sceneuse"
-
-        return action
-    end
-
-    return nil
-end
-
-local function RepairWallQuickAction(self, target)
-    local repairItem = GetRepairItem(target)
-
-    if repairItem then
-        local action = BufferedAction(self.inst, target, ACTIONS.REPAIR, repairItem)
-
-        action.GetActionString = function()
-            return "Repair (" .. repairItem.name .. ")"
-        end
-
-        action.modaction = "sceneuse"
-
-        return action
-    end
-
-    return nil
-end
-
-local function ExtinguishQuickAction(self, target)
-    local extinguishItem = GetExtinguishItem()
-
-    if extinguishItem then
-        local action = BufferedAction(self.inst, target, ACTIONS.MANUALEXTINGUISH, extinguishItem)
-
-        action.GetActionString = function()
-            return "Extinguish (" .. extinguishItem.name .. ")"
-        end
-
-        action.modaction = "extinguish"
-
-        return action
-    end
-
-    return nil
-end
-
-local function LightQuickAction(self, target)
-    local igniteItem = GetIgniteItem()
-
-    if igniteItem then
-        local action = BufferedAction(self.inst, target, ACTIONS.LIGHT, igniteItem)
-
-        action.GetActionString = function()
-            return "Light (" .. igniteItem.name .. ")"
-        end
-
-        action.modaction = "ignite"
-
-        return action
-    end
-
-    return nil
-end
-
-local function WakeupQuickAction(self, target)
-    local action = BufferedAction(self.inst, target, ACTIONS.HARVEST)
-
-    action.GetActionString = function()
-        return "Wakeup"
-    end
-
-    action.modaction = "wakeup"
-
-    return action
-end
-
-local function TrackQuickAction(self, target)
-    local action = BufferedAction(self.inst, target, ACTIONS.ACTIVATE)
-
-    action.GetActionString = function()
-        return "Track Animal"
-    end
-
-    action.modaction = "track"
-
-    return action
-end
-
--- 
--- Add QuickActions
--- 
-
-AddQuickAction("QUICK_ACTION_CAMPFIRE", IsCampfire, CampfireQuickAction)
-AddQuickAction("QUICK_ACTION_TRAP", IsTrapSprung, ResetTrapQuickAction)
-AddQuickAction("QUICK_ACTION_BEEFALO", HasHair, BeefaloQuickAction)
-AddQuickAction("QUICK_ACTION_WALLS", IsRepairableWall, RepairWallQuickAction)
-AddQuickAction("QUICK_ACTION_EXTINGUISH", IsExtinguishable, ExtinguishQuickAction)
-AddQuickAction("QUICK_ACTION_SLURTLEHOLE", IsSnurtleMound, LightQuickAction)
-AddQuickAction("QUICK_ACTION_FEED_BIRD", BirdTraderValid, FeedBirdcageQuickAction)
-AddQuickAction("QUICK_ACTION_WAKEUP_BIRD", IsBirdcageSleeping, WakeupQuickAction)
-AddQuickAction("QUICK_ACTION_IMPRISON_BIRD", IsBirdcageEmpty, ImprisonQuickAction)
-AddQuickAction("QUICK_ACTION_BUILD_FOSSIL", IsFossilStructure, BuildFossilQuickAction)
-AddQuickAction("QUICK_ACTION_DIG", IsDigWorkable, DigQuickAction)
-AddQuickAction("QUICK_ACTION_HAMMER", IsHammerWorkable, HammerQuickAction)
-AddQuickAction("QUICK_ACTION_NET", IsNetWorkable, CatchQuickAction)
-AddQuickAction("QUICK_ACTION_KLAUS_SACK", IsKlausSack, KlausSackQuickAction)
-AddQuickAction("QUICK_ACTION_ATRIUM_GATE", IsAtriumGate, SocketKeyQuickAction)
-AddQuickAction("QUICK_ACTION_REPAIR_BOAT", IsBoatLeak, RepairBoatQuickAction)
-AddQuickAction("QUICK_ACTION_PIG_KING", IsPigking, TradePigKingQuickAction)
-AddQuickAction("QUICK_ACTION_DIRTPILE", IsDirtpile, TrackQuickAction)
+local CanOverride =
+{
+    [ACTIONS.LOOKAT] = true,
+    [ACTIONS.WALKTO] = true,
+}
 
 local function Init()
     local PlayerController = ThePlayer and ThePlayer.components.playercontroller
@@ -917,31 +703,19 @@ local function Init()
         return
     end
 
-    local function IsWalkButtonDown()
-        return TheInput:IsControlPressed(CONTROL_MOVE_UP)
-            or TheInput:IsControlPressed(CONTROL_MOVE_DOWN)
-            or TheInput:IsControlPressed(CONTROL_MOVE_LEFT)
-            or TheInput:IsControlPressed(CONTROL_MOVE_RIGHT)
-    end
-
     local OldOnRightClick = PlayerController.OnRightClick
     function PlayerController:OnRightClick(down)
-        if not (self:UsingMouse() and down) then
+        if not down then
             OldOnRightClick(self, down)
             return
         end
 
         local act = self:GetRightMouseAction()
+
         if act and act.modaction then
-            if act.modaction == "track" then
-                if IsWalkButtonDown() then
-                    return
-                end
-                KillThreadsWithID("TrackingThread")
-                DoTracking()
-                return
-            elseif act.modaction == "fossil_build" then
-                if ThePlayer.components.locomotor == nil then
+
+            if act.modaction == "sceneuse" then
+                if self.locomotor == nil then
                     SendRPCToServer(RPC.ControllerUseItemOnSceneFromInvTile, act.action.code, act.invobject, act.target)
                 else
                     act.preview_cb = function()
@@ -949,125 +723,12 @@ local function Init()
                     end
                 end
 
-                local function callback(inst, data)
-                    OnBuildFossil(inst, data, act.target)
-                end
-
-                ThePlayer.components.eventtracker:AddEvent(
-                    "stacksizechange",
-                    "OnBuildFossil",
-                    callback
-                )
-
-                self:DoAction(act)
-                return
-            elseif act.modaction == "toolaction" then
-                if not InventoryFunctions:EquipHasTag(act.action.id .. "_tool") then
-                    InventoryFunctions:Equip(act.invobject)
-                end
-
-                local position = TheInput:GetWorldPosition()
-                local rpc = act.modlmb and RPC.LeftClick or RPC.RightClick
-
-                if ThePlayer.components.locomotor == nil then
-                    -- Avoid action interference
-                    self.inst:DoTaskInTime(GetTickTime(), function()
-                         SendRPCToServer(rpc, act.action.code, position.x, position.z, act.target, nil, nil, rpc == RPC.LeftClick, nil, nil, false)
-                    end)
-                else
-                    -- Avoid action interference
-                    self.inst:DoTaskInTime(GetTickTime(), function()
-                        act.preview_cb = function()
-                            SendRPCToServer(rpc, act.action.code, position.x, position.z, act.target, nil, nil, rpc == RPC.LeftClick, nil, nil, false)
-                        end
-
-                        self:DoAction(act)
-                    end)
-                end
-                return
-            elseif act.modaction == "sceneuse" then
-                if ThePlayer.components.locomotor == nil then
-                    SendRPCToServer(RPC.ControllerUseItemOnSceneFromInvTile, act.action.code, act.invobject, act.target)
-                else
-                    act.preview_cb = function()
-                        SendRPCToServer(RPC.ControllerUseItemOnSceneFromInvTile, act.action.code, act.invobject, act.target)
-                    end
-                end
-                self:DoAction(act)
-                return
-            elseif act.modaction == "ignite" then
-                if self.inst.replica.inventory:GetEquippedItem(EQUIPSLOTS.HANDS) ~= act.invobject then
-                    InventoryFunctions:Equip(act.invobject)
-                end
-
-                if act.invobject:HasTag("rangedlighter") then
-                    act.action = ACTIONS.ATTACK
-                end
-
-                local position = TheInput:GetWorldPosition()
-
-                self.inst:DoTaskInTime(FRAMES * 4, function()
-                    if ThePlayer.components.locomotor == nil then
-                        SendRPCToServer(RPC.LeftClick, act.action.code, position.x, position.z, act.target)
-                    else
-                        act.preview_cb = function()
-                            SendRPCToServer(RPC.LeftClick, act.action.code, position.x, position.z, act.target)
-                        end
-                    end
-
-                    self:DoAction(act)
-                    return
-                end)
-                return
-            elseif act.modaction == "extinguish" then
-                if act.invobject:HasTag("_equippable") then
-                    if self.inst.replica.inventory:GetEquippedItem(EQUIPSLOTS.HANDS) ~= act.invobject then
-                        InventoryFunctions:Equip(act.invobject)
-                    end
-
-                    local position = TheInput:GetWorldPosition()
-                    local rpc = RPC.LeftClick
-                    local attack = nil
-
-                    if act.invobject.prefab == "waterballoon" then
-                        rpc = RPC.RightClick
-                        act = BufferedAction(self.inst, act.target, ACTIONS.TOSS, nil, position)
-                    else
-                        attack = true
-                        act = BufferedAction(self.inst, act.target, ACTIONS.ATTACK, nil, position)
-                    end
-
-                    self.inst:DoTaskInTime(FRAMES * 4, function()
-                        if ThePlayer.components.locomotor == nil then
-                            SendRPCToServer(rpc, act.action.code, position.x, position.z, act.target, nil, nil, attack, nil, nil, false)
-                            SendRPCToServer(RPC.StopControl, CONTROL_PRIMARY)
-                        else
-                            -- Some predict walking jazz
-                            act.preview_cb = function()
-                                SendRPCToServer(rpc, act.action.code, position.x, position.z, act.target)
-                            end
-                        end
-
-                        self:DoAction(act)
-                        return
-                    end)
-                    return
-                else
-                    act.action = act.target:HasTag("fire") and ACTIONS.MANUALEXTINGUISH or ACTIONS.SMOTHER
-                    if ThePlayer.components.locomotor == nil then
-                        SendRPCToServer(RPC.ControllerUseItemOnSceneFromInvTile, act.action.code, act.invobject, act.target)
-                    else
-                        act.preview_cb = function()
-                            SendRPCToServer(RPC.ControllerUseItemOnSceneFromInvTile, act.action.code, act.invobject, act.target)
-                        end
-                    end
-                end
                 self:DoAction(act)
                 return
             elseif act.modaction == "wakeup" then
                 local position = TheInput:GetWorldPosition()
 
-                if ThePlayer.components.locomotor == nil then
+                if self.locomotor == nil then
                     SendRPCToServer(
                         RPC.LeftClick,
                         act.action.code,
@@ -1091,7 +752,7 @@ local function Init()
                     OnGetBirdEvent(inst, data, act.target)
                 end
 
-                ThePlayer.components.eventtracker:AddEvent(
+                self.inst.components.eventtracker:AddEvent(
                     "gotnewitem",
                     "OnGetBirdEvent",
                     callback
@@ -1102,7 +763,7 @@ local function Init()
             elseif act.modaction == "reset" then
                 local position = TheInput:GetWorldPosition()
 
-                if ThePlayer.components.locomotor == nil then
+                if self.locomotor == nil then
                     SendRPCToServer(
                         RPC.LeftClick,
                         act.action.code,
@@ -1131,13 +792,13 @@ local function Init()
                     OnTrapActiveItem(inst, act.modaction, data, act.target, pos)
                 end
 
-                ThePlayer.components.eventtracker:AddEvent(
+                self.inst.components.eventtracker:AddEvent(
                     "gotnewitem",
                     "OnGetTrapEvent",
                     callback
                 )
 
-                ThePlayer.components.eventtracker:AddEvent(
+                self.inst.components.eventtracker:AddEvent(
                     "newactiveitem",
                     act.modaction,
                     callback2
@@ -1145,7 +806,113 @@ local function Init()
 
                 self:DoAction(act)
                 return
+            elseif act.modaction == "track" then
+                if IsWalkButtonDown() then
+                    return
+                end
+
+                KillThreadsWithID("TrackingThread")
+                DoTracking()
+
+                return
+            elseif act.modaction == "fossil_build" then
+                if self.locomotor == nil then
+                    SendRPCToServer(RPC.ControllerUseItemOnSceneFromInvTile, act.action.code, act.invobject, act.target)
+                else
+                    act.preview_cb = function()
+                        SendRPCToServer(RPC.ControllerUseItemOnSceneFromInvTile, act.action.code, act.invobject, act.target)
+                    end
+                end
+
+                local function callback(inst, data)
+                    OnBuildFossil(inst, data, act.target)
+                end
+
+                self.inst.components.eventtracker:AddEvent(
+                    "stacksizechange",
+                    "OnBuildFossil",
+                    callback
+                )
+
+                self:DoAction(act)
+                return
+            elseif act.modaction == "toolaction" then
+                if not InventoryFunctions:EquipHasTag(act.action.id .. "_tool") then
+                    InventoryFunctions:Equip(act.invobject)
+                end
+
+                local rpc = act.action.rmb and RPC.RightClick or RPC.LeftClick
+                local position = TheInput:GetWorldPosition()
+
+                if self.locomotor == nil then
+                    SendRPCToServer(rpc, act.action.code, position.x, position.z, act.target, nil, nil, act.action.canforce)
+                else
+                    act.preview_cb = function()
+                        SendRPCToServer(rpc, act.action.code, position.x, position.z, act.target)
+                    end
+                end
+
+                self:DoAction(act)
+                return
+            elseif act.modaction == "ignite" then
+                if self.inst.replica.inventory:GetEquippedItem(EQUIPSLOTS.HANDS) ~= act.invobject then
+                    InventoryFunctions:Equip(act.invobject)
+                end
+
+                if act.invobject:HasTag("rangedlighter") then
+                    act.action = ACTIONS.ATTACK
+                end
+
+                local position = TheInput:GetWorldPosition()
+
+                self.inst:DoTaskInTime(FRAMES * 4, function()
+                    if self.locomotor == nil then
+                        SendRPCToServer(RPC.LeftClick, act.action.code, position.x, position.z, act.target)
+                    else
+                        act.preview_cb = function()
+                            SendRPCToServer(RPC.LeftClick, act.action.code, position.x, position.z, act.target)
+                        end
+                    end
+
+                    self:DoAction(act)
+                end)
+
+                return
+            elseif act.modaction == "extinguish" then
+                if not act.invobject:HasTag("_equippable") then
+                    if self.locomotor == nil then
+                        SendRPCToServer(RPC.ControllerUseItemOnSceneFromInvTile, act.action.code, act.invobject, act.target)
+                    else
+                        act.preview_cb = function()
+                            SendRPCToServer(RPC.ControllerUseItemOnSceneFromInvTile, act.action.code, act.invobject, act.target)
+                        end
+                    end
+
+                    self:DoAction(act)
+                    return
+                end
+
+                if self.inst.replica.inventory:GetEquippedItem(EQUIPSLOTS.HANDS) ~= act.invobject then
+                    InventoryFunctions:Equip(act.invobject)
+                end
+
+                local rpc = act.action.rmb and RPC.RightClick or RPC.LeftClick
+                local position = TheInput:GetWorldPosition()
+
+                self.inst:DoTaskInTime(FRAMES * 4, function()
+                    if self.locomotor == nil then
+                        SendRPCToServer(rpc, act.action.code, position.x, position.z, act.target, nil, nil, act.action.canforce)
+                    else
+                        act.preview_cb = function()
+                            SendRPCToServer(rpc, act.action.code, position.x, position.z, act.target, true)
+                        end
+                    end
+                    self:DoAction(act)
+                end)
+
+                return
             end
+
         end
 
         OldOnRightClick(self, down)
@@ -1154,12 +921,6 @@ local function Init()
     -- 
     -- PlayerActionPicker Overrides
     -- 
-
-    local CanOverride =
-    {
-        [ACTIONS.LOOKAT] = true,
-        [ACTIONS.WALKTO] = true,
-    }
 
     local OldDoGetMouseActions = PlayerActionPicker.DoGetMouseActions
     function PlayerActionPicker:DoGetMouseActions(...)
