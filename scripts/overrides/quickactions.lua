@@ -439,7 +439,7 @@ local QuickActions =
     QUICK_ACTION_WAKEUP_BIRD = QuickAction({modaction = "wakeup"}),
     QUICK_ACTION_TRAP = QuickAction({modaction = "reset"}),
     QUICK_ACTION_DIRTPILE = QuickAction({modaction = "track"}),
-    QUICK_ACTION_BUILD_FOSSIL = QuickAction({rmb = true, item = "fossil_piece", modaction = "BuildFossild"}),
+    QUICK_ACTION_BUILD_FOSSIL = QuickAction({rmb = true, item = "fossil_piece", modaction = "BuildFossil"}),
     QUICK_ACTION_DIG = QuickAction({rmb = true, toolaction = ACTIONS.DIG, modaction = "ToolAction"}),
     QUICK_ACTION_HAMMER = QuickAction({rmb = true, toolaction = ACTIONS.HAMMER, modaction = "ToolAction"}),
     QUICK_ACTION_NET = QuickAction({toolaction = ACTIONS.NET, modaction = "ToolAction"}),
