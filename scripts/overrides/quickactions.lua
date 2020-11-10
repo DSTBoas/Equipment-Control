@@ -426,24 +426,24 @@ end)
 -- @TODO This still needs a priority system of sorts
 local QuickActions =
 {
-    QUICK_ACTION_REPAIR_BOAT = QuickAction({item = "boatpatch", modaction = "sceneuse"}),
-    QUICK_ACTION_WALLS = QuickAction({itemfn = GetRepairItem, modaction = "sceneuse"}),
-    QUICK_ACTION_CAMPFIRE = QuickAction({itemfn = GetFuelItem, modaction = "sceneuse"}),
-    QUICK_ACTION_BEEFALO = QuickAction({item = "razor", modaction = "sceneuse"}),
-    QUICK_ACTION_PIG_KING = QuickAction({itemfn = GetBestGoldValueItem, modaction = "sceneuse"}),
-    QUICK_ACTION_FEED_BIRD = QuickAction({itemfn = GetBirdFood, modaction = "sceneuse"}),
-    QUICK_ACTION_IMPRISON_BIRD = QuickAction({itemfn = GetBird, modaction = "sceneuse"}),
-    QUICK_ACTION_ATRIUM_GATE = QuickAction({item = "atrium_key", modaction = "sceneuse"}),
-    QUICK_ACTION_KLAUS_SACK = QuickAction({itemfn = GetKlausSackKey, modaction = "sceneuse"}),
-    QUICK_ACTION_EXTINGUISH = QuickAction({itemfn = GetExtinguishItem, modaction = "extinguish"}),
+    QUICK_ACTION_REPAIR_BOAT = QuickAction({item = "boatpatch", modaction = "SceneUse"}),
+    QUICK_ACTION_WALLS = QuickAction({itemfn = GetRepairItem, modaction = "SceneUse"}),
+    QUICK_ACTION_CAMPFIRE = QuickAction({itemfn = GetFuelItem, modaction = "SceneUse"}),
+    QUICK_ACTION_BEEFALO = QuickAction({item = "razor", modaction = "SceneUse"}),
+    QUICK_ACTION_PIG_KING = QuickAction({itemfn = GetBestGoldValueItem, modaction = "SceneUse"}),
+    QUICK_ACTION_FEED_BIRD = QuickAction({itemfn = GetBirdFood, modaction = "SceneUse"}),
+    QUICK_ACTION_IMPRISON_BIRD = QuickAction({itemfn = GetBird, modaction = "SceneUse"}),
+    QUICK_ACTION_ATRIUM_GATE = QuickAction({item = "atrium_key", modaction = "SceneUse"}),
+    QUICK_ACTION_KLAUS_SACK = QuickAction({itemfn = GetKlausSackKey, modaction = "SceneUse"}),
+    QUICK_ACTION_EXTINGUISH = QuickAction({itemfn = GetExtinguishItem, modaction = "Extinguish"}),
     QUICK_ACTION_WAKEUP_BIRD = QuickAction({modaction = "wakeup"}),
     QUICK_ACTION_TRAP = QuickAction({modaction = "reset"}),
     QUICK_ACTION_DIRTPILE = QuickAction({modaction = "track"}),
-    QUICK_ACTION_BUILD_FOSSIL = QuickAction({rmb = true, item = "fossil_piece", modaction = "fossil_build"}),
-    QUICK_ACTION_DIG = QuickAction({rmb = true, toolaction = ACTIONS.DIG, modaction = "toolaction"}),
-    QUICK_ACTION_HAMMER = QuickAction({rmb = true, toolaction = ACTIONS.HAMMER, modaction = "toolaction"}),
-    QUICK_ACTION_NET = QuickAction({toolaction = ACTIONS.NET, modaction = "toolaction"}),
-    QUICK_ACTION_SLURTLEHOLE = QuickAction({itemfn = GetIgniteItem, modaction = "ignite"}),
+    QUICK_ACTION_BUILD_FOSSIL = QuickAction({rmb = true, item = "fossil_piece", modaction = "BuildFossild"}),
+    QUICK_ACTION_DIG = QuickAction({rmb = true, toolaction = ACTIONS.DIG, modaction = "ToolAction"}),
+    QUICK_ACTION_HAMMER = QuickAction({rmb = true, toolaction = ACTIONS.HAMMER, modaction = "ToolAction"}),
+    QUICK_ACTION_NET = QuickAction({toolaction = ACTIONS.NET, modaction = "ToolAction"}),
+    QUICK_ACTION_SLURTLEHOLE = QuickAction({itemfn = GetIgniteItem, modaction = "Ignite"}),
 }
 
 QuickActions.QUICK_ACTION_REPAIR_BOAT.fn = function(target)
@@ -690,6 +690,210 @@ local function GetRMBOverride(self, position, target)
     return nil
 end
 
+local ModActions = {}
+
+function ModActions.SceneUse(self, act)
+    if self.locomotor == nil then
+        SendRPCToServer(RPC.ControllerUseItemOnSceneFromInvTile, act.action.code, act.invobject, act.target)
+    else
+        act.preview_cb = function()
+            SendRPCToServer(RPC.ControllerUseItemOnSceneFromInvTile, act.action.code, act.invobject, act.target)
+        end
+    end
+
+    self:DoAction(act)
+end
+
+function ModActions.Reset(self, act)
+    local position = TheInput:GetWorldPosition()
+
+    if self.locomotor == nil then
+        SendRPCToServer(
+            RPC.LeftClick,
+            act.action.code,
+            position.x,
+            position.z,
+            act.target
+        )
+    else
+        act.preview_cb = function()
+            SendRPCToServer(
+                RPC.LeftClick,
+                act.action.code,
+                position.x,
+                position.z,
+                act.target
+            )
+        end
+    end
+
+    local function callback(inst, data)
+        OnGetTrapEvent(inst, data, act.target)
+    end
+
+    local pos = act.target:GetPosition()
+    local function callback2(inst, data)
+        OnTrapActiveItem(inst, act.modaction, data, act.target, pos)
+    end
+
+    self.inst.components.eventtracker:AddEvent(
+        "gotnewitem",
+        "OnGetTrapEvent",
+        callback
+    )
+
+    self.inst.components.eventtracker:AddEvent(
+        "newactiveitem",
+        act.modaction,
+        callback2
+    )
+
+    self:DoAction(act)
+end
+
+function ModActions.WakeUp(self, act)
+    local position = TheInput:GetWorldPosition()
+
+    if self.locomotor == nil then
+        SendRPCToServer(
+            RPC.LeftClick,
+            act.action.code,
+            position.x,
+            position.z,
+            act.target
+        )
+    else
+        act.preview_cb = function()
+            SendRPCToServer(
+                RPC.LeftClick,
+                act.action.code,
+                position.x,
+                position.z,
+                act.target
+            )
+        end
+    end
+
+    local function callback(inst, data)
+        OnGetBirdEvent(inst, data, act.target)
+    end
+
+    self.inst.components.eventtracker:AddEvent(
+        "gotnewitem",
+        "OnGetBirdEvent",
+        callback
+    )
+
+    self:DoAction(act)
+end
+
+function ModActions.Track(self, act)
+    if IsWalkButtonDown() then
+        return
+    end
+
+    KillThreadsWithID("TrackingThread")
+    DoTracking()
+end
+
+function ModActions.ToolAction(self, act)
+    if not InventoryFunctions:EquipHasTag(act.action.id .. "_tool") then
+        InventoryFunctions:Equip(act.invobject)
+    end
+
+    local rpc = act.action.rmb and RPC.RightClick or RPC.LeftClick
+    local position = TheInput:GetWorldPosition()
+
+    if self.locomotor == nil then
+        SendRPCToServer(rpc, act.action.code, position.x, position.z, act.target, nil, nil, act.action.canforce)
+    else
+        act.preview_cb = function()
+            SendRPCToServer(rpc, act.action.code, position.x, position.z, act.target)
+        end
+    end
+
+    self:DoAction(act)
+end
+
+function ModActions.Ignite(self, act)
+    if self.inst.replica.inventory:GetEquippedItem(EQUIPSLOTS.HANDS) ~= act.invobject then
+        InventoryFunctions:Equip(act.invobject)
+    end
+
+    if act.invobject:HasTag("rangedlighter") then
+        act.action = ACTIONS.ATTACK
+    end
+
+    local position = TheInput:GetWorldPosition()
+
+    self.inst:DoTaskInTime(FRAMES * 4, function()
+        if self.locomotor == nil then
+            SendRPCToServer(RPC.LeftClick, act.action.code, position.x, position.z, act.target)
+        else
+            act.preview_cb = function()
+                SendRPCToServer(RPC.LeftClick, act.action.code, position.x, position.z, act.target)
+            end
+        end
+
+        self:DoAction(act)
+    end)
+end
+
+function ModActions.BuildFossil(self, act)
+    if self.locomotor == nil then
+        SendRPCToServer(RPC.ControllerUseItemOnSceneFromInvTile, act.action.code, act.invobject, act.target)
+    else
+        act.preview_cb = function()
+            SendRPCToServer(RPC.ControllerUseItemOnSceneFromInvTile, act.action.code, act.invobject, act.target)
+        end
+    end
+
+    local function callback(inst, data)
+        OnBuildFossil(inst, data, act.target)
+    end
+
+    self.inst.components.eventtracker:AddEvent(
+        "stacksizechange",
+        "OnBuildFossil",
+        callback
+    )
+
+    self:DoAction(act)
+end
+
+function ModActions.Extinguish(self, act)
+    if not act.invobject:HasTag("_equippable") then
+        if self.locomotor == nil then
+            SendRPCToServer(RPC.ControllerUseItemOnSceneFromInvTile, act.action.code, act.invobject, act.target)
+        else
+            act.preview_cb = function()
+                SendRPCToServer(RPC.ControllerUseItemOnSceneFromInvTile, act.action.code, act.invobject, act.target)
+            end
+        end
+
+        self:DoAction(act)
+        return
+    end
+
+    if self.inst.replica.inventory:GetEquippedItem(EQUIPSLOTS.HANDS) ~= act.invobject then
+        InventoryFunctions:Equip(act.invobject)
+    end
+
+    local rpc = act.action.rmb and RPC.RightClick or RPC.LeftClick
+    local position = TheInput:GetWorldPosition()
+
+    self.inst:DoTaskInTime(FRAMES * 4, function()
+        if self.locomotor == nil then
+            SendRPCToServer(rpc, act.action.code, position.x, position.z, act.target, nil, nil, act.action.canforce)
+        else
+            act.preview_cb = function()
+                SendRPCToServer(rpc, act.action.code, position.x, position.z, act.target, true)
+            end
+        end
+        self:DoAction(act)
+    end)
+end
+
 local function IsWalkButtonDown()
     return TheInput:IsControlPressed(CONTROL_MOVE_UP)
         or TheInput:IsControlPressed(CONTROL_MOVE_DOWN)
@@ -719,208 +923,13 @@ local function Init()
         end
 
         local act = self:GetRightMouseAction()
+        if act then
+            local modAction = ModActions[act.modaction]
 
-        if act and act.modaction then
-
-            if act.modaction == "sceneuse" then
-                if self.locomotor == nil then
-                    SendRPCToServer(RPC.ControllerUseItemOnSceneFromInvTile, act.action.code, act.invobject, act.target)
-                else
-                    act.preview_cb = function()
-                        SendRPCToServer(RPC.ControllerUseItemOnSceneFromInvTile, act.action.code, act.invobject, act.target)
-                    end
-                end
-
-                self:DoAction(act)
-                return
-            elseif act.modaction == "wakeup" then
-                local position = TheInput:GetWorldPosition()
-
-                if self.locomotor == nil then
-                    SendRPCToServer(
-                        RPC.LeftClick,
-                        act.action.code,
-                        position.x,
-                        position.z,
-                        act.target
-                    )
-                else
-                    act.preview_cb = function()
-                        SendRPCToServer(
-                            RPC.LeftClick,
-                            act.action.code,
-                            position.x,
-                            position.z,
-                            act.target
-                        )
-                    end
-                end
-
-                local function callback(inst, data)
-                    OnGetBirdEvent(inst, data, act.target)
-                end
-
-                self.inst.components.eventtracker:AddEvent(
-                    "gotnewitem",
-                    "OnGetBirdEvent",
-                    callback
-                )
-
-                self:DoAction(act)
-                return
-            elseif act.modaction == "reset" then
-                local position = TheInput:GetWorldPosition()
-
-                if self.locomotor == nil then
-                    SendRPCToServer(
-                        RPC.LeftClick,
-                        act.action.code,
-                        position.x,
-                        position.z,
-                        act.target
-                    )
-                else
-                    act.preview_cb = function()
-                        SendRPCToServer(
-                            RPC.LeftClick,
-                            act.action.code,
-                            position.x,
-                            position.z,
-                            act.target
-                        )
-                    end
-                end
-
-                local function callback(inst, data)
-                    OnGetTrapEvent(inst, data, act.target)
-                end
-
-                local pos = act.target:GetPosition()
-                local function callback2(inst, data)
-                    OnTrapActiveItem(inst, act.modaction, data, act.target, pos)
-                end
-
-                self.inst.components.eventtracker:AddEvent(
-                    "gotnewitem",
-                    "OnGetTrapEvent",
-                    callback
-                )
-
-                self.inst.components.eventtracker:AddEvent(
-                    "newactiveitem",
-                    act.modaction,
-                    callback2
-                )
-
-                self:DoAction(act)
-                return
-            elseif act.modaction == "track" then
-                if IsWalkButtonDown() then
-                    return
-                end
-
-                KillThreadsWithID("TrackingThread")
-                DoTracking()
-
-                return
-            elseif act.modaction == "fossil_build" then
-                if self.locomotor == nil then
-                    SendRPCToServer(RPC.ControllerUseItemOnSceneFromInvTile, act.action.code, act.invobject, act.target)
-                else
-                    act.preview_cb = function()
-                        SendRPCToServer(RPC.ControllerUseItemOnSceneFromInvTile, act.action.code, act.invobject, act.target)
-                    end
-                end
-
-                local function callback(inst, data)
-                    OnBuildFossil(inst, data, act.target)
-                end
-
-                self.inst.components.eventtracker:AddEvent(
-                    "stacksizechange",
-                    "OnBuildFossil",
-                    callback
-                )
-
-                self:DoAction(act)
-                return
-            elseif act.modaction == "toolaction" then
-                if not InventoryFunctions:EquipHasTag(act.action.id .. "_tool") then
-                    InventoryFunctions:Equip(act.invobject)
-                end
-
-                local rpc = act.action.rmb and RPC.RightClick or RPC.LeftClick
-                local position = TheInput:GetWorldPosition()
-
-                if self.locomotor == nil then
-                    SendRPCToServer(rpc, act.action.code, position.x, position.z, act.target, nil, nil, act.action.canforce)
-                else
-                    act.preview_cb = function()
-                        SendRPCToServer(rpc, act.action.code, position.x, position.z, act.target)
-                    end
-                end
-
-                self:DoAction(act)
-                return
-            elseif act.modaction == "ignite" then
-                if self.inst.replica.inventory:GetEquippedItem(EQUIPSLOTS.HANDS) ~= act.invobject then
-                    InventoryFunctions:Equip(act.invobject)
-                end
-
-                if act.invobject:HasTag("rangedlighter") then
-                    act.action = ACTIONS.ATTACK
-                end
-
-                local position = TheInput:GetWorldPosition()
-
-                self.inst:DoTaskInTime(FRAMES * 4, function()
-                    if self.locomotor == nil then
-                        SendRPCToServer(RPC.LeftClick, act.action.code, position.x, position.z, act.target)
-                    else
-                        act.preview_cb = function()
-                            SendRPCToServer(RPC.LeftClick, act.action.code, position.x, position.z, act.target)
-                        end
-                    end
-
-                    self:DoAction(act)
-                end)
-
-                return
-            elseif act.modaction == "extinguish" then
-                if not act.invobject:HasTag("_equippable") then
-                    if self.locomotor == nil then
-                        SendRPCToServer(RPC.ControllerUseItemOnSceneFromInvTile, act.action.code, act.invobject, act.target)
-                    else
-                        act.preview_cb = function()
-                            SendRPCToServer(RPC.ControllerUseItemOnSceneFromInvTile, act.action.code, act.invobject, act.target)
-                        end
-                    end
-
-                    self:DoAction(act)
-                    return
-                end
-
-                if self.inst.replica.inventory:GetEquippedItem(EQUIPSLOTS.HANDS) ~= act.invobject then
-                    InventoryFunctions:Equip(act.invobject)
-                end
-
-                local rpc = act.action.rmb and RPC.RightClick or RPC.LeftClick
-                local position = TheInput:GetWorldPosition()
-
-                self.inst:DoTaskInTime(FRAMES * 4, function()
-                    if self.locomotor == nil then
-                        SendRPCToServer(rpc, act.action.code, position.x, position.z, act.target, nil, nil, act.action.canforce)
-                    else
-                        act.preview_cb = function()
-                            SendRPCToServer(rpc, act.action.code, position.x, position.z, act.target, true)
-                        end
-                    end
-                    self:DoAction(act)
-                end)
-
+            if modAction then
+                modAction(self, act)
                 return
             end
-
         end
 
         OldOnRightClick(self, down)
