@@ -191,14 +191,13 @@ local function GetEggPriority(item)
     local priority = 0
 
     if item:HasTag("spoiled") then
-        priority = 4 - (ItemFunctions:GetHunger(item) * 0.01)
+        priority = 4 - (ItemFunctions:GetHunger(item) * .01)
     elseif item:HasTag("monstermeat") then
         priority = 3
     elseif item:HasTag("badfood") then
         priority = 2.5
     elseif item:HasTag("preparedfood") then
-        priority = item:HasTag("stale") and 1
-                   or .5
+        priority = item:HasTag("stale") and 1 or .5
     elseif item:HasTag("stale") then
         priority = 1.5
     elseif item.prefab == "bird_egg_cooked" then
@@ -421,7 +420,7 @@ local QuickAction = Class(function(self, data)
     self.stringfn = data.stringfn
 end)
 
--- @TODO This still needs a priority system of sorts
+-- @TODO Implement a priority system
 local QuickActions =
 {
     QUICK_ACTION_REPAIR_BOAT = QuickAction({item = "boatpatch", modaction = "SceneUse"}),
@@ -434,9 +433,9 @@ local QuickActions =
     QUICK_ACTION_ATRIUM_GATE = QuickAction({item = "atrium_key", modaction = "SceneUse"}),
     QUICK_ACTION_KLAUS_SACK = QuickAction({itemfn = GetKlausSackKey, modaction = "SceneUse"}),
     QUICK_ACTION_EXTINGUISH = QuickAction({itemfn = GetExtinguishItem, modaction = "Extinguish"}),
-    QUICK_ACTION_WAKEUP_BIRD = QuickAction({modaction = "wakeup"}),
-    QUICK_ACTION_TRAP = QuickAction({modaction = "reset"}),
-    QUICK_ACTION_DIRTPILE = QuickAction({modaction = "track"}),
+    QUICK_ACTION_WAKEUP_BIRD = QuickAction({modaction = "WakeUp"}),
+    QUICK_ACTION_TRAP = QuickAction({modaction = "Reset"}),
+    QUICK_ACTION_DIRTPILE = QuickAction({modaction = "Track"}),
     QUICK_ACTION_BUILD_FOSSIL = QuickAction({rmb = true, item = "fossil_piece", modaction = "BuildFossil"}),
     QUICK_ACTION_DIG = QuickAction({rmb = true, toolaction = ACTIONS.DIG, modaction = "ToolAction"}),
     QUICK_ACTION_HAMMER = QuickAction({rmb = true, toolaction = ACTIONS.HAMMER, modaction = "ToolAction"}),
