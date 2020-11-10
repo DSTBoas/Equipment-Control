@@ -783,6 +783,13 @@ function ModActions.WakeUp(self, act)
     self:DoAction(act)
 end
 
+local function IsWalkButtonDown()
+    return TheInput:IsControlPressed(CONTROL_MOVE_UP)
+        or TheInput:IsControlPressed(CONTROL_MOVE_DOWN)
+        or TheInput:IsControlPressed(CONTROL_MOVE_LEFT)
+        or TheInput:IsControlPressed(CONTROL_MOVE_RIGHT)
+end
+
 function ModActions.Track(self, act)
     if IsWalkButtonDown() then
         return
@@ -888,13 +895,6 @@ function ModActions.Extinguish(self, act)
         end
         self:DoAction(act)
     end)
-end
-
-local function IsWalkButtonDown()
-    return TheInput:IsControlPressed(CONTROL_MOVE_UP)
-        or TheInput:IsControlPressed(CONTROL_MOVE_DOWN)
-        or TheInput:IsControlPressed(CONTROL_MOVE_LEFT)
-        or TheInput:IsControlPressed(CONTROL_MOVE_RIGHT)
 end
 
 local CanOverride =
