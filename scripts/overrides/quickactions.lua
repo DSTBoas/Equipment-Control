@@ -148,10 +148,8 @@ local function DoTracking()
 end
 
 -- 
--- Helpers
+-- Helpers @TODO Refactor helpers
 -- 
-
--- @TODO Refactor helpers into multi purpose funcs
 
 local function GetItemFromInventory(prefab)
     for _, item in pairs(InventoryFunctions:GetPlayerInventory()) do
@@ -427,7 +425,7 @@ end)
 local QuickActions =
 {
     QUICK_ACTION_REPAIR_BOAT = QuickAction({item = "boatpatch", modaction = "SceneUse"}),
-    QUICK_ACTION_WALLS = QuickAction({itemfn = GetRepairItem, modaction = "SceneUse"}),
+    QUICK_ACTION_WALLS = QuickAction({rmb = true, itemfn = GetRepairItem, modaction = "SceneUse"}),
     QUICK_ACTION_CAMPFIRE = QuickAction({itemfn = GetFuelItem, modaction = "SceneUse"}),
     QUICK_ACTION_BEEFALO = QuickAction({item = "razor", modaction = "SceneUse"}),
     QUICK_ACTION_PIG_KING = QuickAction({itemfn = GetBestGoldValueItem, modaction = "SceneUse"}),
@@ -453,9 +451,9 @@ end
 QuickActions.QUICK_ACTION_WALLS.fn = function(target)
     return target:HasTag("wall")
        and not (target.AnimState:IsCurrentAnimation("fullA")
-                or target.AnimState:IsCurrentAnimation("fullB")
-                or target.AnimState:IsCurrentAnimation("fullC")
-                or IsExtinguishable(target))
+             or target.AnimState:IsCurrentAnimation("fullB")
+             or target.AnimState:IsCurrentAnimation("fullC")
+             or IsExtinguishable(target))
 end
 
 QuickActions.QUICK_ACTION_WALLS.stringfn = function(item)
@@ -577,8 +575,7 @@ QuickActions.QUICK_ACTION_EXTINGUISH.stringfn = function(item)
     return "Extinguish (" .. item.name .. ")"
 end
 
--- @TODO Might wanna do this somewhere else
--- Remove disabled QuickActions
+-- @TODO Move this logic
 for config in pairs(QuickActions) do
     if not GetModConfigData(config, MOD_EQUIPMENT_CONTROL.MODNAME) then
         QuickActions[config] = nil
