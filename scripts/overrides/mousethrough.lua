@@ -82,6 +82,13 @@ local function Init()
         return
     end
 
+    if GetModConfigData("FORCE_INSPECT_PLAYERS", MOD_EQUIPMENT_CONTROL.MODNAME) then
+        FuncToPriority.player = function()
+            return ThePlayer.components.playercontroller:IsControlPressed(CONTROL_FORCE_INSPECT) and 1
+                or -1
+        end
+    end
+
     if GetModConfigData("ORANGESTAFF_MOUSETHROUGH", MOD_EQUIPMENT_CONTROL.MODNAME) then
         FuncToPriority.wall = function()
             return IsEquipped("orangestaff") and -1

@@ -5,7 +5,7 @@ icon_atlas = "modicon.xml"
 icon = "modicon.tex"
 
 author = "Boas"
-version = "5.9"
+version = "6.0"
 forumthread = ""
 
 dont_starve_compatible = false
@@ -194,6 +194,7 @@ local BetaSettingOptions = GetDefaultOptions("Experimental feature use at your o
 local TelepoofHoverOptions = GetDefaultOptions("Hovertext is hidden when Telepoof is disabled")
 local TelepoofDisabledOptions = GetDefaultOptions("Telepoof is disabled when you enter the game")
 
+local ForceInspectPlayerOptions = GetDefaultOptions("Requires you to hold Force Inspect to interact with Players")
 local FlyingBirdsOptions = GetDefaultOptions("Flying birds are unclickable")
 local YellowStaffOptions = GetDefaultOptions("Allows you to cast Dwarf Stars closer together")
 local OrangeStaffOptions = GetDefaultOptions("Allows you to Telepoof through walls")
@@ -1235,6 +1236,13 @@ configuration_options =
 
 
     AddSectionTitle("Mousethrough"),
+    AddConfig(
+        "Force Inspect Player",
+        "FORCE_INSPECT_PLAYERS",
+        ForceInspectPlayerOptions,
+        false,
+        SettingMessage
+    ),
     AddConfig(
         "Unclickable flying birds",
         "FLYING_BIRDS_MOUSETHROUGH",

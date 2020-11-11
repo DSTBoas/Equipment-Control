@@ -890,7 +890,7 @@ function ModActions.Extinguish(self, act)
             SendRPCToServer(rpc, act.action.code, position.x, position.z, act.target, nil, nil, act.action.canforce)
         else
             act.preview_cb = function()
-                SendRPCToServer(rpc, act.action.code, position.x, position.z, act.target, true)
+                SendRPCToServer(rpc, act.action.code, position.x, position.z, act.target, rpc == RPC.LeftClick)
             end
         end
         self:DoAction(act)
