@@ -53,9 +53,9 @@ local function OrderByPriority(l, r)
 end
 
 local function GetHoverInst(ents)
-    if InventoryFunctions:GetActiveItem() then
-        return ents[1]
-    end
+    -- if InventoryFunctions:GetActiveItem() then
+    --     return ents[1]
+    -- end
 
     local hoverPriorityTable = GetHoverPriorityTable(ents)
     table.sort(hoverPriorityTable, OrderByPriority)
@@ -113,6 +113,7 @@ local function Init()
         if self.mouse_enabled then
             self.entitiesundermouse = TheSim:GetEntitiesAtScreenPoint(TheSim:GetPosition())
             local inst = GetHoverInst(self.entitiesundermouse)
+            print("Hover Inst = ", inst)
             if inst ~= nil and inst.CanMouseThrough ~= nil then
                 local mousethrough, keepnone = inst:CanMouseThrough()
                 if mousethrough then
