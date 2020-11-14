@@ -113,7 +113,6 @@ local function Init()
         if self.mouse_enabled then
             self.entitiesundermouse = TheSim:GetEntitiesAtScreenPoint(TheSim:GetPosition())
             local inst = GetHoverInst(self.entitiesundermouse)
-            print("Hover Inst = ", inst)
             if inst ~= nil and inst.CanMouseThrough ~= nil then
                 local mousethrough, keepnone = inst:CanMouseThrough()
                 if mousethrough then
