@@ -187,6 +187,11 @@ local function ApplyStimuli(self, item, damage, target)
     return damage
 end
 
+local BadPrefabs =
+{
+    lilina_wrath = 68,
+}
+
 function ItemFunctions:GetDamage(item, target, noStimuli)
     if item.prefab == "hambat" then
         return GetHambatDamage(self, item)
@@ -196,7 +201,9 @@ function ItemFunctions:GetDamage(item, target, noStimuli)
 
     local cachedItem = self:GetCachedItem(item)
     if cachedItem and cachedItem.components.weapon then
-        if type(cachedItem.components.weapon.damage) == "number" then
+        if BadPrefabs[item.prefab] then
+            return BadPrefabs[item.prefab]
+        elseif type(cachedItem.components.weapon.damage) == "number" then
             damage = cachedItem.components.weapon.damage
         elseif type(cachedItem.components.weapon.damage) == "function" then
             damage = cachedItem.components.weapon.damage(item, ThePlayer, target or ThePlayer)
