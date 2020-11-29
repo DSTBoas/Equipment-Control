@@ -61,6 +61,7 @@ local function Unequip(item)
     end
 
     SendRPCToServer(RPC.ControllerUseItemOnSelfFromInvTile, ACTIONS.UNEQUIP.code, item)
+
     return true
 end
 
@@ -71,6 +72,7 @@ local EmitLookup =
     minerhat = 0.739,
     torch = 0.730,
     lighter = 0.601,
+    molehat = 0.01, -- Kinda hacky
 }
 
 local function GetEmitValue()
