@@ -24,8 +24,6 @@ local Sorter = Class(function(self, inst)
 
     -- Memory
     self.blacklist = {}
-    self.pickupaction = nil
-    self.deployaction = nil
 
     -- Sorter
     self.sorting = false
@@ -444,14 +442,6 @@ function Sorter:Stop()
     if inventory then
         inventory.ReturnActiveItem = Inventory_Replica.ReturnActiveItem
     end
-    if self.pickupaction then
-        ACTIONS.PICKUP = self.pickupaction
-        self.pickupaction = nil
-    end
-    if self.deployaction then
-        ACTIONS.DEPLOY = self.deployaction
-        self.deployaction = nil
-    end
     self.sorting = false
     self:DebugPrint(nil, "Sorting stopped.")
 end
@@ -479,10 +469,6 @@ function Sorter:Start()
     self.sorting = true
     self:DebugPrint(nil, "Sorting of inventory started.")
     DisableUserInput()
-    self.pickupaction = ACTIONS.PICKUP
-    self.deployaction = ACTIONS.DEPLOY
-    ACTIONS.PICKUP = nil
-    ACTIONS.DEPLOY = nil
 
     local priorityTable = {}
 

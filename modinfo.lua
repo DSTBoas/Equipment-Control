@@ -5,7 +5,7 @@ icon_atlas = "modicon.xml"
 icon = "modicon.tex"
 
 author = "Boas"
-version = "6.3"
+version = "6.4"
 forumthread = ""
 
 dont_starve_compatible = false
@@ -203,6 +203,7 @@ local AutoEquipCaneOptions = GetDefaultOptions("Auto-equip your cane when moving
 local AutoEquipWeaponOptions = GetDefaultOptions("Auto-equip your best weapon in combat")
 local AutoEquipGlasscutterOptions = GetDefaultOptions("Auto-equip your glass cutter against nightmare creatures")
 local AutoDetectRepairableOptions = GetDefaultOptions("Auto-unequip repairables before their last use")
+local AutoRepeatActionsOptions = GetDefaultOptions("Auto-repeat actions e.g. cutting wood, mining rocks")
 local AutoSwitchOptions = GetDefaultOptions("Auto-switch your bone armors to stay invulnerable")
 local AutoReEquipArmorOptions = GetDefaultOptions("Auto-re-equip to the next best armor")
 local AutoReGearOptions = GetDefaultOptions("Auto-regear when transforming back to Woodie")
@@ -938,6 +939,13 @@ configuration_options =
         "Auto-unequip repairables",
         "AUTO_UNEQUIP_REPAIRABLES",
         AutoDetectRepairableOptions,
+        true,
+        SettingMessage
+    ),
+    AddConfig(
+        "Auto-repeat actions",
+        "AUTO_REPEAT_ACTIONS",
+        AutoRepeatActionsOptions,
         true,
         SettingMessage
     ),

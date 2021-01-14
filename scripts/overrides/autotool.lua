@@ -2,6 +2,7 @@ local InventoryFunctions = require "util/inventoryfunctions"
 local CraftFunctions = require "util/craftfunctions"
 
 local CRAFTING_ALLOWED = GetModConfigData("AUTO_EQUIP_TOOL", MOD_EQUIPMENT_CONTROL.MODNAME) == 2
+local AUTO_REPEAT_ACTIONS = GetModConfigData("AUTO_REPEAT_ACTIONS", MOD_EQUIPMENT_CONTROL.MODNAME)
 
 local CanOverrideAction =
 {
@@ -126,7 +127,8 @@ local WorkAnimations =
 }
 
 local function IsWorking(inst)
-    return inst.AnimState
+    return AUTO_REPEAT_ACTIONS
+       and inst.AnimState
        and (IsInOneOfAnimation(inst, WorkAnimations)
         or inst:HasTag("beaver")
        and not inst:HasTag("attack")
