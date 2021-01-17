@@ -43,7 +43,7 @@ local function GetTool(toolAction)
 
     if CRAFTING_ALLOWED then
         for i = 1, #CraftableTools[toolAction] do
-            if CraftFunctions:CanCraft(CraftableTools[toolAction][i]) then
+            if CraftFunctions:KnowsRecipe(CraftableTools[toolAction][i]) and CraftFunctions:CanCraft(CraftableTools[toolAction][i]) then
                 return CraftableTools[toolAction][i], true
             end
         end
