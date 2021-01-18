@@ -321,7 +321,6 @@ function ItemFunctions:IsMeleeWeapon(item)
        and not self:IsLightSource(item)
        and not self:IsTool(item)
        and not self:IsTerraformer(item)
-       and not self:IsCane(item)
        and not self:IsProjectile(item)
        and not self:IsStaff(item)
 end
