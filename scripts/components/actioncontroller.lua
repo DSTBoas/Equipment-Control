@@ -48,7 +48,8 @@ end
 
 local function GetPriority(category, item, ignorePreferences, target)
     return not ignorePreferences and GetPreference(category, item)
-        or Categories[category].priority(item, target) + GetNamePriority(item) - GetPercentUsedPriority(item)
+        or Categories[category].priority(item, target)
+         + (not Categories.CANE.fn(item) and GetNamePriority(item) - GetPercentUsedPriority(item) or 0)
 end
 
 local function IsAutoUnEquipping(item)
