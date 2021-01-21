@@ -51,6 +51,7 @@ local Overrides =
     autotool =
     {
         "AUTO_EQUIP_TOOL",
+        "AUTO_REPEAT_ACTIONS",
     },
     mousethrough =
     {
