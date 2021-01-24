@@ -97,7 +97,7 @@ local function OnBuildFossil(inst, data, target)
     end
 end
 
-local TrackTimeOut = FRAMES * 10
+local TrackTimeOut = FRAMES * 90
 
 local function GetTrack()
     local time = GetTime()
