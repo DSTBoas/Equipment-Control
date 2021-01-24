@@ -327,6 +327,7 @@ end
 local IgnoredFuels =
 {
     blueprint = true,
+    livinglog = true,
     waxwelljournal = true,
     boatpatch = true,
 }
