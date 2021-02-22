@@ -521,8 +521,14 @@ QuickActions.QUICK_ACTION_WAKEUP_BIRD.stringfn = function()
     return "Wakeup"
 end
 
-QuickActions.QUICK_ACTION_TRAP.fn = function(target)
-    return target:HasTag("trapsprung")
+if GetModConfigData("QUICK_ACTION_TRAP", MOD_EQUIPMENT_CONTROL.MODNAME) == 2 then
+    QuickActions.QUICK_ACTION_TRAP.fn = function(target)
+        return target:HasTag("trap")
+    end
+else
+    QuickActions.QUICK_ACTION_TRAP.fn = function(target)
+        return target:HasTag("trapsprung")
+    end
 end
 
 QuickActions.QUICK_ACTION_TRAP.stringfn = function()

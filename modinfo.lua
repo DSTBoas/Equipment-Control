@@ -5,7 +5,7 @@ icon_atlas = "modicon.xml"
 icon = "modicon.tex"
 
 author = "Boas"
-version = "6.8"
+version = "6.9"
 forumthread = ""
 
 dont_starve_compatible = false
@@ -381,6 +381,13 @@ local PickaxePreferenceOptions =
     AddConfigOption("Pick/Axe", "multitool_axe_pickaxe"),
     AddConfigOption("Opulent Pickaxe", "goldenpickaxe"),
     AddConfigOption("Pickaxe", "pickaxe"),
+}
+
+local TrapOptions =
+{
+    AddDisabledOption(),
+    AddConfigOption("Sprung", 1, "Only display on traps in a sprung state"),
+    AddConfigOption("Always", 2),
 }
 
 local RangedPreferenceOptions =
@@ -946,7 +953,7 @@ configuration_options =
         "Auto-repeat actions",
         "AUTO_REPEAT_ACTIONS",
         AutoRepeatActionsOptions,
-        true,
+        false,
         SettingMessage
     ),
     AddConfig(
@@ -988,7 +995,7 @@ configuration_options =
         "Auto-equip tool",
         "AUTO_EQUIP_TOOL",
         AutoEquipToolOptions,
-        2,
+        false,
         SettingMessage
     ),
     AddConfig(
@@ -1067,8 +1074,8 @@ configuration_options =
     AddConfig(
         "Reset Trap",
         "QUICK_ACTION_TRAP",
-        SettingOptions,
-        true,
+        TrapOptions,
+        2,
         SettingMessage
     ),
     AddConfig(
