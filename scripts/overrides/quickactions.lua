@@ -113,6 +113,8 @@ local function GetTrack()
         Sleep(FRAMES)
     end
 
+    Sleep(0)
+
     return track
 end
 
