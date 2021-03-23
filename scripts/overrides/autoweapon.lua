@@ -32,8 +32,19 @@ end
 
 local AUTO_EQUIP_WEAPON = GetModConfigData("AUTO_EQUIP_WEAPON", MOD_EQUIPMENT_CONTROL.MODNAME)
 
+local function IsRangeWeaponEquipped()
+    local equipped = InventoryFunctions:GetEquippedItem(EQUIPSLOTS.HANDS)
+
+    if not equipped then
+        return false
+    end
+
+    return Categories.RANGED.fn(equipped)
+end
+
 local function WeaponTrigger(target)
     return AUTO_EQUIP_WEAPON
+       and not IsRangeWeaponEquipped()
        and not target:HasTag("butterfly")
 end
 
@@ -51,6 +62,7 @@ local function EquipWeapon(target)
     if not ThePlayer or not ThePlayer.components.actioncontroller then
         return
     end
+
 
     local weapon = ThePlayer.components.actioncontroller:GetAutoEquipCategoryItem(target)
 

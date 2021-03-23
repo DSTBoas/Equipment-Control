@@ -149,6 +149,7 @@ end
 function InventoryFunctions:IsBusyClassified()
     local classified = self:GetClassified()
     return classified
+       and classified.IsBusy
        and classified:IsBusy()
 end
 
