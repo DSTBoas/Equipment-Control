@@ -5,7 +5,7 @@ icon_atlas = "modicon.xml"
 icon = "modicon.tex"
 
 author = "Boas"
-version = "7.07"
+version = "7.08"
 forumthread = ""
 
 dont_starve_compatible = false
@@ -1351,6 +1351,13 @@ configuration_options =
     AddConfig(
         "Damage estimation",
         "DAMAGE_ESTIMATION",
+        SettingOptions,
+        true,
+        SettingMessage
+    ),
+    AddConfig(
+        "Allow Tools on Weapon button",
+        "TOOLS_ON_WEAPON",
         SettingOptions,
         true,
         SettingMessage
