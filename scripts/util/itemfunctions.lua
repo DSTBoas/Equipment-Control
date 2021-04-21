@@ -1,5 +1,7 @@
 local CacheService = require "util/cacheservice"
 
+local TOOLS_ON_WEAPON = GetModConfigData("TOOLS_ON_WEAPON", MOD_EQUIPMENT_CONTROL.MODNAME)
+
 local ItemFunctions = {}
 
 function ItemFunctions:GetCachedItem(item)
@@ -319,7 +321,7 @@ end
 function ItemFunctions:IsMeleeWeapon(item)
     return self:IsWeapon(item)
        and not self:IsLightSource(item)
-       and not self:IsTool(item)
+       and (TOOLS_ON_WEAPON or not self:IsTool(item))
        and not self:IsTerraformer(item)
        and not self:IsProjectile(item)
        and not self:IsStaff(item)
