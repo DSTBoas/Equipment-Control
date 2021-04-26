@@ -28,6 +28,7 @@ Categories =
     FOOD = Category("berries"),
     HEALINGFOOD = Category("healingsalve"),
     SCYTHE = Category("scythe", false, "scythe"),
+    AMULET = Category(),
 }
 
 Categories.WEAPON.fn = function(item)
@@ -156,6 +157,14 @@ Categories.SCYTHE.fn = function(item)
 end
 
 Categories.SCYTHE.priority = Categories.AXE.priority
+
+Categories.AMULET.fn = function(item)
+    return item.prefab:sub(#item.prefab-5, #item.prefab) == "amulet"
+end
+
+---
+--- Connecting the keybinds
+---
 
 for category in pairs(Categories) do
     KeybindService:AddKey(category, function()

@@ -5,7 +5,7 @@ icon_atlas = "modicon.xml"
 icon = "modicon.tex"
 
 author = "Boas"
-version = "7.08"
+version = "7.09"
 forumthread = ""
 
 dont_starve_compatible = false
@@ -495,6 +495,7 @@ local ButtonCategoriesOptions =
     AddConfigOption("Healing food", "HEALINGFOOD"),
     AddConfigOption("Ranged", "RANGED"),
     AddConfigOption("Staff", "STAFF"),
+    AddConfigOption("Amulet", "AMULET"),
 }
 
 local AssignKeyMessage = "Assign a key"
