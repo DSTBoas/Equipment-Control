@@ -124,7 +124,7 @@ local function AddToFilter(ent)
 end
 
 local function LoadPickupFilter()
-    local t = FileSystem:LoadFile(Filter_File)
+    local t = FileSystem:LoadTableFromFile(Filter_File)
     for i = 1, #t do
         PickupFilter.prefabs[t[i]] = true
     end

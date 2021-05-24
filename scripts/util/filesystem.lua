@@ -1,6 +1,6 @@
 local FileSystem = {}
 
-function FileSystem:LoadFile(path)
+function FileSystem:LoadTableFromFile(path)
     local file = io.open(path, "r")
 
     if not file then

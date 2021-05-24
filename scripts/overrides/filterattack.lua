@@ -39,7 +39,7 @@ local function GetFilter(prefab)
 end
 
 local function LoadFilter()
-    local t = FileSystem:LoadFile(Filter_File)
+    local t = FileSystem:LoadTableFromFile(Filter_File)
     for i = 1, #t do
         AttackFilters[t[i]] = GetFilter(t[i])
     end
