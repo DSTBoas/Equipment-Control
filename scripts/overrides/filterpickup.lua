@@ -100,7 +100,7 @@ end
 local function SavePickupFilter()
     local t = {}
 
-    for prefab in pairs(PickupFilter) do
+    for prefab in pairs(PickupFilter.prefabs) do
         t[#t + 1] = prefab
     end
 
