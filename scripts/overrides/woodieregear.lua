@@ -24,7 +24,9 @@ local function UnEquip()
         local equips = {}
 
         for _, item in pairs(InventoryFunctions:GetEquips()) do
-            equips[#equips + 1] = item
+            if not item:HasTag("backpack") then
+                equips[#equips + 1] = item
+            end
         end
 
         for i = #equips, 1, -1 do
