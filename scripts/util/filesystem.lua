@@ -22,7 +22,7 @@ function FileSystem:LoadFile(path)
     return t
 end
 
-function FileSystem:SaveFile(path, t)
+function FileSystem:SaveTableToFile(path, t)
     local file = io.open(path, "w")
     file:write(table.concat(t, "\n"))
     file:close()

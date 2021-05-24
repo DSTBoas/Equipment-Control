@@ -52,7 +52,7 @@ local function SaveFilter()
         t[#t + 1] = prefab
     end
 
-    FileSystem:SaveFile(Filter_File, t)
+    FileSystem:SaveTableToFile(Filter_File, t)
 end
 
 local GroupTags =
