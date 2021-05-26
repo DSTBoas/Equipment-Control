@@ -53,10 +53,17 @@ local function IsLightSourceEquipped()
     return Categories.LIGHTSOURCE.fn(equipped)
 end
 
+local function ShouldEquipCane()
+    local cane = ThePlayer.components.actioncontroller:GetItemFromCategory("CANE")
+    return cane
+       and InventoryFunctions:GetEquippedItem(EQUIPSLOTS.HANDS) ~= cane
+end
+
 local function CanEquipCane()
     return AUTO_EQUIP_CANE
        and not IsLightSourceEquipped()
        and not InventoryFunctions:IsHeavyLifting()
+       and ShouldEquipCane()
 end
 
 local function EquipCane()
