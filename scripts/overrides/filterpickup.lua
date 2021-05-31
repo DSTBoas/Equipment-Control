@@ -8,11 +8,10 @@ local KeybindService = MOD_EQUIPMENT_CONTROL.KEYBINDSERVICE
 -- Config
 -- 
 
-local PRIOTIZE_VALUABLE_ITEMS = GetModConfigData("PRIOTIZE_VALUABLE_ITEMS", MOD_EQUIPMENT_CONTROL.MODNAME)
-local IGNORE_KNOWN_BLUEPRINT = GetModConfigData("IGNORE_KNOWN_BLUEPRINT", MOD_EQUIPMENT_CONTROL.MODNAME)
 local AUTO_EQUIP_TOOL = GetModConfigData("AUTO_EQUIP_TOOL", MOD_EQUIPMENT_CONTROL.MODNAME)
 
 local Filter_File = "mod_equipment_control_pickup_filter.txt"
+
 local PriotizedPickups =
 {
     greengem = .5,
@@ -163,19 +162,22 @@ local function GetBlueprintPrefab(blueprint)
     return nil
 end
 
-local function GetModifiedEnts(self, exclude, tags)
-    local x, y, z = self.inst.Transform:GetWorldPosition()
-    local ents = TheSim:FindEntities(x, y, z, self.directwalking and 3 or 6, nil, exclude, tags)
+local EntityFilters = {}
 
-    if IGNORE_KNOWN_BLUEPRINT then
+if GetModConfigData("IGNORE_KNOWN_BLUEPRINT", MOD_EQUIPMENT_CONTROL.MODNAME) then
+    EntityFilters[#EntityFilters + 1] = function(ents)
         for i = #ents, 1, -1 do
             if ents[i].prefab == "blueprint" and CraftFunctions:KnowsRecipe(GetBlueprintPrefab(ents[i])) then
                 table.remove(ents, i)
             end
         end
+        
+        return ents
     end
+end
 
-    if PRIOTIZE_VALUABLE_ITEMS then
+if GetModConfigData("PRIOTIZE_VALUABLE_ITEMS", MOD_EQUIPMENT_CONTROL.MODNAME) then
+    EntityFilters[#EntityFilters + 1] = function(ents)
         local prio = {}
 
         for i = 1, #ents do
@@ -195,8 +197,19 @@ local function GetModifiedEnts(self, exclude, tags)
         for i = 1, #prio do
             ents[#ents + 1] = prio[i].ent
         end
-    end
 
+        return ents
+    end
+end
+
+local function GetModifiedEnts(self, exclude, tags)
+    local x, y, z = self.inst.Transform:GetWorldPosition()
+    local ents = TheSim:FindEntities(x, y, z, self.directwalking and 3 or 6, nil, exclude, tags)
+
+    for i = 1, #EntityFilters do
+        ents = EntityFilters[i](ents) 
+    end
+    
     return ents
 end
 
@@ -263,9 +276,6 @@ local function Init()
         LoadPickupFilter()
     end
 
-    local function ValidateHaunt(target)
-        return target:HasActionComponent("hauntable")
-    end
 
     local function ValidateBugNet(target)
         return not target.replica.health:IsDead()
@@ -348,6 +358,22 @@ local function Init()
         table.insert(HAUNT_TARGET_EXCLUDE_TAGS, v)
     end
 
+    local function ValidateHaunt(target)
+        return target:HasActionComponent("hauntable")
+    end
+
+    local function ModifiedGhostFindEntity(self)
+        return FindEntity(self.inst, self.directwalking and 3 or 6, ValidateHaunt, nil, HAUNT_TARGET_EXCLUDE_TAGS)
+    end
+
+    if GetModConfigData("PRIOTIZE_VALUABLE_ITEMS", MOD_EQUIPMENT_CONTROL.MODNAME) then
+        local OldModifiedGhostFindEntity = ModifiedGhostFindEntity
+
+        ModifiedGhostFindEntity = function(self)
+            return FindEntity(self.inst, self.directwalking and 3 or 6, nil, {"resurrector"}) or OldModifiedGhostFindEntity(self)
+        end
+    end
+
     local CATCHABLE_TAGS = { "catchable" }
     local PINNED_TAGS = { "pinned" }
     local CORPSE_TAGS = { "corpse" }
@@ -380,7 +406,7 @@ local function Init()
             if self.inst:HasTag("playerghost") then
                 --haunt
                 if force_target == nil then
-                    local target = FindEntity(self.inst, self.directwalking and 3 or 6, ValidateHaunt, nil, HAUNT_TARGET_EXCLUDE_TAGS)
+                    local target = ModifiedGhostFindEntity(self)
                     if CanEntitySeeTarget(self.inst, target) then
                         return BufferedAction(self.inst, target, ACTIONS.HAUNT)
                     end
