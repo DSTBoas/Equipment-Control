@@ -212,6 +212,9 @@ local AutoCandyBagOptions = GetDefaultOptions("Auto-store candy & trinkets in th
 local ButtonPreferenceOptions = GetDefaultOptions("Right click to change preference")
 local ButtonAutoEquipOptions = GetDefaultOptions("Hold Shift + Right click to change Auto-equip")
 
+local IgnoreBlueprintOptions = GetDefaultOptions("Filter known blueprints from pickup")
+local PriotizeResurrection = GetDefaultOptions("As ghost prioritize picking up resurrection items")
+
 local TelepoofDoubleclickOptions =
 {
     AddDisabledOption(),
@@ -1181,9 +1184,16 @@ configuration_options =
         SettingMessage
     ),
     AddConfig(
-        "Ignore known Blueprints",
+        "Pickup resurrection item first",
+        "PRIOTIZE_RESURRECTION",
+        PriotizeResurrection,
+        true,
+        SettingMessage
+    ),
+    AddConfig(
+        "Ignore known blueprints",
         "IGNORE_KNOWN_BLUEPRINT",
-        SettingOptions,
+        IgnoreBlueprintOptions,
         true,
         SettingMessage
     ),
