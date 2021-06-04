@@ -26,7 +26,7 @@ local function IsInCombat()
         end
     end
 
-    -- @TODO Could be better
+    -- @TODO This could be better
     -- return IsNearBoss()
 end
 
@@ -48,7 +48,7 @@ local function UnEquipHelm()
 end
 
 local function IsWearingHelm()
-    return InventoryFunctions:GetEquippedItem(EQUIPSLOTS.HEAD) == ThePlayer.components.actioncontroller:GetItemFromCategory("ARMORHAT")
+    return Categories.ARMORHAT.fn(InventoryFunctions:GetEquippedItem(EQUIPSLOTS.HEAD))
 end
 
 local function Init()
