@@ -208,6 +208,7 @@ local AutoSwitchOptions = GetDefaultOptions("Auto-switch your bone armors to sta
 local AutoReEquipArmorOptions = GetDefaultOptions("Auto-re-equip to the next best armor")
 local AutoReGearOptions = GetDefaultOptions("Auto-regear when transforming back to Woodie")
 local AutoCandyBagOptions = GetDefaultOptions("Auto-store candy & trinkets in the Candy Bag")
+local AutoHelmOptions = GetDefaultOptions("Auto-equip your helm in combat")
 
 local ButtonPreferenceOptions = GetDefaultOptions("Right click to change preference")
 local ButtonAutoEquipOptions = GetDefaultOptions("Hold Shift + Right click to change Auto-equip")
@@ -993,6 +994,13 @@ configuration_options =
         "AUTO_EQUIP_LIGHTSOURCE",
         AutoEquipLightSourceOptions,
         2,
+        SettingMessage
+    ),
+    AddConfig(
+        "Auto-equip helm",
+        "AUTO_EQUIP_HELM",
+        AutoHelmOptions,
+        false,
         SettingMessage
     ),
     AddConfig(
