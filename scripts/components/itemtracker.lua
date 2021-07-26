@@ -32,6 +32,10 @@ end
 local function AutoReEquip(item)
     item = item.entity:GetParent()
 
+    if not item then
+        return
+    end
+
     if AUTO_RE_EQUIP_WEAPON == AutoEquipEnum.BEST and ItemFunctions:IsMeleeWeapon(item) then
         item = GetItemFromCategory("WEAPON")
         InventoryFunctions:Equip(item)
@@ -150,6 +154,10 @@ end
 local function AutoUnEquip(item)
     item = item.entity:GetParent()
 
+    if not item then
+        return
+    end
+
     if ItemFunctions:GetPercentUsed(item) <= ItemFunctions:GetFiniteUses(item) then
         StartAutoUnequipTask(item)
     end
@@ -157,6 +165,11 @@ end
 
 local function AutoSwitchSkeletonArmor(item)
     item = item.entity:GetParent()
+
+    if not item then
+        return
+    end
+
     item.LAST_USED = GetTime()
 
     local armors = {}
@@ -252,6 +265,10 @@ end
 local function AutoRefuel(item)
     item = item.entity:GetParent()
 
+    if not item then
+        return
+    end
+
     if ItemFunctions:GetPercentUsed(item) < 50 then
         local fuelTypes = GetFuelTypes(item)
         local fuel = GetFuel(fuelTypes)
@@ -270,6 +287,10 @@ end
 
 local function OnFuelDepleted(item)
     item = item.entity:GetParent()
+
+    if not item then
+        return
+    end
 
     if item:HasTag("fueldepleted") then
         RefreshButtons()
@@ -323,6 +344,10 @@ end
             
 local function AutoCatchBoomerang(item)
     item = item.entity:GetParent()
+
+    if not item then
+        return
+    end
 
     if ThePlayer.AnimState:IsCurrentAnimation("throw") then
         if AutoCatch.tasks[item] then
