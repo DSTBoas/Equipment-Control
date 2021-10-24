@@ -631,6 +631,13 @@ configuration_options =
         AssignKeyMessage
     ),
     AddConfig(
+        "Meat prioritization mode",
+        "MEAT_PRIORITIZATION_MODE",
+        KeyboardOptions,
+        "KEY_F9",
+        AssignKeyMessage
+    ),
+    AddConfig(
         "Eat confirmation",
         "CONFIRM_TO_EAT",
         ConfirmToEatOptions,
