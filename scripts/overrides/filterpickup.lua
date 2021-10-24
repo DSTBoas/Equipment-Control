@@ -71,6 +71,8 @@ local PickupFilter =
     prefabs = {},
 }
 
+_G.MOD_EQUIPMENT_CONTROL.PICKUP_FILTER = PickupFilter.prefabs
+
 local function AddFilteredPrefab(prefab)
     PickupFilter.prefabs[prefab] = true
 end
@@ -104,6 +106,14 @@ local function SavePickupFilter()
     end
 
     FileSystem:SaveTableToFile(Filter_File, t)
+end
+
+local function AddColor(ent)
+    ent.AnimState:SetMultColour(1, 0, 0, 1)
+end
+
+local function RemoveColor(ent)
+    ent.AnimState:SetMultColour(1, 1, 1, 1)
 end
 
 local function IsFiltered(ent)
@@ -274,8 +284,12 @@ local function Init()
 
     if GetModConfigData("PICKUP_FILTER", MOD_EQUIPMENT_CONTROL.MODNAME) then
         LoadPickupFilter()
+        for _, ent in pairs(Ents) do
+            if PickupFilter.prefabs[ent.prefab] then
+                AddColor(ent)
+            end
+        end
     end
-
 
     local function ValidateBugNet(target)
         return not target.replica.health:IsDead()
@@ -539,14 +553,129 @@ KeybindService:AddKey("PICKUP_FILTER", function()
     local ent = TheInput:GetWorldEntityUnderMouse()
 
     if CanBePickedUp(ent) then
+        local addEntity = AddToFilter(ent)
+        if addEntity then
+            for _, v in pairs(Ents) do
+                if v.prefab == ent.prefab then
+                    AddColor(v)
+                end
+            end
+        else
+            for _, v in pairs(Ents) do
+                if v.prefab == ent.prefab then
+                    RemoveColor(v)
+                end
+            end
+        end
         Say(
             string.format(
-                AddToFilter(ent) and MOD_EQUIPMENT_CONTROL.STRINGS.PICKUP_FILTER.ADD
+                addEntity and MOD_EQUIPMENT_CONTROL.STRINGS.PICKUP_FILTER.ADD
                 or MOD_EQUIPMENT_CONTROL.STRINGS.PICKUP_FILTER.REMOVE,
                 ent.name
             )
         )
     end
 end)
+
+-- DO NOT add any functions to the EntityFilters after this line since the last # is changing dynamically
+if GetModConfigData("MEAT_PRIORITIZATION_MODE", MOD_EQUIPMENT_CONTROL.MODNAME) then
+    local meatPrioritizationModes =
+    {
+        "First",
+        "Last",
+        "Ignore",
+        "None"
+    }
+
+    local meatPrioritizationFuncs = {}
+
+    local function AddFuncInOrder(name, fn)
+        for i = 1, #meatPrioritizationModes do
+            if meatPrioritizationModes[i] == name then
+                meatPrioritizationFuncs[i] = fn
+                break
+            end
+        end
+    end
+
+    AddFuncInOrder("First", function(ents)
+        local prio = {}
+
+        for i = 1, #ents do
+            prio[#prio + 1] =
+            {
+                ent = ents[i],
+                priority = ents[i]:HasTag("meat") and 1 or 0,
+            }
+        end
+
+        ents = {}
+
+        table.sort(prio, function(a, b)
+            return a.priority > b.priority
+        end)
+
+        for i = 1, #prio do
+            ents[#ents + 1] = prio[i].ent
+        end
+
+        return ents
+    end)
+
+    AddFuncInOrder("Last", function(ents)
+        local prio = {}
+
+        for i = 1, #ents do
+            prio[#prio + 1] =
+            {
+                ent = ents[i],
+                priority = ents[i]:HasTag("meat") and 0 or 1,
+            }
+        end
+
+        ents = {}
+
+        table.sort(prio, function(a, b)
+            return a.priority > b.priority
+        end)
+
+        for i = 1, #prio do
+            ents[#ents + 1] = prio[i].ent
+        end
+
+        return ents
+    end)
+
+    AddFuncInOrder("Ignore", function(ents)
+        local newEnts = {}
+
+        for i = 1, #ents do
+            if not ents[i]:HasTag("meat") then
+                newEnts[#newEnts + 1] = ents[i]
+            end
+        end
+
+        return newEnts
+    end)
+
+    AddFuncInOrder("None", function(ents)
+        return ents
+    end)
+
+    local currentMeatPrioritizationMode = 4
+
+    EntityFilters[#EntityFilters + 1] = meatPrioritizationFuncs[currentMeatPrioritizationMode]
+
+    KeybindService:AddKey("MEAT_PRIORITIZATION_MODE", function()
+        if currentMeatPrioritizationMode == #meatPrioritizationModes then
+            currentMeatPrioritizationMode = 1
+        else
+            currentMeatPrioritizationMode = currentMeatPrioritizationMode + 1;
+        end
+
+        Say("Current meat pickup mode is: " .. meatPrioritizationModes[currentMeatPrioritizationMode] .. ".")
+        EntityFilters[#EntityFilters] = meatPrioritizationFuncs[currentMeatPrioritizationMode]
+    end)
+end
 
 return Init
