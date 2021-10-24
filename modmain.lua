@@ -7,6 +7,7 @@ MOD_EQUIPMENT_CONTROL.SPECIALFOOD = require("util/specialfood")
 MOD_EQUIPMENT_CONTROL.KEYBINDSERVICE = require("util/keybindservice")(modname)
 MOD_EQUIPMENT_CONTROL.STRINGS = require("equipment_control_strings")
 MOD_EQUIPMENT_CONTROL.SPAWNING = false
+MOD_EQUIPMENT_CONTROL.PICKUP_FILTER = {}
 _G.MOD_EQUIPMENT_CONTROL = MOD_EQUIPMENT_CONTROL
 
 require("categories")
@@ -167,3 +168,14 @@ local function OnWorldPostInit(inst)
     inst:ListenForEvent("playeractivated", OnPlayerActivated, _G.TheWorld)
 end
 AddPrefabPostInit("world", OnWorldPostInit)
+
+-- Pickup filter colors
+AddPrefabPostInitAny(function(inst)
+    if inst and inst.prefab then
+        if _G.MOD_EQUIPMENT_CONTROL.PICKUP_FILTER[inst.prefab] then
+            if inst.AnimState then
+                inst.AnimState:SetMultColour(1, 0, 0, 1)
+            end
+        end
+    end
+end)
