@@ -119,6 +119,10 @@ local Overrides =
     {
         "AUTO_EQUIP_HELM",
     },
+    autoeat = 
+    {
+        "AUTO_EAT_FOOD",
+    },
 }
 
 for override, confs in pairs(Overrides) do

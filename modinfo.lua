@@ -5,7 +5,7 @@ icon_atlas = "modicon.xml"
 icon = "modicon.tex"
 
 author = "Boas"
-version = "7.13"
+version = "7.15"
 forumthread = ""
 
 dont_starve_compatible = false
@@ -209,6 +209,7 @@ local AutoReEquipArmorOptions = GetDefaultOptions("Auto-re-equip to the next bes
 local AutoReGearOptions = GetDefaultOptions("Auto-regear when transforming back to Woodie")
 local AutoCandyBagOptions = GetDefaultOptions("Auto-store candy & trinkets in the Candy Bag")
 local AutoHelmOptions = GetDefaultOptions("Auto-equip your helm in combat")
+local AutoEatOptions = GetDefaultOptions("Auto-eat food at 0 hunger")
 
 local ButtonPreferenceOptions = GetDefaultOptions("Right click to change preference")
 local ButtonAutoEquipOptions = GetDefaultOptions("Hold Shift + Right click to change Auto-equip")
@@ -1049,6 +1050,13 @@ configuration_options =
         "Auto-refuel light",
         "AUTO_REFUEL_LIGHT_SOURCES",
         SettingOptions,
+        false,
+        SettingMessage
+    ),
+    AddConfig(
+        "Auto-eat food",
+        "AUTO_EAT_FOOD",
+        AutoEatOptions,
         false,
         SettingMessage
     ),
