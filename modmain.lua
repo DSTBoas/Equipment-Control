@@ -32,6 +32,8 @@ if GetModConfigData("BUTTON_SHOW") then
     end)
 end
 
+-- Don't do this, it's error prone
+-- Each file should have its own config check table at the top of the file
 local Overrides =
 {
     autocane =
@@ -90,6 +92,7 @@ local Overrides =
         "PICKUP_IGNORE_FERNS",
         "PICKUP_IGNORE_SUCCULENTS",
         "PICKUP_IGNORE_MARSH_BUSH",
+        "MEAT_PRIORITIZATION_MODE",
     },
     quickactions =
     {
