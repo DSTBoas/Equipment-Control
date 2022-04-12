@@ -10,7 +10,6 @@ local AUTO_RE_EQUIP_WEAPON = GetModConfigData("AUTO_RE_EQUIP_WEAPON", MOD_EQUIPM
 local BUTTON_SHOW = GetModConfigData("BUTTON_SHOW", MOD_EQUIPMENT_CONTROL.MODNAME)
 local PREFERRED_FUEL = GetModConfigData("PREFERRED_FUEL", MOD_EQUIPMENT_CONTROL.MODNAME)
 
-local IsMasterSim
 local Trackers = {}
 local TrackerFunctions = {}
 
@@ -497,7 +496,6 @@ local function OnDeactivateWorld()
 end
 
 local ItemTracker = Class(function(self, inst)
-    IsMasterSim = TheWorld.ismastersim
     self.inst = inst
 
     self.inst:ListenForEvent("equip", function(_, data)
