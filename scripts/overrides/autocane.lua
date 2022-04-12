@@ -2,6 +2,7 @@ local InventoryFunctions = require "util/inventoryfunctions"
 local ConfigFunctions = require "util/configfunctions"
 local KeybindService = MOD_EQUIPMENT_CONTROL.KEYBINDSERVICE
 
+-- TODO: Would be nice to automatically fetch these actions
 local CanWalkTo =
 {
     [ACTIONS.RUMMAGE] = true,
@@ -54,9 +55,7 @@ local function IsLightSourceEquipped()
 end
 
 local function ShouldEquipCane()
-    local cane = ThePlayer.components.actioncontroller:GetItemFromCategory("CANE")
-    return cane
-       and InventoryFunctions:GetEquippedItem(EQUIPSLOTS.HANDS) ~= cane
+    return not Categories.CANE.fn(InventoryFunctions:GetEquippedItem(EQUIPSLOTS.HANDS))
 end
 
 local function CanEquipCane()

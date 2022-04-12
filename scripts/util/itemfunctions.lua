@@ -315,6 +315,7 @@ function ItemFunctions:IsWeapon(item)
 
     return cachedItem
        and cachedItem.components.weapon
+       and not item:HasTag("dumbbell")
        and not cachedItem.components.weapon:CanRangedAttack()
 end
 

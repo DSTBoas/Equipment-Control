@@ -10,6 +10,7 @@ local AUTO_RE_EQUIP_WEAPON = GetModConfigData("AUTO_RE_EQUIP_WEAPON", MOD_EQUIPM
 local BUTTON_SHOW = GetModConfigData("BUTTON_SHOW", MOD_EQUIPMENT_CONTROL.MODNAME)
 local PREFERRED_FUEL = GetModConfigData("PREFERRED_FUEL", MOD_EQUIPMENT_CONTROL.MODNAME)
 
+local IsMasterSim
 local Trackers = {}
 local TrackerFunctions = {}
 
@@ -229,37 +230,28 @@ local function GetFuel(fuelTypes)
     return ret[1]
 end
 
-local function IsWalkButtonDown()
-    return TheInput:IsControlPressed(CONTROL_MOVE_UP)
-        or TheInput:IsControlPressed(CONTROL_MOVE_DOWN)
-        or TheInput:IsControlPressed(CONTROL_MOVE_LEFT)
-        or TheInput:IsControlPressed(CONTROL_MOVE_RIGHT)
-end
+local function AddFuel(item, fuel)
+    local dragWalking = ThePlayer.components.playercontroller.dragwalking
 
-local function AddFuel(invItem, item)
-    local newRequest = false
-
-    if IsWalkButtonDown() and not ThePlayer.sg then
-        SendRPCToServer(RPC.StopWalking)
-        newRequest = true
-    end
-
-    local action = invItem:GetIsWet() and ACTIONS.ADDWETFUEL
-                   or ACTIONS.ADDFUEL
-    local buffaction = BufferedAction(ThePlayer, nil, action)
-    ThePlayer.components.playercontroller:RemoteControllerUseItemOnItemFromInvTile(buffaction, item, invItem)
-
-    if newRequest then
+    if ThePlayer.components.playercontroller.directwalking or dragWalking then
+        local oldPlayerControllerIsEnabled = ThePlayer.components.playercontroller.IsEnabled
+        ThePlayer.components.playercontroller.IsEnabled = function() return false end
         ThePlayer:DoTaskInTime(FRAMES * 8, function()
-            if IsWalkButtonDown() then
-                SendRPCToServer(
-                    RPC.DirectWalking,
-                    ThePlayer.components.playercontroller.remote_vector.x,
-                    ThePlayer.components.playercontroller.remote_vector.z
-                )
+            ThePlayer.components.playercontroller.IsEnabled = oldPlayerControllerIsEnabled
+            if dragWalking and TheInput:IsControlPressed(CONTROL_PRIMARY) then
+                 ThePlayer.components.playercontroller:OnLeftClick(true)
             end
         end)
     end
+
+    if dragWalking then
+        ThePlayer:DoTaskInTime(FRAMES * 2, function()
+            ThePlayer.replica.inventory:ControllerUseItemOnItemFromInvTile(item, fuel)
+        end)
+        return
+    end
+
+    ThePlayer.replica.inventory:ControllerUseItemOnItemFromInvTile(item, fuel)
 end
 
 local function AutoRefuel(item)
@@ -269,12 +261,13 @@ local function AutoRefuel(item)
         return
     end
 
+    local percent = ItemFunctions:GetPercentUsed(item)
     if ItemFunctions:GetPercentUsed(item) < 50 then
         local fuelTypes = GetFuelTypes(item)
         local fuel = GetFuel(fuelTypes)
 
         if fuel then
-            AddFuel(fuel, item)
+            AddFuel(item, fuel)
         end
     end
 end
@@ -504,6 +497,7 @@ local function OnDeactivateWorld()
 end
 
 local ItemTracker = Class(function(self, inst)
+    IsMasterSim = TheWorld.ismastersim
     self.inst = inst
 
     self.inst:ListenForEvent("equip", function(_, data)
