@@ -5,7 +5,7 @@ icon_atlas = "modicon.xml"
 icon = "modicon.tex"
 
 author = "Boas"
-version = "7.16"
+version = "7.21"
 forumthread = ""
 
 dont_starve_compatible = false
@@ -306,6 +306,7 @@ local WeaponPreferenceOptions =
 {
     AddDisabledOption(),
 
+    AddConfigOption("Shield of Terror", "shieldofterror"),
     AddConfigOption("Darksword", "nightsword"),
     AddConfigOption("Glasscutter", "glasscutter"),
     AddConfigOption("Thulecite Club", "ruins_bat"),
@@ -335,6 +336,7 @@ local WeaponPreferenceOptions =
 local HeadArmorPreferenceOptions =
 {
     AddDisabledOption(),
+    AddConfigOption("Eye Mask", "eyemaskhat"),
     AddConfigOption("Bone Helm", "skeletonhat"),
     AddConfigOption("Thulecite Crown", "ruinshat"),
     AddConfigOption("Shelmet", "slurtlehat"),

@@ -37,10 +37,15 @@ local function CacheItem(item)
     return cacheItem
 end
 
+local NotAllowed =
+{
+    ["blueprint"] = true,
+    ["terrarium"] = true
+}
+
 local function AllowCache(item)
     return item
-       and item.prefab
-       and item.prefab ~= "blueprint"
+       and not NotAllowed[item.prefab]
 end
 
 function CacheService:GetCachedItem(item)
@@ -52,6 +57,7 @@ function CacheService:GetCachedItem(item)
         MOD_EQUIPMENT_CONTROL.SPAWNING = true
         local sim = TheWorld.ismastersim
         TheWorld.ismastersim = true
+
         local clone = SpawnPrefab(item.prefab)
         Cache[item.prefab] = CacheItem(clone)
         clone:Remove()

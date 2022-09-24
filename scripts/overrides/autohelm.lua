@@ -51,6 +51,28 @@ local function IsWearingHelm()
     return Categories.ARMORHAT.fn(InventoryFunctions:GetEquippedItem(EQUIPSLOTS.HEAD))
 end
 
+local function AmountOfEquippedLightSources()
+    local ret = 0
+
+    for _, item in pairs(InventoryFunctions:GetEquips()) do
+        if (Categories.LIGHTSOURCE.fn(item)) then
+            ret = ret + 1
+        end
+    end
+
+    return ret
+end
+
+local function CanEquipHelm()
+    local equippedItem = InventoryFunctions:GetEquippedItem(EQUIPSLOTS.HEAD)
+
+    if not equippedItem then
+        return true
+    end
+
+    return (AmountOfEquippedLightSources() > 1) or not Categories.LIGHTSOURCE.fn(equippedItem)
+end
+
 local function Init()
     if not ThePlayer then
         return
@@ -61,7 +83,7 @@ local function Init()
 
     StartThread(function()
         while ThePlayer do
-            if not IsWearingHelm() and IsInCombat() then
+            if CanEquipHelm() and not IsWearingHelm() and IsInCombat() then
                 oldHelm = InventoryFunctions:GetEquippedItem(EQUIPSLOTS.HEAD)
                 EquipHelm()
                 trigger = true

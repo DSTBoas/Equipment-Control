@@ -94,38 +94,38 @@ local function Init()
         return
     end
 
-    -- local PlayerControllerDoAttackButton = PlayerController.DoAttackButton
-    -- function PlayerController:DoAttackButton(retarget)
-    --     local force_attack = TheInput:IsControlPressed(CONTROL_FORCE_ATTACK)
-    --     local target = self:GetAttackTarget(force_attack, retarget, retarget ~= nil)
+    local PlayerControllerDoAttackButton = PlayerController.DoAttackButton
+    function PlayerController:DoAttackButton(retarget)
+        local force_attack = TheInput:IsControlPressed(CONTROL_FORCE_ATTACK)
+        local target = self:GetAttackTarget(force_attack, retarget, retarget ~= nil)
 
-    --     if target then
-    --         for i = 1, #AutoEquipFns do
-    --             if AutoEquipFns[i].trigger(target) then
-    --                 AutoEquipFns[i].fn(target)
-    --                 break
-    --             end
-    --         end
-    --     end
-
-    --     PlayerControllerDoAttackButton(self, retarget)
-    -- end
-
-    local OldGetAttackTarget = PlayerController.GetAttackTarget
-    function PlayerController:GetAttackTarget(...)
-        local force_target = OldGetAttackTarget(self, ...)
-
-        if force_target then
+        if target then
             for i = 1, #AutoEquipFns do
-                if AutoEquipFns[i].trigger(force_target) then
-                    AutoEquipFns[i].fn(force_target)
+                if AutoEquipFns[i].trigger(target) then
+                    AutoEquipFns[i].fn(target)
                     break
                 end
             end
         end
 
-        return force_target
+        PlayerControllerDoAttackButton(self, retarget)
     end
+
+    -- local OldGetAttackTarget = PlayerController.GetAttackTarget
+    -- function PlayerController:GetAttackTarget(...)
+    --     local force_target = OldGetAttackTarget(self, ...)
+
+    --     if force_target then
+    --         for i = 1, #AutoEquipFns do
+    --             if AutoEquipFns[i].trigger(force_target) then
+    --                 AutoEquipFns[i].fn(force_target)
+    --                 break
+    --             end
+    --         end
+    --     end
+
+    --     return force_target
+    -- end
 end
 
 KeybindService:AddKey("TOGGLE_AUTO_EQUIP", function()
