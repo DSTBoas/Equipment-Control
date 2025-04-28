@@ -109,13 +109,15 @@ local function Init()
         TagToPriority.flight = -1
     end
 
-    function TheInput:OnUpdate()
+    local oldOnUpdate = TheInput.OnUpdate
+
+    function TheInput:OnUpdate(...)
         if self.mouse_enabled then
             self.entitiesundermouse = TheSim:GetEntitiesAtScreenPoint(TheSim:GetPosition())
             local inst = GetHoverInst(self.entitiesundermouse)
 
             if ( inst ~= nil and #self.entitiesundermouse == 1) then
-                return oldUpdate(self, ...)
+                return oldOnUpdate(self, ...)
             end
             
             if inst ~= nil and inst.CanMouseThrough ~= nil then

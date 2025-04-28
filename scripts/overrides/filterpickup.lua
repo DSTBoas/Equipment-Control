@@ -132,12 +132,16 @@ local function AddToFilter(ent)
     return PickupFilter.prefabs[ent.prefab]
 end
 
-local function LoadPickupFilter()
-    local t = FileSystem:LoadTableFromFile(Filter_File)
-    for i = 1, #t do
-        PickupFilter.prefabs[t[i]] = true
-    end
-end
+local function LoadPickupFilter(onLoaded)
+    FileSystem:LoadTableFromFile(Filter_File, function(filterList)
+        for _, prefab in ipairs(filterList) do
+            PickupFilter.prefabs[prefab] = true
+        end
+        if onLoaded then
+            onLoaded()
+        end
+    end)
+end    
 
 local function GetBlueprintPriority(name)
     if KnowsBlueprint(name) then
@@ -283,12 +287,13 @@ local function Init()
     -- print(str)
 
     if GetModConfigData("PICKUP_FILTER", MOD_EQUIPMENT_CONTROL.MODNAME) then
-        LoadPickupFilter()
-        for _, ent in pairs(Ents) do
-            if PickupFilter.prefabs[ent.prefab] then
-                AddColor(ent)
+        LoadPickupFilter(function()
+            for _, ent in pairs(Ents) do
+                if PickupFilter.prefabs[ent.prefab] then
+                    AddColor(ent)
+                end
             end
-        end
+        end)
     end
 
     local function ValidateBugNet(target)
