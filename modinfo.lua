@@ -5,7 +5,7 @@ icon_atlas = "modicon.xml"
 icon = "modicon.tex"
 
 author = "Boas"
-version = "7.23"
+version = "7.24"
 forumthread = ""
 
 dont_starve_compatible = false
@@ -300,6 +300,13 @@ local CanePreferenceOptions =
     AddDisabledOption(),
     AddConfigOption("The Lazy Explorer", "orangestaff"),
     AddConfigOption("Walking Cane", "cane"),
+    AddConfigOption("Dumbbell", "dumbbell"),
+    AddConfigOption("Golden Dumbbell", "dumbbell_golden"),
+    AddConfigOption("Marbell", "dumbbell_marble"),
+    AddConfigOption("Gembell", "dumbbell_gem"),
+    AddConfigOption("Firebell", "dumbell_redgem"),
+    AddConfigOption("Icebell", "dumbell_bluegem"),
+    AddConfigOption("Thermbell", "dumbell_heat")
 }
 
 local WeaponPreferenceOptions =

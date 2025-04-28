@@ -291,8 +291,8 @@ function ItemFunctions:IsTerraformer(item)
 end
 
 function ItemFunctions:IsCane(item)
-    return self:GetWalkspeedMult(item) > 1
-       and self:GetEquipSlot(item) == EQUIPSLOTS.HANDS
+    return (item and item:HasTag("dumbbell")) or (self:GetWalkspeedMult(item) > 1
+       and self:GetEquipSlot(item) == EQUIPSLOTS.HANDS)
 end
 
 function ItemFunctions:IsProjectile(item)
