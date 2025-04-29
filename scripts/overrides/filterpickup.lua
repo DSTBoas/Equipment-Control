@@ -5,6 +5,9 @@ local Say = require "util/say"
 local TheInput = GLOBAL.TheInput
 local MOD_EQUIPMENT_CONTROL = GLOBAL.MOD_EQUIPMENT_CONTROL
 local KeybindService = MOD_EQUIPMENT_CONTROL.KEYBINDSERVICE
+local EQUIPSLOTS = GLOBAL.EQUIPSLOTS
+local ACTIONS = GLOBAL.ACTIONS
+local PlayerController = GLOBAL.PlayerController
 
 -- 
 -- Config
