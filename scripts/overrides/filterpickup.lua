@@ -11,6 +11,9 @@ local FindEntity = GLOBAL.FindEntity
 local CanEntitySeeTarget = GLOBAL.CanEntitySeeTarget
 local TOOLACTIONS = GLOBAL.TOOLACTIONS
 local BufferedAction = GLOBAL.BufferedAction
+local STRINGS = GLOBAL.STRINGS
+local TheSim = GLOBAL.TheSim
+local CONTROL_ACTION = GLOBAL.CONTROL_ACTION
 
 -- 
 -- Config
