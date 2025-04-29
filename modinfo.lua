@@ -1,1408 +1,581 @@
 name = "Equipment Control"
 description = "If you have suggestions/ideas/bugs let me know in this mod's comment section on Steam\n\n\n\n\n\n\n\n\n\n\n\n\n\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tMade with 󰀍"
-
 icon_atlas = "modicon.xml"
 icon = "modicon.tex"
-
 author = "Boas"
 version = "7.30"
 forumthread = ""
-
 dont_starve_compatible = false
 reign_of_giants_compatible = false
 dst_compatible = true
-
 all_clients_require_mod = false
 client_only_mod = true
-
 api_version = 10
-
 folder_name = folder_name or name
 if not folder_name:find("workshop-") then
     name = name .. " (dev)"
 end
 
-local function AddConfigOption(desc, data, hover)
+local function opt(desc, data, hover)
+    return { description = desc, data = data, hover = hover }
+end
+
+local function boolOpt(hover)
     return {
-                description = desc,
-                data = data,
-                hover = hover
-           }
-end
-
-local function AddDisabledOption()
-    return {
-                description = "Disabled",
-                data = false
-           }
-end
-
-local function AddConfig(label, name, options, default, hover)
-    return {
-                label = label,
-                name = name,
-                options = options,
-                default = default,
-                hover = hover
-           }
-end
-
-local function AddSectionTitle(title)
-    return AddConfig(title, "", {{description = "", data = 0}}, 0)
-end
-
-local function GetKeyboardOptions(hover)
-    local keys = {}
-    local nameKeys =
-    {
-        "Tab",
-        "-",
-        "=",
-        "Space",
-        "Enter",
-        "Esc",
-        "Pause",
-        "Print Screen",
-        "Caps Lock",
-        "Scroll Lock",
-        "Right Shift",
-        "Left Shift",
-        "Shift",
-        "Right Ctrl",
-        "Left Ctrl",
-        "Ctrl",
-        "Right Alt",
-        "Left Alt",
-        "Alt",
-        "Backspace",
-        "\\",
-        ".",
-        "/",
-        ";",
-        "{",
-        "}",
-        "~",
-        "Arrow Up",
-        "Arrow Down",
-        "Arrow Right",
-        "Arrow Left",
-        "Insert",
-        "Delete",
-        "Home",
-        "End",
-        "Page Up",
-        "Page Down"
+        opt("Disabled", false, hover),
+        opt("Enabled", true, hover),
     }
-    local specialKeys =
-    {
-        "TAB",
-        "MINUS",
-        "EQUALS",
-        "SPACE",
-        "ENTER",
-        "ESCAPE",
-        "PAUSE",
-        "PRINT",
-        "CAPSLOCK",
-        "SCROLLOCK",
-        "RSHIFT",
-        "LSHIFT",
-        "SHIFT",
-        "RCTRL",
-        "LCTRL",
-        "CTRL",
-        "RALT",
-        "LALT",
-        "ALT",
-        "BACKSPACE",
-        "BACKSLASH",
-        "PERIOD",
-        "SLASH",
-        "SEMICOLON",
-        "RIGHTBRACKET",
-        "LEFTBRACKET",
-        "TILDE",
-        "UP",
-        "DOWN",
-        "RIGHT",
-        "LEFT",
-        "INSERT",
-        "DELETE",
-        "HOME",
-        "END",
-        "PAGEUP",
-        "PAGEDOWN",
+end
+
+local function cfg(label, name, options, default, hover)
+    return { label = label, name = name, options = options, default = default, hover = hover }
+end
+
+local function title(text)
+    return cfg(text, "", { { description = "", data = 0 } }, 0)
+end
+
+
+local YESNO = boolOpt()
+local YESNO_BETA = boolOpt("Experimental – use at your own risk!")
+local YESNO_PREF_SHORTCUT = boolOpt("Right click to change preference")
+local YESNO_AUTOEQUIP_SHORTCUT = boolOpt("Hold Shift + Right click to change Auto-equip")
+local YESNO_TELEPOOF_HOVER = boolOpt("Hovertext is hidden when Telepoof is disabled")
+local YESNO_TELEPOOF_DISABLED = boolOpt("Telepoof is disabled when you enter the game")
+local YESNO_FORCE_INSPECT = boolOpt("Requires you to hold Force Inspect to interact with Players")
+local YESNO_FLYING_BIRDS = boolOpt("Flying birds are unclickable")
+local YESNO_YELLOWSTAFF = boolOpt("Allows you to cast Dwarf Stars closer together")
+local YESNO_ORANGESTAFF = boolOpt("Allows you to Telepoof through walls")
+local YESNO_AUTO_EQUIP_GLASSCUTTER = boolOpt("Auto-equip your glass cutter against nightmare creatures")
+local YESNO_AUTO_REGEAR_WOODIE = boolOpt("Auto-regear when transforming back to Woodie")
+local YESNO_AUTO_REFUEL_LIGHT = boolOpt()
+
+local PRIORITY = {}
+for p = 7, 1, -1 do
+    PRIORITY[#PRIORITY + 1] = opt("" .. (8 - p), p)
+end
+
+local KB = {}
+KB[#KB + 1] = opt("Disabled", false)
+do -- Scope for local vars
+    local ALPHA = {
+        "A","B","C","D","E","F","G","H","I","J","K","L","M",
+        "N","O","P","Q","R","S","T","U","V","W","X","Y","Z",
     }
-
-    local function AddConfigKey(t, key, hover)
-        t[#t + 1] = AddConfigOption(key, "KEY_" .. key, hover)
+    for i = 1, #ALPHA do
+        local letter = ALPHA[i]
+        KB[#KB + 1] = opt(letter, "KEY_" .. letter)
     end
 
-    local function AddConfigSpecialKey(t, name, key, hover)
-        t[#t + 1] = AddConfigOption(name, "KEY_" .. key, hover)
-    end
-
-    local function AddDisabledConfigOption(t, hover)
-        t[#t + 1] = AddConfigOption("Disabled", false, hover)
-    end
-
-    AddDisabledConfigOption(keys, hover)
-
-    local string = ""
-    for i = 1, 26 do
-        AddConfigKey(keys, string.char(64 + i), hover)
-    end
-
-    for i = 1, 10 do
-        AddConfigKey(keys, i % 10 .. "", hover)
+    for i = 0, 9 do
+        KB[#KB + 1] = opt("" .. i, "KEY_" .. i)
     end
 
     for i = 1, 12 do
-        AddConfigKey(keys, "F" .. i, hover)
+        KB[#KB + 1] = opt("F" .. i, "KEY_F" .. i)
     end
 
-    for i = 1, #specialKeys do
-        AddConfigSpecialKey(keys, nameKeys[i], specialKeys[i], hover)
-    end
-    
-    AddDisabledConfigOption(keys, hover)
-
-    return keys
-end
-
-local function GetDefaultOptions(hover)
-    local function AddDefaultOption(t, desc, data, hover)
-        t[#t + 1] = AddConfigOption(desc, data, hover)
-    end
-
-    local options = {}
-
-    AddDefaultOption(options, "Disabled", false)
-    AddDefaultOption(options, "Enabled", true, hover)
-
-    return options
-end
-
-local KeyboardOptions = GetKeyboardOptions()
-local ConfirmToEatOptions = GetKeyboardOptions("Avoid accidentally eating valuable foods")
-local PickupFilterOptions = GetKeyboardOptions("Add entities under your mouse to the Pickup filter")
-local AttackFilterOptions = GetKeyboardOptions("Add entities under your mouse to the Attack filter")
-
-local SettingOptions = GetDefaultOptions()
-local BetaSettingOptions = GetDefaultOptions("Experimental feature use at your own risk!")
-
-local TelepoofHoverOptions = GetDefaultOptions("Hovertext is hidden when Telepoof is disabled")
-local TelepoofDisabledOptions = GetDefaultOptions("Telepoof is disabled when you enter the game")
-
-local ForceInspectPlayerOptions = GetDefaultOptions("Requires you to hold Force Inspect to interact with Players")
-local FlyingBirdsOptions = GetDefaultOptions("Flying birds are unclickable")
-local YellowStaffOptions = GetDefaultOptions("Allows you to cast Dwarf Stars closer together")
-local OrangeStaffOptions = GetDefaultOptions("Allows you to Telepoof through walls")
-
-local AutoEquipCaneOptions = GetDefaultOptions("Auto-equip your cane when moving")
-local AutoEquipWeaponOptions = GetDefaultOptions("Auto-equip your best weapon in combat")
-local AutoEquipGlasscutterOptions = GetDefaultOptions("Auto-equip your glass cutter against nightmare creatures")
-local AutoDetectRepairableOptions = GetDefaultOptions("Auto-unequip repairables before their last use")
-local AutoRepeatActionsOptions = GetDefaultOptions("Auto-repeat actions e.g. cutting wood, mining rocks")
-local AutoSwitchOptions = GetDefaultOptions("Auto-switch your bone armors to stay invulnerable")
-local AutoReEquipArmorOptions = GetDefaultOptions("Auto-re-equip to the next best armor")
-local AutoReGearOptions = GetDefaultOptions("Auto-regear when transforming back to Woodie")
-local AutoCandyBagOptions = GetDefaultOptions("Auto-store candy & trinkets in the Candy Bag")
-local AutoHelmOptions = GetDefaultOptions("Auto-equip your helm in combat")
-local AutoEatOptions = GetDefaultOptions("Auto-eat food at 0 hunger")
-
-local ButtonPreferenceOptions = GetDefaultOptions("Right click to change preference")
-local ButtonAutoEquipOptions = GetDefaultOptions("Hold Shift + Right click to change Auto-equip")
-
-local IgnoreBlueprintOptions = GetDefaultOptions("Filter known blueprints from pickup")
-local PriotizeResurrection = GetDefaultOptions("As ghost prioritize picking up resurrection items")
-
-local TelepoofDoubleclickOptions =
-{
-    AddDisabledOption(),
-    AddConfigOption("Default", .5, "Double-click speed is 1/2 of a second"),
-    AddConfigOption("Fast", .3, "Double-click speed is 1/3 of a second"),
-    AddConfigOption("Ludicrous", .25, "Double-click speed is 1/4 of a second"),
-    AddConfigOption("Plaid", .2, "Double-click speed is 1/5 of a second"),
-}
-
-local AutoReEquipOptions =
-{
-    AddDisabledOption(),
-    AddConfigOption("Enabled (Same)", 1, "Auto-re-equip to the same weapon"),
-    AddConfigOption("Enabled (Best)", 2, "Auto-re-equip to the next best weapon"),
-}
-
-local AutoEquipLightSourceOptions =
-{
-    AddDisabledOption(),
-    AddConfigOption("Enabled", 1, "Auto-equip your light in the dark!"),
-    AddConfigOption("Enabled (Craft)", 2, "Auto-equip your light in the dark! (Auto-craft enabled)"),
-}
-
-local AutoEquipToolOptions =
-{
-    AddDisabledOption(),
-    AddConfigOption("Enabled", 1, "Auto-equip tools"),
-    AddConfigOption("Enabled (Craft)", 2, "Auto-equip tools (Auto-craft enabled)"),
-}
-
-local SortContainerOptions =
-{
-    AddConfigOption("Full inventory", 3, "Sorts your inventory and backpack"),
-    AddConfigOption("Inventory", 2, "Sorts only your inventory"),
-    AddConfigOption("Backpack", 1, "Sorts only your backpack"),
-}
-
-local LightsourcePreferenceOptions =
-{
-    AddDisabledOption(),
-    AddConfigOption("Lantern", "lantern"),
-    AddConfigOption("Miner Hat", "minerhat"),
-    AddConfigOption("Willow's Lighter", "lighter"),
-    AddConfigOption("Torch", "torch"),
-    AddConfigOption("Moggles", "molehat"),
-}
-
-local FuelLanternPreferenceOptions =
-{
-    AddDisabledOption(),
-    AddConfigOption("Light Bulb", "lightbulb"),
-    AddConfigOption("Slurtle Slime", "slurtleslime"),
-}
-
-local FuelMogglesPreferenceOptions =
-{
-    AddDisabledOption(),
-    AddConfigOption("Glow Berry", "wormlight"),
-    AddConfigOption("Lesser Glow Berry", "wormlight_lesser"),
-}
-
-local CampfireFuelPreferenceOptions =
-{
-    AddDisabledOption(),
-    AddConfigOption("Charcoal", "charcoal"),
-    AddConfigOption("Boards", "boards"),
-    AddConfigOption("Rope", "rope"),
-    AddConfigOption("Log", "log"),
-    AddConfigOption("Cut Grass", "cutgrass"),
-    AddConfigOption("Twigs", "twigs"),
-    AddConfigOption("Beefalo Wool", "beefalowool"),
-    AddConfigOption("Pine Cone", "pinecone"),
-    AddConfigOption("Manure", "poop"),
-    AddConfigOption("Rotten Egg", "rottenegg"),
-    AddConfigOption("Rot", "spoiled_food"),
-    AddConfigOption("Nitre", "nitre"),
-}
-
-local CanePreferenceOptions =
-{
-    AddDisabledOption(),
-    AddConfigOption("The Lazy Explorer", "orangestaff"),
-    AddConfigOption("Walking Cane", "cane"),
-    AddConfigOption("Dumbbell", "dumbbell"),
-    AddConfigOption("Golden Dumbbell", "dumbbell_golden"),
-    AddConfigOption("Marbell", "dumbbell_marble"),
-    AddConfigOption("Gembell", "dumbbell_gem"),
-    AddConfigOption("Firebell", "dumbell_redgem"),
-    AddConfigOption("Icebell", "dumbell_bluegem"),
-    AddConfigOption("Thermbell", "dumbell_heat")
-}
-
-local WeaponPreferenceOptions =
-{
-    AddDisabledOption(),
-
-    AddConfigOption("Shield of Terror", "shieldofterror"),
-    AddConfigOption("Darksword", "nightsword"),
-    AddConfigOption("Glasscutter", "glasscutter"),
-    AddConfigOption("Thulecite Club", "ruins_bat"),
-    AddConfigOption("Hambat", "hambat"),
-    AddConfigOption("Tentacle Spike", "tentaclespike"),
-    AddConfigOption("Morning Star", "nightstick"),
-    AddConfigOption("Bat Bat", "batbat"),
-    AddConfigOption("Battle Spear", "spear_wathgrithr"),
-    AddConfigOption("Spear", "spear"),
-    AddConfigOption("Tail o' Three Cats", "whip"),
-    AddConfigOption("Bull Kelp Stalk", "bullkelp_root"),
-
-    -- More Weapons and Magic MOD
-    -- http://steamcommunity.com/sharedfiles/filedetails/?id=1234341720
-    AddConfigOption("[M] Katana", "katana"),
-    AddConfigOption("[M] Poseidon", "poseidon"),
-    AddConfigOption("[M] Skullspear", "skullspear"),
-    AddConfigOption("[M] Halberd", "halberd"),
-    AddConfigOption("[M] Deathscythe", "deathscythe"),
-    AddConfigOption("[M] Purplesword", "purplesword"),
-    AddConfigOption("[M] Battleaxe", "battleaxe"),
-    AddConfigOption("[M] Pirate", "pirate"),
-    AddConfigOption("[M] Lightningsword", "lightningsword"),
-    AddConfigOption("[M] Flamesword", "flamesword"),
-}
-
-local HeadArmorPreferenceOptions =
-{
-    AddDisabledOption(),
-    AddConfigOption("Eye Mask", "eyemaskhat"),
-    AddConfigOption("Bone Helm", "skeletonhat"),
-    AddConfigOption("Thulecite Crown", "ruinshat"),
-    AddConfigOption("Shelmet", "slurtlehat"),
-    AddConfigOption("Bee Queen Crown", "hivehat"),
-    AddConfigOption("Battle Helm", "wathgrithrhat"),
-    AddConfigOption("Football Helmet", "footballhat"),
-    AddConfigOption("Beekeeper Hat", "beehat"),
-    AddConfigOption("CookieCutter Cap", "cookiecutterhat"),
-}
-
-local BodyArmorPreferenceOptions =
-{
-    AddDisabledOption(),
-    AddConfigOption("Bone Armor", "armorskeleton"),
-    AddConfigOption("Thulecite Suit", "armorruins"),
-    AddConfigOption("Scalemail", "armordragonfly"),
-    AddConfigOption("Marble Suit", "armormarble"),
-    AddConfigOption("Snurtle Shell", "armorsnurtleshell"),
-    AddConfigOption("Night Armor", "armor_sanity"),
-    AddConfigOption("Log Suit", "armorwood"),
-    AddConfigOption("Bramble Husk", "armor_bramble"), 
-    AddConfigOption("Grass Suit", "armorgrass"),
-}
-
-local ArmorPreferenceOptions = {}
-
-for i = 1, #HeadArmorPreferenceOptions do
-    ArmorPreferenceOptions[#ArmorPreferenceOptions + 1] = HeadArmorPreferenceOptions[i]
-end
-
-for i = 1, #BodyArmorPreferenceOptions do
-    if BodyArmorPreferenceOptions[i].data then
-        ArmorPreferenceOptions[#ArmorPreferenceOptions + 1] = BodyArmorPreferenceOptions[i]
+    local specialsTXT = {
+        "Tab","-","=","Space","Enter","Esc","Pause","Print Screen","Caps Lock",
+        "Scroll Lock","Right Shift","Left Shift","Shift","Right Ctrl","Left Ctrl",
+        "Ctrl","Right Alt","Left Alt","Alt","Backspace","\\",".","/",";","{","}","~",
+        "Arrow Up","Arrow Down","Arrow Right","Arrow Left","Insert","Delete",
+        "Home","End","Page Up","Page Down",
+    }
+    local specialsKEY = {
+        "TAB","MINUS","EQUALS","SPACE","ENTER","ESCAPE","PAUSE","PRINT","CAPSLOCK",
+        "SCROLLOCK","RSHIFT","LSHIFT","SHIFT","RCTRL","LCTRL","CTRL","RALT","LALT",
+        "ALT","BACKSPACE","BACKSLASH","PERIOD","SLASH","SEMICOLON","RIGHTBRACKET",
+        "LEFTBRACKET","TILDE","UP","DOWN","RIGHT","LEFT","INSERT","DELETE",
+        "HOME","END","PAGEUP","PAGEDOWN",
+    }
+    for i = 1, #specialsTXT do
+        KB[#KB + 1] = opt(specialsTXT[i], "KEY_" .. specialsKEY[i])
     end
 end
+KB[#KB + 1] = opt("Disabled", false)
 
-local AxePreferenceOptions =
-{
-    AddDisabledOption(),
-    AddConfigOption("Lucy the Axe", "lucy"),
-    AddConfigOption("Moon Glass Axe", "moonglassaxe"),
-    AddConfigOption("Luxury Axe", "goldenaxe"),
-    AddConfigOption("Axe", "axe"),
+local KB_CONFIRM_EAT = {}
+for i=1,#KB do KB_CONFIRM_EAT[i] = opt(KB[i].description, KB[i].data, "Avoid accidentally eating valuable foods") end
+
+local KB_PICKUP_FILTER = {}
+for i=1,#KB do KB_PICKUP_FILTER[i] = opt(KB[i].description, KB[i].data, "Add entities under your mouse to the Pickup filter") end
+
+local KB_ATTACK_FILTER = {}
+for i=1,#KB do KB_ATTACK_FILTER[i] = opt(KB[i].description, KB[i].data, "Add entities under your mouse to the Attack filter") end
+
+local BUTTON_CATEGORIES = {
+    opt("Disabled", false),
+    opt("Cane", "CANE"),
+    opt("Weapon", "WEAPON"),
+    opt("Light", "LIGHTSOURCE"),
+    opt("Armor", "ARMOR"),
+    opt("Head armor", "ARMORHAT"),
+    opt("Body armor", "ARMORBODY"),
+    opt("Axe", "AXE"),
+    opt("Pickaxe", "PICKAXE"),
+    opt("Hammer", "HAMMER"),
+    opt("Shovel", "SHOVEL"),
+    opt("[M] Scythe", "SCYTHE"),
+    opt("Pitchfork", "PITCHFORK"),
+    opt("Food", "FOOD"),
+    opt("Healing food", "HEALINGFOOD"),
+    opt("Ranged", "RANGED"),
+    opt("Staff", "STAFF"),
+    opt("Amulet", "AMULET"),
 }
 
-local PickaxePreferenceOptions =
-{
-    AddDisabledOption(),
-    AddConfigOption("Pick/Axe", "multitool_axe_pickaxe"),
-    AddConfigOption("Opulent Pickaxe", "goldenpickaxe"),
-    AddConfigOption("Pickaxe", "pickaxe"),
+local PREF_CANE = {
+    opt("Disabled", false),
+    opt("The Lazy Explorer", "orangestaff"),
+    opt("Walking Cane", "cane"),
+    opt("Dumbbell", "dumbbell"),
+    opt("Golden Dumbbell", "dumbbell_golden"),
+    opt("Marbell", "dumbbell_marble"),
+    opt("Gembell", "dumbbell_gem"),
+    opt("Firebell", "dumbell_redgem"),
+    opt("Icebell", "dumbell_bluegem"),
+    opt("Thermbell", "dumbell_heat"),
 }
 
-local TrapOptions =
-{
-    AddDisabledOption(),
-    AddConfigOption("Sprung", 1, "Only display on traps in a sprung state"),
-    AddConfigOption("Always", 2),
+local PREF_WEAPON = {
+    opt("Disabled", false),
+    opt("Shield of Terror", "shieldofterror"),
+    opt("Darksword", "nightsword"),
+    opt("Glasscutter", "glasscutter"),
+    opt("Thulecite Club", "ruins_bat"),
+    opt("Hambat", "hambat"),
+    opt("Tentacle Spike", "tentaclespike"),
+    opt("Morning Star", "nightstick"),
+    opt("Bat Bat", "batbat"),
+    opt("Battle Spear", "spear_wathgrithr"),
+    opt("Spear", "spear"),
+    opt("Tail o' Three Cats", "whip"),
+    opt("Bull Kelp Stalk", "bullkelp_root"),
+    opt("[M] Katana", "katana"),
+    opt("[M] Poseidon", "poseidon"),
+    opt("[M] Skullspear", "skullspear"),
+    opt("[M] Halberd", "haolberd"),
+    opt("[M] Deathscythe", "deathscythe"),
+    opt("[M] Purplesword", "purplesword"),
+    opt("[M] Battleaxe", "battleaxe"),
+    opt("[M] Pirate", "pirate"),
+    opt("[M] Lightningsword", "lightningsword"),
+    opt("[M] Flamesword", "flamesword"),
 }
 
-local RangedPreferenceOptions =
-{
-    AddDisabledOption(),
-
-    AddConfigOption("Trusty Slingshot", "slingshot"),
-    AddConfigOption("Blow Dart", "blowdart_pipe"),
-    AddConfigOption("Electric Dart", "blowdart_yellow"),
-    AddConfigOption("Fire Dart", "blowdart_fire"),
-    AddConfigOption("Sleep Dart", "blowdart_sleep"),
-    AddConfigOption("Boomerang", "boomerang"),
-    AddConfigOption("Napsack", "sleepbomb"),
-
-    -- Archery MOD
-    -- https://steamcommunity.com/sharedfiles/filedetails/?id=2141379038
-    AddConfigOption("[M] Bow", "bow"),
-    AddConfigOption("[M] Musket", "musket"),
-    AddConfigOption("[M] Crossbow", "crossbow"),
+local PREF_LIGHTSOURCE = {
+    opt("Disabled", false),
+    opt("Lantern", "lantern"),
+    opt("Miner Hat", "minerhat"),
+    opt("Willow's Lighter", "lighter"),
+    opt("Torch", "torch"),
+    opt("Moggles", "molehat"),
 }
 
-local StaffPreferenceOptions =
-{
-    AddDisabledOption(),
-    AddConfigOption("Star Caller Staff", "yellowstaff"),
-    AddConfigOption("Moon Caller Staff", "opalstaff"),
-    AddConfigOption("Fire Staff", "firestaff"),
-    AddConfigOption("Ice Staff", "icestaff"),
-    AddConfigOption("Telelocator Staff", "telestaff"),
-    AddConfigOption("Deconstruct Staff", "greenstaff"),
-    AddConfigOption("Weather Pain", "staff_tornado"),
+local PREF_RANGED = {
+    opt("Disabled", false),
+    opt("Trusty Slingshot", "slingshot"),
+    opt("Blow Dart", "blowdart_pipe"),
+    opt("Electric Dart", "blowdart_yellow"),
+    opt("Fire Dart", "blowdart_fire"),
+    opt("Sleep Dart", "blowdart_sleep"),
+    opt("Boomerang", "boomerang"),
+    opt("Napsack", "sleepbomb"),
+    opt("[M] Bow", "bow"),
+    opt("[M] Musket", "musket"),
+    opt("[M] Crossbow", "crossbow"),
 }
 
--- Scythe MOD
--- https://steamcommunity.com/sharedfiles/filedetails/?id=537902048&searchtext=Scythe
-local ScythePreferenceOptions =
-{
-    AddDisabledOption(),
-    AddConfigOption("Golden Scythe", "scythe_golden"),
-    AddConfigOption("Scythe", "scythe"),
+local PREF_HEAD_ARMOR = {
+    opt("Disabled", false),
+    opt("Eye Mask", "eyemaskhat"),
+    opt("Bone Helm", "skeletonhat"),
+    opt("Thulecite Crown", "ruinshat"),
+    opt("Shelmet", "slurtlehat"),
+    opt("Bee Queen Crown", "hivehat"),
+    opt("Battle Helm", "wathgrithrhat"),
+    opt("Football Helmet", "footballhat"),
+    opt("Beekeeper Hat", "beehat"),
+    opt("CookieCutter Cap", "cookiecutterhat"),
 }
 
-local SortPriorityOptions =
-{
-    AddConfigOption("1", 7),
-    AddConfigOption("2", 6),
-    AddConfigOption("3", 5),
-    AddConfigOption("4", 4),
-    AddConfigOption("5", 3),
-    AddConfigOption("6", 2),
-    AddConfigOption("7", 1),
+local PREF_BODY_ARMOR = {
+    opt("Disabled", false),
+    opt("Bone Armor", "armorskeleton"),
+    opt("Thulecite Suit", "armorruins"),
+    opt("Scalemail", "armordragonfly"),
+    opt("Marble Suit", "armormarble"),
+    opt("Snurtle Shell", "armorsnurtleshell"),
+    opt("Night Armor", "armor_sanity"),
+    opt("Log Suit", "armorwood"),
+    opt("Bramble Husk", "armor_bramble"),
+    opt("Grass Suit", "armorgrass"),
 }
 
-local LabelSizeOptions = {}
-
-for i = 8, 26, 2 do
-    LabelSizeOptions[#LabelSizeOptions + 1] = AddConfigOption(i .. "", i)
+local PREF_ARMOR = {}
+for i = 1, #PREF_HEAD_ARMOR do PREF_ARMOR[#PREF_ARMOR + 1] = PREF_HEAD_ARMOR[i] end
+for i = 1, #PREF_BODY_ARMOR do
+    if PREF_BODY_ARMOR[i].data then PREF_ARMOR[#PREF_ARMOR + 1] = PREF_BODY_ARMOR[i] end
 end
 
-local FontOptions =
-{
-    AddConfigOption("Open Sans", "DEFAULTFONT"),
-
-    AddConfigOption("Bp100", "TITLEFONT"),
-    AddConfigOption("Bp50", "UIFONT"),
-
-    AddConfigOption("Button Font", "BUTTONFONT"),
-
-    AddConfigOption("Spirequal", "NEWFONT"),
-    AddConfigOption("Spirequal Small", "NEWFONT_SMALL"),
-    AddConfigOption("Spirequal Outline", "NEWFONT_OUTLINE"),
-    AddConfigOption("Spirequal S Outline", "NEWFONT_OUTLINE_SMALL"),
-
-    AddConfigOption("Stint Ucr", "BODYTEXTFONT"),
-    AddConfigOption("Stint Small", "SMALLNUMBERFONT"),
-
-    AddConfigOption("Talking Font", "TALKINGFONT"),
-    AddConfigOption("Bellefair", "CHATFONT"),
-    AddConfigOption("Bellefair Outline", "CHATFONT_OUTLINE"),
-    AddConfigOption("Hammerhead", "HEADERFONT"),
+local PREF_AXE = {
+    opt("Disabled", false),
+    opt("Lucy the Axe", "lucy"),
+    opt("Moon Glass Axe", "moonglassaxe"),
+    opt("Luxury Axe", "goldenaxe"),
+    opt("Axe", "axe"),
 }
 
-local SortOverrideOptions =
-{
-    AddDisabledOption(),
-    AddConfigOption("Abigail's Flower", "abigail_flower"),
+local PREF_PICKAXE = {
+    opt("Disabled", false),
+    opt("Pick/Axe", "multitool_axe_pickaxe"),
+    opt("Opulent Pickaxe", "goldenpickaxe"),
+    opt("Pickaxe", "pickaxe"),
 }
 
-local ButtonCategoriesOptions =
-{
-    AddDisabledOption(),
-    AddConfigOption("Cane", "CANE"),
-    AddConfigOption("Weapon", "WEAPON"),
-    AddConfigOption("Light", "LIGHTSOURCE"),
-    AddConfigOption("Armor", "ARMOR"),
-    AddConfigOption("Head armor", "ARMORHAT"),
-    AddConfigOption("Body armor", "ARMORBODY"),
-    AddConfigOption("Axe", "AXE"),
-    AddConfigOption("Pickaxe", "PICKAXE"),
-    AddConfigOption("Hammer", "HAMMER"),
-    AddConfigOption("Shovel", "SHOVEL"),
-    AddConfigOption("[M] Scythe", "SCYTHE"),
-    AddConfigOption("Pitchfork", "PITCHFORK"),
-    AddConfigOption("Food", "FOOD"),
-    AddConfigOption("Healing food", "HEALINGFOOD"),
-    AddConfigOption("Ranged", "RANGED"),
-    AddConfigOption("Staff", "STAFF"),
-    AddConfigOption("Amulet", "AMULET"),
+local PREF_SCYTHE = {
+    opt("Disabled", false),
+    opt("Golden Scythe", "scythe_golden"),
+    opt("Scythe", "scythe"),
 }
 
-local AssignKeyMessage = "Assign a key"
-local PreferenceMessage = "Select your preference"
-local SettingMessage = "Set to your liking"
-local BetaSettingMessage = "(beta) " .. SettingMessage
-
-configuration_options =
-{
-    AddSectionTitle("Keybinds"),
-    AddConfig(
-        "Cane",
-        "CANE",
-        KeyboardOptions,
-        "KEY_Z",
-        AssignKeyMessage
-    ),
-    AddConfig(
-        "Weapon",
-        "WEAPON",
-        KeyboardOptions,
-        "KEY_X",
-        AssignKeyMessage
-    ),
-    AddConfig(
-        "Light",
-        "LIGHTSOURCE",
-        KeyboardOptions,
-        "KEY_C",
-        AssignKeyMessage
-    ),
-    AddConfig(
-        "Ranged",
-        "RANGED",
-        KeyboardOptions,
-        "KEY_R",
-        AssignKeyMessage
-    ),
-    AddConfig(
-        "Armor",
-        "ARMOR",
-        KeyboardOptions,
-        false,
-        AssignKeyMessage
-    ),
-    AddConfig(
-        "Head armor",
-        "ARMORHAT",
-        KeyboardOptions,
-        "KEY_H",
-        AssignKeyMessage
-    ),
-    AddConfig(
-        "Body armor",
-        "ARMORBODY",
-        KeyboardOptions,
-        "KEY_B",
-        AssignKeyMessage
-    ),
-    AddConfig(
-        "Axe",
-        "AXE",
-        KeyboardOptions,
-        false,
-        AssignKeyMessage
-    ),
-    AddConfig(
-        "Pickaxe",
-        "PICKAXE",
-        KeyboardOptions,
-        false,
-        AssignKeyMessage
-    ),
-    AddConfig(
-        "Hammer",
-        "HAMMER",
-        KeyboardOptions,
-        false,
-        AssignKeyMessage
-    ),
-    AddConfig(
-        "Shovel",
-        "SHOVEL",
-        KeyboardOptions,
-        false,
-        AssignKeyMessage
-    ),
-    AddConfig(
-        "Pitchfork",
-        "PITCHFORK",
-        KeyboardOptions,
-        false,
-        AssignKeyMessage
-    ),
-    AddConfig(
-        "[M] Scythe",
-        "SCYTHE",
-        KeyboardOptions,
-        false,
-        AssignKeyMessage
-    ),
-    AddConfig(
-        "Staff",
-        "STAFF",
-        KeyboardOptions,
-        false,
-        AssignKeyMessage
-    ),
-    AddConfig(
-        "Food",
-        "FOOD",
-        KeyboardOptions,
-        false,
-        AssignKeyMessage
-    ),
-    AddConfig(
-        "Healing food",
-        "HEALINGFOOD",
-        KeyboardOptions,
-        false,
-        AssignKeyMessage
-    ),
-    AddConfig(
-        "Drop lantern",
-        "DROPKEY",
-        KeyboardOptions,
-        "KEY_K",
-        AssignKeyMessage
-    ),
-    AddConfig(
-        "Meat prioritization mode",
-        "MEAT_PRIORITIZATION_MODE",
-        KeyboardOptions,
-        "KEY_F9",
-        AssignKeyMessage
-    ),
-    AddConfig(
-        "Eat confirmation",
-        "CONFIRM_TO_EAT",
-        ConfirmToEatOptions,
-        "KEY_CTRL",
-        AssignKeyMessage
-    ),
-    AddConfig(
-        "Pickup filter",
-        "PICKUP_FILTER",
-        PickupFilterOptions,
-        "KEY_F1",
-        AssignKeyMessage
-    ),
-    AddConfig(
-        "Attack filter",
-        "ATTACK_FILTER",
-        AttackFilterOptions,
-        "KEY_F2",
-        AssignKeyMessage
-    ),
-    AddConfig(
-        "Sort inventory",
-        "SORT_INVENTORY",
-        KeyboardOptions,
-        "KEY_F3",
-        AssignKeyMessage
-    ),
-    AddConfig(
-        "Sort chest",
-        "SORT_CHEST",
-        KeyboardOptions,
-        "KEY_F4",
-        AssignKeyMessage
-    ),
-    AddSectionTitle("Toggles"),
-    AddConfig(
-        "Toggle Telepoof",
-        "TOGGLE_TELEPOOF",
-        KeyboardOptions,
-        "KEY_F5",
-        AssignKeyMessage
-    ),
-    AddConfig(
-        "Toggle Sorting container",
-        "TOGGLE_SORTING_CONTAINER",
-        KeyboardOptions,
-        "KEY_F6",
-        AssignKeyMessage
-    ),
-    AddConfig(
-        "Toggle Auto-equip weapon",
-        "TOGGLE_AUTO_EQUIP",
-        KeyboardOptions,
-        "KEY_F7",
-        AssignKeyMessage
-    ),
-    AddConfig(
-        "Toggle Auto-equip cane",
-        "TOGGLE_AUTO_EQUIP_CANE",
-        KeyboardOptions,
-        "KEY_F8",
-        AssignKeyMessage
-    ),
-
-
-    AddSectionTitle("Buttons"),
-    AddConfig(
-        "Show buttons",
-        "BUTTON_SHOW",
-        SettingOptions,
-        true,
-        SettingMessage
-    ),
-    AddConfig(
-        "Button animations",
-        "BUTTON_ANIMATIONS",
-        SettingOptions,
-        true,
-        SettingMessage
-    ),
-    AddConfig(
-        "Display keybind on button",
-        "BUTTON_SHOW_KEYBIND",
-        SettingOptions,
-        false,
-        SettingMessage
-    ),
-    AddConfig(
-        "Preference shortcut",
-        "BUTTON_PREFERENCE_CHANGE",
-        ButtonPreferenceOptions,
-        true,
-        SettingMessage
-    ),
-    AddConfig(
-        "Auto-equip shortcut",
-        "BUTTON_AUTO_EQUIP_CHANGE",
-        ButtonAutoEquipOptions,
-        true,
-        SettingMessage
-    ),
-    AddConfig(
-        "Button 1 category",
-        "BUTTON_1_CATEGORY",
-        ButtonCategoriesOptions,
-        "ARMORHAT",
-        SettingMessage
-    ),
-    AddConfig(
-        "Button 2 category",
-        "BUTTON_2_CATEGORY",
-        ButtonCategoriesOptions,
-        "ARMORBODY",
-        SettingMessage
-    ),
-    AddConfig(
-        "Button 3 category",
-        "BUTTON_3_CATEGORY",
-        ButtonCategoriesOptions,
-        "WEAPON",
-        SettingMessage
-    ),
-    AddConfig(
-        "Button 4 category",
-        "BUTTON_4_CATEGORY",
-        ButtonCategoriesOptions,
-        "CANE",
-        SettingMessage
-    ),
-    AddConfig(
-        "Button 5 category",
-        "BUTTON_5_CATEGORY",
-        ButtonCategoriesOptions,
-        "LIGHTSOURCE",
-        SettingMessage
-    ),
-    AddConfig(
-        "Button 6 category",
-        "BUTTON_6_CATEGORY",
-        ButtonCategoriesOptions,
-        "AXE",
-        SettingMessage
-    ),
-    AddConfig(
-        "Button 7 category",
-        "BUTTON_7_CATEGORY",
-        ButtonCategoriesOptions,
-        "PICKAXE",
-        SettingMessage
-    ),
-    AddConfig(
-        "Button 8 category",
-        "BUTTON_8_CATEGORY",
-        ButtonCategoriesOptions,
-        "SHOVEL",
-        SettingMessage
-    ),
-    AddConfig(
-        "Button 9 category",
-        "BUTTON_9_CATEGORY",
-        ButtonCategoriesOptions,
-        "HAMMER",
-        SettingMessage
-    ),
-    AddConfig(
-        "Button 10 category",
-        "BUTTON_10_CATEGORY",
-        ButtonCategoriesOptions,
-        "PITCHFORK",
-        SettingMessage
-    ),
-    AddConfig(
-        "Button 11 category",
-        "BUTTON_11_CATEGORY",
-        ButtonCategoriesOptions,
-        "RANGED",
-        SettingMessage
-    ),
-    AddConfig(
-        "Button 12 category",
-        "BUTTON_12_CATEGORY",
-        ButtonCategoriesOptions,
-        "STAFF",
-        SettingMessage
-    ),
-    AddConfig(
-        "Button 13 category",
-        "BUTTON_13_CATEGORY",
-        ButtonCategoriesOptions,
-        false,
-        SettingMessage
-    ),
-    AddConfig(
-        "Button 14 category",
-        "BUTTON_14_CATEGORY",
-        ButtonCategoriesOptions,
-        false,
-        SettingMessage
-    ),
-    AddConfig(
-        "Button 15 category",
-        "BUTTON_15_CATEGORY",
-        ButtonCategoriesOptions,
-        false,
-        SettingMessage
-    ),
-
-
-    AddSectionTitle("Preferences"),
-    AddConfig(
-        "Preferred Cane",
-        "PREFERRED_CANE",
-        CanePreferenceOptions,
-        false,
-        PreferenceMessage
-    ),
-    AddConfig(
-        "Preferred Weapon",
-        "PREFERRED_WEAPON",
-        WeaponPreferenceOptions,
-        false,
-        PreferenceMessage
-    ),
-    AddConfig(
-        "Preferred Light",
-        "PREFERRED_LIGHTSOURCE",
-        LightsourcePreferenceOptions,
-        false,
-        PreferenceMessage
-    ),
-    AddConfig(
-        "Preferred Ranged",
-        "PREFERRED_RANGED",
-        RangedPreferenceOptions,
-        false,
-        PreferenceMessage
-    ),
-    AddConfig(
-        "Preferred Armor",
-        "PREFERRED_ARMOR",
-        ArmorPreferenceOptions,
-        false,
-        PreferenceMessage
-    ),
-    AddConfig(
-        "Preferred Head Armor",
-        "PREFERRED_ARMORHAT",
-        HeadArmorPreferenceOptions,
-        false,
-        PreferenceMessage
-    ),
-    AddConfig(
-        "Preferred Body Armor",
-        "PREFERRED_ARMORBODY",
-        BodyArmorPreferenceOptions,
-        false,
-        PreferenceMessage
-    ),
-    AddConfig(
-        "Preferred Axe",
-        "PREFERRED_AXE",
-        AxePreferenceOptions,
-        false,
-        PreferenceMessage
-    ),
-    AddConfig(
-        "Preferred Pickaxe",
-        "PREFERRED_PICKAXE",
-        PickaxePreferenceOptions,
-        false,
-        PreferenceMessage
-    ),
-    AddConfig(
-        "[M] Preferred Scythe",
-        "PREFERRED_SCYTHE",
-        ScythePreferenceOptions,
-        false,
-        PreferenceMessage
-    ),
-    AddConfig(
-        "Preferred Staff",
-        "PREFERRED_STAFF",
-        StaffPreferenceOptions,
-        false,
-        PreferenceMessage
-    ),
-    AddConfig(
-        "Preferred Auto-equip light",
-        "PREFERRED_AUTO_LIGHT",
-        LightsourcePreferenceOptions,
-        false,
-        PreferenceMessage
-    ),
-    AddConfig(
-        "Preferred Lantern fuel",
-        "PREFERRED_FUEL_LANTERN",
-        FuelLanternPreferenceOptions,
-        false,
-        PreferenceMessage
-    ),
-    AddConfig(
-        "Preferred Moggles fuel",
-        "PREFERRED_FUEL_MOGGLES",
-        FuelMogglesPreferenceOptions,
-        false,
-        PreferenceMessage
-    ),
-    AddConfig(
-        "Preferred Campfire fuel",
-        "PREFERRED_CAMPFIRE_FUEL",
-        CampfireFuelPreferenceOptions,
-        false,
-        PreferenceMessage
-    ),
-
-
-    AddSectionTitle("Automation"),
-    AddConfig(
-        "Auto-unequip repairables",
-        "AUTO_UNEQUIP_REPAIRABLES",
-        AutoDetectRepairableOptions,
-        true,
-        SettingMessage
-    ),
-    AddConfig(
-        "Auto-repeat actions",
-        "AUTO_REPEAT_ACTIONS",
-        AutoRepeatActionsOptions,
-        false,
-        SettingMessage
-    ),
-    AddConfig(
-        "Auto-re-equip weapon",
-        "AUTO_RE_EQUIP_WEAPON",
-        AutoReEquipOptions,
-        2,
-        SettingMessage
-    ),
-    AddConfig(
-        "Auto-re-equip armor",
-        "AUTO_RE_EQUIP_ARMOR",
-        AutoReEquipArmorOptions,
-        true,
-        SettingMessage
-    ),
-    AddConfig(
-        "Auto-equip weapon",
-        "AUTO_EQUIP_WEAPON",
-        AutoEquipWeaponOptions,
-        true,
-        SettingMessage
-    ),
-    AddConfig(
-        "Auto-equip cane",
-        "AUTO_EQUIP_CANE",
-        AutoEquipCaneOptions,
-        true,
-        SettingMessage
-    ),
-    AddConfig(
-        "Auto-equip light",
-        "AUTO_EQUIP_LIGHTSOURCE",
-        AutoEquipLightSourceOptions,
-        2,
-        SettingMessage
-    ),
-    AddConfig(
-        "Auto-equip helm",
-        "AUTO_EQUIP_HELM",
-        AutoHelmOptions,
-        false,
-        SettingMessage
-    ),
-    AddConfig(
-        "Auto-equip tool",
-        "AUTO_EQUIP_TOOL",
-        AutoEquipToolOptions,
-        false,
-        SettingMessage
-    ),
-    AddConfig(
-        "Auto-equip glass cutter",
-        "AUTO_EQUIP_GLASSCUTTER",
-        AutoEquipGlasscutterOptions,
-        true,
-        SettingMessage
-    ),
-    AddConfig(
-        "Auto-regear woodie",
-        "WOODIE_WEREITEM_UNEQUIP",
-        AutoReGearOptions,
-        true,
-        SettingMessage
-    ),
-    AddConfig(
-        "Auto-switch bone armor",
-        "AUTO_SWITCH_BONE_ARMOR",
-        AutoSwitchOptions,
-        true,
-        SettingMessage
-    ),
-    AddConfig(
-        "Auto-catch boomerang",
-        "AUTO_CATCH_BOOMERANG",
-        SettingOptions,
-        true,
-        SettingMessage
-    ),
-    AddConfig(
-        "Auto-store candy bag",
-        "AUTO_CANDYBAG",
-        AutoCandyBagOptions,
-        true,
-        SettingMessage
-    ),
-    AddConfig(
-        "Auto-refuel light",
-        "AUTO_REFUEL_LIGHT_SOURCES",
-        SettingOptions,
-        false,
-        SettingMessage
-    ),
-    AddConfig(
-        "Auto-eat food",
-        "AUTO_EAT_FOOD",
-        AutoEatOptions,
-        false,
-        SettingMessage
-    ),
-
-
-    AddSectionTitle("Quick Actions"),
-    AddConfig(
-        "Catch",
-        "QUICK_ACTION_NET",
-        SettingOptions,
-        true,
-        SettingMessage
-    ),
-    AddConfig(
-        "Hammer",
-        "QUICK_ACTION_HAMMER",
-        SettingOptions,
-        false,
-        SettingMessage
-    ),
-    AddConfig(
-        "Dig",
-        "QUICK_ACTION_DIG",
-        SettingOptions,
-        true,
-        SettingMessage
-    ),
-    AddConfig(
-        "Add Fuel Campfires",
-        "QUICK_ACTION_CAMPFIRE",
-        SettingOptions,
-        true,
-        SettingMessage
-    ),
-    AddConfig(
-        "Reset Trap",
-        "QUICK_ACTION_TRAP",
-        TrapOptions,
-        2,
-        SettingMessage
-    ),
-    AddConfig(
-        "Shave Beefalo",
-        "QUICK_ACTION_BEEFALO",
-        SettingOptions,
-        true,
-        SettingMessage
-    ),
-    AddConfig(
-        "Unlock Loot Stash",
-        "QUICK_ACTION_KLAUS_SACK",
-        SettingOptions,
-        true,
-        SettingMessage
-    ),
-    AddConfig(
-        "Repair Boat",
-        "QUICK_ACTION_REPAIR_BOAT",
-        SettingOptions,
-        true,
-        SettingMessage
-    ),
-    AddConfig(
-        "Build Odd Skeleton",
-        "QUICK_ACTION_BUILD_FOSSIL",
-        SettingOptions,
-        true,
-        SettingMessage
-    ),
-    AddConfig(
-        "Socket Ancient Key",
-        "QUICK_ACTION_ATRIUM_GATE",
-        SettingOptions,
-        true,
-        SettingMessage
-    ),
-    AddConfig(
-        "Track Animal",
-        "QUICK_ACTION_DIRTPILE",
-        SettingOptions,
-        true,
-        SettingMessage
-    ),
-    AddConfig(
-        "Trade Pig King",
-        "QUICK_ACTION_PIG_KING",
-        SettingOptions,
-        true,
-        SettingMessage
-    ),
-    AddConfig(
-        "Feed Bird",
-        "QUICK_ACTION_FEED_BIRD",
-        SettingOptions,
-        true,
-        SettingMessage
-    ),
-    AddConfig(
-        "Wakeup Bird",
-        "QUICK_ACTION_WAKEUP_BIRD",
-        SettingOptions,
-        true,
-        SettingMessage
-    ),
-    AddConfig(
-        "Imprison Bird",
-        "QUICK_ACTION_IMPRISON_BIRD",
-        SettingOptions,
-        true,
-        SettingMessage
-    ),
-    AddConfig(
-        "Repair Wall",
-        "QUICK_ACTION_WALLS",
-        SettingOptions,
-        true,
-        SettingMessage
-    ),
-    AddConfig(
-        "Extinguish Fire",
-        "QUICK_ACTION_EXTINGUISH",
-        SettingOptions,
-        true,
-        SettingMessage
-    ),
-    AddConfig(
-        "Light Slurtle Mound",
-        "QUICK_ACTION_SLURTLEHOLE",
-        SettingOptions,
-        false,
-        SettingMessage
-    ),
-
-
-    AddSectionTitle("Pickup"),
-    AddConfig(
-        "Pickup valuables first",
-        "PRIOTIZE_VALUABLE_ITEMS",
-        SettingOptions,
-        true,
-        SettingMessage
-    ),
-    AddConfig(
-        "Pickup resurrection item first",
-        "PRIOTIZE_RESURRECTION",
-        PriotizeResurrection,
-        true,
-        SettingMessage
-    ),
-    AddConfig(
-        "Ignore known blueprints",
-        "IGNORE_KNOWN_BLUEPRINT",
-        IgnoreBlueprintOptions,
-        true,
-        SettingMessage
-    ),
-
-
-    AddSectionTitle("Picking"),
-    AddConfig(
-        "Never pick Flowers",
-        "PICKUP_IGNORE_FLOWERS",
-        SettingOptions,
-        true,
-        SettingMessage
-    ),
-    AddConfig(
-        "Never pick Succulents",
-        "PICKUP_IGNORE_SUCCULENTS",
-        SettingOptions,
-        true,
-        SettingMessage
-    ),
-    AddConfig(
-        "Never pick Ferns",
-        "PICKUP_IGNORE_FERNS",
-        SettingOptions,
-        true,
-        SettingMessage
-    ),
-    AddConfig(
-        "Never pick Spiky Bush",
-        "PICKUP_IGNORE_MARSH_BUSH",
-        SettingOptions,
-        false,
-        SettingMessage
-    ),
-
-
-    AddSectionTitle("Telepoof"),
-    AddConfig(
-        "Disabled by default",
-        "TELEPOOF_DISABLED",
-        TelepoofDisabledOptions,
-        false,
-        SettingMessage
-    ),
-    AddConfig(
-        "Hide hovertext",
-        "TELEPOOF_HOVER",
-        TelepoofHoverOptions,
-        false,
-        SettingMessage
-    ),
-    AddConfig(
-        "Double-click speed",
-        "TELEPOOF_DOUBLECLICK",
-        TelepoofDoubleclickOptions,
-        .5,
-        SettingMessage
-    ),
-    AddConfig(
-        "Double-click Soul Hop",
-        "TELEPOOF_WORTOX",
-        SettingOptions,
-        true,
-        SettingMessage
-    ),
-
-
-    AddSectionTitle("Mousethrough"),
-    AddConfig(
-        "Force Inspect Player",
-        "FORCE_INSPECT_PLAYERS",
-        ForceInspectPlayerOptions,
-        false,
-        SettingMessage
-    ),
-    AddConfig(
-        "Unclickable flying birds",
-        "FLYING_BIRDS_MOUSETHROUGH",
-        FlyingBirdsOptions,
-        true,
-        SettingMessage
-    ),
-    AddConfig(
-        "Star Caller Staff",
-        "YELLOWSTAFF_MOUSETHROUGH",
-        YellowStaffOptions,
-        true,
-        SettingMessage
-    ),
-    AddConfig(
-        "The Lazy Explorer",
-        "ORANGESTAFF_MOUSETHROUGH",
-        OrangeStaffOptions,
-        true,
-        SettingMessage
-    ),
-
-
-    AddSectionTitle("Sorting"),
-    AddConfig(
-        "Sorting container",
-        "CONTAINER_SORT",
-        SortContainerOptions,
-        3,
-        SettingMessage
-    ),
-    AddConfig(
-        "Armor priority",
-        "ARMOR_SORT_PRIORITY",
-        SortPriorityOptions,
-        7,
-        SettingMessage
-    ),
-    AddConfig(
-        "Light priority",
-        "LIGHT_SORT_PRIORITY",
-        SortPriorityOptions,
-        6,
-        SettingMessage
-    ),
-    AddConfig(
-        "Staff priority",
-        "STAFF_SORT_PRIORITY",
-        SortPriorityOptions,
-        5,
-        SettingMessage
-    ),
-    AddConfig(
-        "Equipment priority",
-        "EQUIPMENT_SORT_PRIORITY",
-        SortPriorityOptions,
-        4,
-        SettingMessage
-    ),
-    AddConfig(
-        "Food priority",
-        "FOOD_SORT_PRIORITY",
-        SortPriorityOptions,
-        3,
-        SettingMessage
-    ),
-    AddConfig(
-        "Resource priority",
-        "RESOURCE_SORT_PRIORITY",
-        SortPriorityOptions,
-        2,
-        SettingMessage
-    ),
-    AddConfig(
-        "Tool priority",
-        "TOOL_SORT_PRIORITY",
-        SortPriorityOptions,
-        1,
-        SettingMessage
-    ),
-    AddConfig(
-        "Keep in slot 1",
-        "OVERRIDE_SLOT1_SORT",
-        SortOverrideOptions,
-        false,
-        SettingMessage
-    ),
-
-
-    AddSectionTitle("Miscellaneous"),
-    AddConfig(
-        "Damage estimation",
-        "DAMAGE_ESTIMATION",
-        SettingOptions,
-        true,
-        SettingMessage
-    ),
-    AddConfig(
-        "Allow Tools on Weapon button",
-        "TOOLS_ON_WEAPON",
-        SettingOptions,
-        true,
-        SettingMessage
-    ),
+local PREF_STAFF = {
+    opt("Disabled", false),
+    opt("Star Caller Staff", "yellowstaff"),
+    opt("Moon Caller Staff", "opalstaff"),
+    opt("Fire Staff", "firestaff"),
+    opt("Ice Staff", "icestaff"),
+    opt("Telelocator Staff", "telestaff"),
+    opt("Deconstruct Staff", "greenstaff"),
+    opt("Weather Pain", "staff_tornado"),
 }
+
+local PREF_FUEL_LANTERN = {
+    opt("Disabled", false),
+    opt("Light Bulb", "lightbulb"),
+    opt("Slurtle Slime", "slurtleslime"),
+}
+
+local PREF_FUEL_MOGGLES = {
+    opt("Disabled", false),
+    opt("Glow Berry", "wormlight"),
+    opt("Lesser Glow Berry", "wormlight_lesser"),
+}
+
+local PREF_CAMPFIRE_FUEL = {
+    opt("Disabled", false),
+    opt("Charcoal", "charcoal"),
+    opt("Boards", "boards"),
+    opt("Rope", "rope"),
+    opt("Log", "log"),
+    opt("Cut Grass", "cutgrass"),
+    opt("Twigs", "twigs"),
+    opt("Beefalo Wool", "beefalowool"),
+    opt("Pine Cone", "pinecone"),
+    opt("Manure", "poop"),
+    opt("Rotten Egg", "rottenegg"),
+    opt("Rot", "spoiled_food"),
+    opt("Nitre", "nitre"),
+}
+
+local AUTO_RE_EQUIP_WEAPON_OPTS = {
+    opt("Disabled", false),
+    opt("Enabled (Same)", 1, "Auto-re-equip to the same weapon"),
+    opt("Enabled (Best)", 2, "Auto-re-equip to the next best weapon"),
+}
+
+local AUTO_EQUIP_LIGHT_OPTS = {
+    opt("Disabled", false),
+    opt("Enabled", 1, "Auto-equip your light in the dark!"),
+    opt("Enabled (Craft)", 2, "Auto-equip your light in the dark! (Auto-craft enabled)"),
+}
+
+local AUTO_EQUIP_TOOL_OPTS = {
+    opt("Disabled", false),
+    opt("Enabled", 1, "Auto-equip tools"),
+    opt("Enabled (Craft)", 2, "Auto-equip tools (Auto-craft enabled)"),
+}
+
+local TRAP_OPTS = {
+    opt("Disabled", false),
+    opt("Sprung", 1, "Only display on traps in a sprung state"),
+    opt("Always", 2),
+}
+
+local TELEPOOF_SPEED = {
+    opt("Disabled", false),
+    opt("Default", .5, "Double-click speed is 1/2 of a second"),
+    opt("Fast", .3, "Double-click speed is 1/3 of a second"),
+    opt("Ludicrous", .25, "Double-click speed is 1/4 of a second"),
+    opt("Plaid", .2, "Double-click speed is 1/5 of a second"),
+}
+
+local SORT_OVERRIDE_OPTS = {
+    opt("Disabled", false),
+    opt("Abigail's Flower", "abigail_flower"),
+}
+
+local SORT_CONTAINER_OPTS = {
+    opt("Full inventory", 3, "Sorts your inventory and backpack"),
+    opt("Inventory", 2, "Sorts only your inventory"),
+    opt("Backpack", 1, "Sorts only your backpack"),
+}
+
+local DATA = {
+    keybinds = {
+        {"Cane","CANE","KEY_Z"},
+        {"Weapon","WEAPON","KEY_X"},
+        {"Light","LIGHTSOURCE","KEY_C"},
+        {"Ranged","RANGED","KEY_R"},
+        {"Armor","ARMOR",false},
+        {"Head armor","ARMORHAT","KEY_H"},
+        {"Body armor","ARMORBODY","KEY_B"},
+        {"Axe","AXE",false},
+        {"Pickaxe","PICKAXE",false},
+        {"Hammer","HAMMER",false},
+        {"Shovel","SHOVEL",false},
+        {"Pitchfork","PITCHFORK",false},
+        {"[M] Scythe","SCYTHE",false},
+        {"Staff","STAFF",false},
+        {"Food","FOOD",false},
+        {"Healing food","HEALINGFOOD",false},
+        {"Drop lantern","DROPKEY","KEY_K"},
+        {"Meat prioritization mode","MEAT_PRIORITIZATION_MODE","KEY_F9"},
+        {"Eat confirmation","CONFIRM_TO_EAT","KEY_CTRL", true},
+        {"Pickup filter","PICKUP_FILTER","KEY_F1", true},
+        {"Attack filter","ATTACK_FILTER","KEY_F2", true},
+        {"Sort inventory","SORT_INVENTORY","KEY_F3"},
+        {"Sort chest","SORT_CHEST","KEY_F4"},
+    },
+    toggles = {
+        -- Label, Name, Default
+        {"Toggle Telepoof","TOGGLE_TELEPOOF","KEY_F5"},
+        {"Toggle Sorting container","TOGGLE_SORTING_CONTAINER","KEY_F6"},
+        {"Toggle Auto-equip weapon","TOGGLE_AUTO_EQUIP","KEY_F7"},
+        {"Toggle Auto-equip cane","TOGGLE_AUTO_EQUIP_CANE","KEY_F8"},
+    },
+    buttons = {
+        -- Label, Name, Options, Default, Hover
+        {"Show buttons","BUTTON_SHOW", YESNO, true, "Set to your liking"},
+        {"Button animations","BUTTON_ANIMATIONS", YESNO, true, "Set to your liking"},
+        {"Display keybind on button","BUTTON_SHOW_KEYBIND", YESNO, false, "Set to your liking"},
+        {"Preference shortcut", "BUTTON_PREFERENCE_CHANGE", YESNO_PREF_SHORTCUT, true, "Set to your liking"},
+        {"Auto-equip shortcut", "BUTTON_AUTO_EQUIP_CHANGE", YESNO_AUTOEQUIP_SHORTCUT, true, "Set to your liking"},
+        {"Button 1 category", "BUTTON_1_CATEGORY", BUTTON_CATEGORIES, "ARMORHAT", "Set to your liking"},
+        {"Button 2 category", "BUTTON_2_CATEGORY", BUTTON_CATEGORIES, "ARMORBODY", "Set to your liking"},
+        {"Button 3 category", "BUTTON_3_CATEGORY", BUTTON_CATEGORIES, "WEAPON", "Set to your liking"},
+        {"Button 4 category", "BUTTON_4_CATEGORY", BUTTON_CATEGORIES, "CANE", "Set to your liking"},
+        {"Button 5 category", "BUTTON_5_CATEGORY", BUTTON_CATEGORIES, "LIGHTSOURCE", "Set to your liking"},
+        {"Button 6 category", "BUTTON_6_CATEGORY", BUTTON_CATEGORIES, "AXE", "Set to your liking"},
+        {"Button 7 category", "BUTTON_7_CATEGORY", BUTTON_CATEGORIES, "PICKAXE", "Set to your liking"},
+        {"Button 8 category", "BUTTON_8_CATEGORY", BUTTON_CATEGORIES, "SHOVEL", "Set to your liking"},
+        {"Button 9 category", "BUTTON_9_CATEGORY", BUTTON_CATEGORIES, "HAMMER", "Set to your liking"},
+        {"Button 10 category", "BUTTON_10_CATEGORY", BUTTON_CATEGORIES, "PITCHFORK", "Set to your liking"},
+        {"Button 11 category", "BUTTON_11_CATEGORY", BUTTON_CATEGORIES, "RANGED", "Set to your liking"},
+        {"Button 12 category", "BUTTON_12_CATEGORY", BUTTON_CATEGORIES, "STAFF", "Set to your liking"},
+        {"Button 13 category", "BUTTON_13_CATEGORY", BUTTON_CATEGORIES, false, "Set to your liking"},
+        {"Button 14 category", "BUTTON_14_CATEGORY", BUTTON_CATEGORIES, false, "Set to your liking"},
+        {"Button 15 category", "BUTTON_15_CATEGORY", BUTTON_CATEGORIES, false, "Set to your liking"},
+    },
+    preferences = {
+        -- Label, Name, Options, Default
+        {"Preferred Cane", "PREFERRED_CANE", PREF_CANE, false},
+        {"Preferred Weapon", "PREFERRED_WEAPON", PREF_WEAPON, false},
+        {"Preferred Light", "PREFERRED_LIGHTSOURCE", PREF_LIGHTSOURCE, false},
+        {"Preferred Ranged", "PREFERRED_RANGED", PREF_RANGED, false},
+        {"Preferred Armor", "PREFERRED_ARMOR", PREF_ARMOR, false},
+        {"Preferred Head Armor", "PREFERRED_ARMORHAT", PREF_HEAD_ARMOR, false},
+        {"Preferred Body Armor", "PREFERRED_ARMORBODY", PREF_BODY_ARMOR, false},
+        {"Preferred Axe", "PREFERRED_AXE", PREF_AXE, false},
+        {"Preferred Pickaxe", "PREFERRED_PICKAXE", PREF_PICKAXE, false},
+        {"[M] Preferred Scythe", "PREFERRED_SCYTHE", PREF_SCYTHE, false},
+        {"Preferred Staff", "PREFERRED_STAFF", PREF_STAFF, false},
+        {"Preferred Auto-equip light", "PREFERRED_AUTO_LIGHT", PREF_LIGHTSOURCE, false},
+        {"Preferred Lantern fuel", "PREFERRED_FUEL_LANTERN", PREF_FUEL_LANTERN, false},
+        {"Preferred Moggles fuel", "PREFERRED_FUEL_MOGGLES", PREF_FUEL_MOGGLES, false},
+        {"Preferred Campfire fuel", "PREFERRED_CAMPFIRE_FUEL", PREF_CAMPFIRE_FUEL, false},
+    },
+    automation = {
+        -- Label, Name, Options, Default, Hover
+        {"Auto-unequip repairables","AUTO_UNEQUIP_REPAIRABLES", YESNO, true, "Auto-unequip repairables before their last use"},
+        {"Auto-repeat actions","AUTO_REPEAT_ACTIONS", YESNO, false, "Auto-repeat actions e.g. cutting wood, mining rocks"},
+        {"Auto-re-equip weapon", "AUTO_RE_EQUIP_WEAPON", AUTO_RE_EQUIP_WEAPON_OPTS, 2, "Set to your liking"}, -- Updated
+        {"Auto-re-equip armor","AUTO_RE_EQUIP_ARMOR", YESNO, true, "Auto-re-equip to the next best armor"},
+        {"Auto-equip weapon","AUTO_EQUIP_WEAPON", YESNO, true, "Auto-equip your best weapon in combat"},
+        {"Auto-equip cane","AUTO_EQUIP_CANE", YESNO, true, "Auto-equip your cane when moving"},
+        {"Auto-equip light", "AUTO_EQUIP_LIGHTSOURCE", AUTO_EQUIP_LIGHT_OPTS, 2, "Set to your liking"}, -- Added
+        {"Auto-equip helm","AUTO_EQUIP_HELM", YESNO, false, "Auto-equip your helm in combat"},
+        {"Auto-equip tool","AUTO_EQUIP_TOOL", AUTO_EQUIP_TOOL_OPTS, false, "Set to your liking"}, -- Updated
+        {"Auto-equip glass cutter", "AUTO_EQUIP_GLASSCUTTER", YESNO_AUTO_EQUIP_GLASSCUTTER, true, "Set to your liking"}, -- Added
+        {"Auto-regear woodie", "WOODIE_WEREITEM_UNEQUIP", YESNO_AUTO_REGEAR_WOODIE, true, "Set to your liking"}, -- Added
+        {"Auto-switch bone armor","AUTO_SWITCH_BONE_ARMOR", YESNO, true, "Auto-switch your bone armors to stay invulnerable"},
+        {"Auto-catch boomerang","AUTO_CATCH_BOOMERANG", YESNO, true, "Set to your liking"},
+        {"Auto-store candy bag","AUTO_CANDYBAG", YESNO, true, "Auto-store candy & trinkets in the Candy Bag"},
+        {"Auto-refuel light", "AUTO_REFUEL_LIGHT_SOURCES", YESNO_AUTO_REFUEL_LIGHT, false, "Set to your liking"}, -- Added
+        {"Auto-eat food","AUTO_EAT_FOOD", YESNO, false, "Auto-eat food at 0 hunger"},
+    },
+    quick_actions = {
+        -- Label, Name, Options, Default
+        {"Catch", "QUICK_ACTION_NET", YESNO, true},
+        {"Hammer", "QUICK_ACTION_HAMMER", YESNO, false},
+        {"Dig", "QUICK_ACTION_DIG", YESNO, true},
+        {"Add Fuel Campfires", "QUICK_ACTION_CAMPFIRE", YESNO, true},
+        {"Reset Trap", "QUICK_ACTION_TRAP", TRAP_OPTS, 2},
+        {"Shave Beefalo", "QUICK_ACTION_BEEFALO", YESNO, true},
+        {"Unlock Loot Stash", "QUICK_ACTION_KLAUS_SACK", YESNO, true},
+        {"Repair Boat", "QUICK_ACTION_REPAIR_BOAT", YESNO, true},
+        {"Build Odd Skeleton", "QUICK_ACTION_BUILD_FOSSIL", YESNO, true},
+        {"Socket Ancient Key", "QUICK_ACTION_ATRIUM_GATE", YESNO, true},
+        {"Track Animal", "QUICK_ACTION_DIRTPILE", YESNO, true},
+        {"Trade Pig King", "QUICK_ACTION_PIG_KING", YESNO, true},
+        {"Feed Bird", "QUICK_ACTION_FEED_BIRD", YESNO, true},
+        {"Wakeup Bird", "QUICK_ACTION_WAKEUP_BIRD", YESNO, true},
+        {"Imprison Bird", "QUICK_ACTION_IMPRISON_BIRD", YESNO, true},
+        {"Repair Wall", "QUICK_ACTION_WALLS", YESNO, true},
+        {"Extinguish Fire", "QUICK_ACTION_EXTINGUISH", YESNO, true},
+        {"Light Slurtle Mound", "QUICK_ACTION_SLURTLEHOLE", YESNO, false},
+    },
+    pickup = {
+        -- Label, Name, Options, Default, Hover
+        {"Pickup valuables first","PRIOTIZE_VALUABLE_ITEMS", YESNO, true, "Set to your liking"},
+        {"Pickup resurrection item first","PRIOTIZE_RESURRECTION", YESNO, true, "As ghost prioritise resurrection items"},
+        {"Ignore known blueprints","IGNORE_KNOWN_BLUEPRINT", YESNO, true, "Filter known blueprints from pickup"},
+    },
+    picking = {
+        -- Label, Name, Options, Default
+        {"Never pick Flowers","PICKUP_IGNORE_FLOWERS", YESNO, true},
+        {"Never pick Succulents","PICKUP_IGNORE_SUCCULENTS", YESNO, true},
+        {"Never pick Ferns","PICKUP_IGNORE_FERNS", YESNO, true},
+        {"Never pick Spiky Bush","PICKUP_IGNORE_MARSH_BUSH", YESNO, false},
+    },
+    telepoof = {
+        -- Label, Name, Options, Default
+        {"Disabled by default", "TELEPOOF_DISABLED", YESNO_TELEPOOF_DISABLED, false},
+        {"Hide hovertext", "TELEPOOF_HOVER", YESNO_TELEPOOF_HOVER, false},
+        {"Double-click speed", "TELEPOOF_DOUBLECLICK", TELEPOOF_SPEED, 0.5},
+        {"Double-click Soul Hop", "TELEPOOF_WORTOX", YESNO, true},
+    },
+    mousethrough = {
+        -- Label, Name, Options, Default
+        {"Force Inspect Player", "FORCE_INSPECT_PLAYERS", YESNO_FORCE_INSPECT, false},
+        {"Unclickable flying birds", "FLYING_BIRDS_MOUSETHROUGH", YESNO_FLYING_BIRDS, true},
+        {"Star Caller Staff", "YELLOWSTAFF_MOUSETHROUGH", YESNO_YELLOWSTAFF, true},
+        {"The Lazy Explorer", "ORANGESTAFF_MOUSETHROUGH", YESNO_ORANGESTAFF, true},
+    },
+    sorting = {
+        -- Label, Name, Options, Default
+        {"Sorting container","CONTAINER_SORT", SORT_CONTAINER_OPTS, 3},
+        {"Armor priority","ARMOR_SORT_PRIORITY", PRIORITY, 7},
+        {"Light priority","LIGHT_SORT_PRIORITY", PRIORITY, 6},
+        {"Staff priority","STAFF_SORT_PRIORITY", PRIORITY, 5},
+        {"Equipment priority","EQUIPMENT_SORT_PRIORITY", PRIORITY, 4},
+        {"Food priority","FOOD_SORT_PRIORITY", PRIORITY, 3},
+        {"Resource priority","RESOURCE_SORT_PRIORITY", PRIORITY, 2},
+        {"Tool priority","TOOL_SORT_PRIORITY", PRIORITY, 1},
+        {"Keep in slot 1","OVERRIDE_SLOT1_SORT", SORT_OVERRIDE_OPTS, false},
+    },
+    misc = {
+        -- Label, Name, Options, Default
+        {"Damage estimation","DAMAGE_ESTIMATION", YESNO, true},
+        {"Allow Tools on Weapon button","TOOLS_ON_WEAPON", YESNO, true},
+    },
+}
+
+configuration_options = {}
+
+local assignKeyMsg = "Assign a key"
+local preferenceMsg = "Select your preference"
+local settingMsg = "Set to your liking"
+
+-- Keybinds
+configuration_options[#configuration_options+1] = title("Keybinds")
+for i = 1, #DATA.keybinds do
+    local e = DATA.keybinds[i]
+    local kb_options = KB
+    local hover = e[4] or assignKeyMsg
+    if e[4] == true then
+        if e[2] == "CONFIRM_TO_EAT" then kb_options = KB_CONFIRM_EAT end
+        if e[2] == "PICKUP_FILTER" then kb_options = KB_PICKUP_FILTER end
+        if e[2] == "ATTACK_FILTER" then kb_options = KB_ATTACK_FILTER end
+        hover = assignKeyMsg
+    end
+    configuration_options[#configuration_options+1] = cfg(e[1], e[2], kb_options, e[3], hover)
+end
+
+-- Toggles
+configuration_options[#configuration_options+1] = title("Toggles")
+for i = 1, #DATA.toggles do
+    local e = DATA.toggles[i]
+    configuration_options[#configuration_options+1] = cfg(e[1], e[2], KB, e[3], assignKeyMsg)
+end
+
+-- Buttons
+configuration_options[#configuration_options+1] = title("Buttons")
+for i = 1, #DATA.buttons do
+    local e = DATA.buttons[i]
+    configuration_options[#configuration_options+1] = cfg(e[1], e[2], e[3], e[4], e[5] or settingMsg)
+end
+
+-- Preferences
+configuration_options[#configuration_options+1] = title("Preferences")
+for i = 1, #DATA.preferences do
+    local e = DATA.preferences[i]
+    configuration_options[#configuration_options+1] = cfg(e[1], e[2], e[3], e[4], preferenceMsg)
+end
+
+-- Automation
+configuration_options[#configuration_options+1] = title("Automation")
+for i = 1, #DATA.automation do
+    local e = DATA.automation[i]
+    configuration_options[#configuration_options+1] = cfg(e[1], e[2], e[3], e[4], e[5] or settingMsg)
+end
+
+-- Quick Actions
+configuration_options[#configuration_options+1] = title("Quick Actions")
+for i = 1, #DATA.quick_actions do
+    local e = DATA.quick_actions[i]
+    configuration_options[#configuration_options+1] = cfg(e[1], e[2], e[3], e[4], settingMsg)
+end
+
+-- Pickup
+configuration_options[#configuration_options+1] = title("Pickup")
+for i = 1, #DATA.pickup do
+    local e = DATA.pickup[i]
+    configuration_options[#configuration_options+1] = cfg(e[1], e[2], e[3], e[4], e[5] or settingMsg)
+end
+
+-- Picking
+configuration_options[#configuration_options+1] = title("Picking")
+for i = 1, #DATA.picking do
+    local e = DATA.picking[i]
+    configuration_options[#configuration_options+1] = cfg(e[1], e[2], e[3], e[4], settingMsg)
+end
+
+-- Telepoof
+configuration_options[#configuration_options+1] = title("Telepoof")
+for i = 1, #DATA.telepoof do
+    local e = DATA.telepoof[i]
+    configuration_options[#configuration_options+1] = cfg(e[1], e[2], e[3], e[4], settingMsg)
+end
+
+-- Mousethrough
+configuration_options[#configuration_options+1] = title("Mousethrough")
+for i = 1, #DATA.mousethrough do
+    local e = DATA.mousethrough[i]
+    configuration_options[#configuration_options+1] = cfg(e[1], e[2], e[3], e[4], settingMsg)
+end
+
+-- Sorting
+configuration_options[#configuration_options+1] = title("Sorting")
+for i = 1, #DATA.sorting do
+    local e = DATA.sorting[i]
+    configuration_options[#configuration_options+1] = cfg(e[1], e[2], e[3], e[4], settingMsg)
+end
+
+-- Miscellaneous
+configuration_options[#configuration_options+1] = title("Miscellaneous")
+for i = 1, #DATA.misc do
+    local e = DATA.misc[i]
+    configuration_options[#configuration_options+1] = cfg(e[1], e[2], e[3], e[4], settingMsg)
+end
