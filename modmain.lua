@@ -141,7 +141,8 @@ for name, confs in pairs(Overrides) do
 
     if enabled then
         if name == "filterpickup" or name == "filterattack" then
-            Overrides[name] = modimport("scripts/overrides/"..name)
+            modimport("scripts/overrides/"..name)
+            Overrides[name] = nil
         else
             Overrides[name] = require("overrides/"..name)
         end

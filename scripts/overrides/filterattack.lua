@@ -40,10 +40,13 @@ local function GetFilter(prefab)
     return CustomFilters[prefab] or DefaultFilter
 end
 
-local function LoadFilter()
+local function LoadFilter(onLoaded)
     FileSystem:LoadTableFromFile(Filter_File, function(filterList)
         for i = 1, #filterList do
             AttackFilters[filterList[i]] = GetFilter(filterList[i])
+        end
+        if onLoaded then
+            onLoaded()
         end
     end)
 end
@@ -141,15 +144,30 @@ AddCustomFilter("bird", function(guy)
        and not (IsFrozen(guy) or IsAsleep(guy))
 end)
 
-local function Init()
-    LoadFilter()
+local function Init(_, player)
+    if player ~= GLOBAL.ThePlayer then
+        return
+    end
 
-    local OldIsAlly = ThePlayer.replica.combat.IsAlly
-    function ThePlayer.replica.combat:IsAlly(guy, ...)
+    LoadFilter(function()
+        for _, ent in pairs(GLOBAL.Ents) do
+            if AttackFilters[ent.prefab] then
+                AddColor(ent)
+            end
+        end
+    end)
+
+    local OldIsAlly = GLOBAL.ThePlayer.replica.combat.IsAlly
+    function GLOBAL.ThePlayer.replica.combat:IsAlly(guy, ...)
         return IsAttackFiltered(self, guy)
             or OldIsAlly(self, guy, ...)
     end
 end
+
+local function OnWorldPostInit(inst)
+    inst:ListenForEvent("playeractivated", Init, GLOBAL.TheWorld)
+end
+AddPrefabPostInit("world", OnWorldPostInit)
 
 local function tintIfFiltered(inst)
     if inst and inst.prefab and AttackFilters[inst.prefab] and inst.AnimState then
@@ -191,5 +209,3 @@ KeybindService:AddKey("ATTACK_FILTER", function()
         )
     end
 end)
-
-return Init

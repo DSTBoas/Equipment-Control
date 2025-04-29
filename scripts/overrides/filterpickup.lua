@@ -269,8 +269,8 @@ end
 
 AddPrefabPostInitAny(tintIfFiltered)
 
-local function Init()
-    local PlayerController = ThePlayer and ThePlayer.components.playercontroller
+local function Init(_, player)
+    local PlayerController = player and player.components.playercontroller
 
     if not PlayerController then
         return
@@ -300,7 +300,7 @@ local function Init()
 
     if GetModConfigData("PICKUP_FILTER", MOD_EQUIPMENT_CONTROL.MODNAME) then
         LoadPickupFilter(function()
-            for _, ent in pairs(Ents) do
+            for _, ent in pairs(GLOBAL.Ents) do
                 if PickupFilter.prefabs[ent.prefab] then
                     AddColor(ent)
                 end
@@ -560,6 +560,11 @@ local function Init()
     end
 end
 
+local function OnWorldPostInit(inst)
+    inst:ListenForEvent("playeractivated", Init, GLOBAL.TheWorld)
+end
+AddPrefabPostInit("world", OnWorldPostInit)
+
 local function CanBePickedUp(ent)
     return ent
        and ent.replica.inventoryitem
@@ -694,5 +699,3 @@ if GetModConfigData("MEAT_PRIORITIZATION_MODE", MOD_EQUIPMENT_CONTROL.MODNAME) t
         EntityFilters[#EntityFilters] = meatPrioritizationFuncs[currentMeatPrioritizationMode]
     end)
 end
-
-return Init
