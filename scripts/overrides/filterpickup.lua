@@ -2,6 +2,8 @@ local InventoryFunctions = require "util/inventoryfunctions"
 local CraftFunctions = require "util/craftfunctions"
 local FileSystem = require "util/filesystem"
 local Say = require "util/say"
+local TheInput = GLOBAL.TheInput
+local MOD_EQUIPMENT_CONTROL = GLOBAL.MOD_EQUIPMENT_CONTROL
 local KeybindService = MOD_EQUIPMENT_CONTROL.KEYBINDSERVICE
 
 -- 
@@ -40,6 +42,10 @@ local PriotizedPickups =
     ["Strident Trident Blueprint"] = 3,
 }
 
+-- 
+-- Logic
+-- 
+
 local BlueprintPrefabs =
 {
     ["Mushlight Blueprint"] = "mushroom_light",
@@ -70,8 +76,6 @@ local PickupFilter =
     tags = {},
     prefabs = {},
 }
-
-_G.MOD_EQUIPMENT_CONTROL.PICKUP_FILTER = PickupFilter.prefabs
 
 local function AddFilteredPrefab(prefab)
     PickupFilter.prefabs[prefab] = true
@@ -256,6 +260,14 @@ local function GetToolsFromInventory(self, excludeTool)
 
     return ret
 end
+
+local function tintIfFiltered(inst)
+    if inst and inst.prefab and PickupFilter.prefabs[inst.prefab] and inst.AnimState then
+        AddColor(inst)
+    end
+end
+
+AddPrefabPostInitAny(tintIfFiltered)
 
 local function Init()
     local PlayerController = ThePlayer and ThePlayer.components.playercontroller
@@ -560,13 +572,13 @@ KeybindService:AddKey("PICKUP_FILTER", function()
     if CanBePickedUp(ent) then
         local addEntity = AddToFilter(ent)
         if addEntity then
-            for _, v in pairs(Ents) do
+            for _, v in pairs(GLOBAL.Ents) do
                 if v.prefab == ent.prefab then
                     AddColor(v)
                 end
             end
         else
-            for _, v in pairs(Ents) do
+            for _, v in pairs(GLOBAL.Ents) do
                 if v.prefab == ent.prefab then
                     RemoveColor(v)
                 end

@@ -34,6 +34,7 @@ end
 
 -- Don't do this, it's error prone
 -- Each file should have its own config check table at the top of the file
+-- This determines if we should include the file to be more efficient with our resources
 local Overrides =
 {
     autocane =
@@ -129,19 +130,23 @@ local Overrides =
     },
 }
 
-for override, confs in pairs(Overrides) do
-    local loaded = false
-
-    for _, conf in pairs(confs) do
-        if GetModConfigData(conf) then
-            Overrides[override] = require("overrides/" .. override)
-            loaded = true
+for name, confs in pairs(Overrides) do
+    local enabled = false
+    for _, cfg in ipairs(confs) do
+        if GetModConfigData(cfg) then
+            enabled = true
             break
         end
     end
 
-    if not loaded then
-        Overrides[override] = nil
+    if enabled then
+        if name == "filterpickup" or name == "filterattack" then
+            Overrides[name] = modimport("scripts/overrides/"..name)
+        else
+            Overrides[name] = require("overrides/"..name)
+        end
+    else
+        Overrides[name] = nil
     end
 end
 
@@ -171,14 +176,3 @@ local function OnWorldPostInit(inst)
     inst:ListenForEvent("playeractivated", OnPlayerActivated, _G.TheWorld)
 end
 AddPrefabPostInit("world", OnWorldPostInit)
-
--- Pickup filter colors
-AddPrefabPostInitAny(function(inst)
-    if inst and inst.prefab then
-        if _G.MOD_EQUIPMENT_CONTROL.PICKUP_FILTER[inst.prefab] then
-            if inst.AnimState then
-                inst.AnimState:SetMultColour(1, 0, 0, 1)
-            end
-        end
-    end
-end)

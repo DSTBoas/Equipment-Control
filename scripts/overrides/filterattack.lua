@@ -1,4 +1,6 @@
+local MOD_EQUIPMENT_CONTROL = GLOBAL.MOD_EQUIPMENT_CONTROL
 local KeybindService = MOD_EQUIPMENT_CONTROL.KEYBINDSERVICE
+local TheInput = GLOBAL.TheInput
 local FileSystem = require "util/filesystem"
 local Say = require "util/say"
 
@@ -39,10 +41,11 @@ local function GetFilter(prefab)
 end
 
 local function LoadFilter()
-    local t = FileSystem:LoadTableFromFile(Filter_File)
-    for i = 1, #t do
-        AttackFilters[t[i]] = GetFilter(t[i])
-    end
+    FileSystem:LoadTableFromFile(Filter_File, function(filterList)
+        for i = 1, #filterList do
+            AttackFilters[filterList[i]] = GetFilter(filterList[i])
+        end
+    end)
 end
 
 local function SaveFilter()
@@ -100,6 +103,14 @@ local function AddToFilter(ent)
     return AttackFilters[prefab]
 end
 
+local function AddColor(ent)
+    ent.AnimState:SetMultColour(1, 0, 0, 1)
+end
+
+local function RemoveColor(ent)
+    ent.AnimState:SetMultColour(1, 1, 1, 1)
+end
+
 -- 
 -- Helpers
 -- 
@@ -140,6 +151,14 @@ local function Init()
     end
 end
 
+local function tintIfFiltered(inst)
+    if inst and inst.prefab and AttackFilters[inst.prefab] and inst.AnimState then
+        inst.AnimState:SetMultColour(1, 0, 0, 1)
+    end
+end
+
+AddPrefabPostInitAny(tintIfFiltered)
+
 -- 
 -- Keybinds
 -- 
@@ -148,10 +167,25 @@ KeybindService:AddKey("ATTACK_FILTER", function()
     local ent = TheInput:GetWorldEntityUnderMouse()
 
     if ent and ent.replica.health then
+        local isAdded = AddToFilter(ent)
+        
+        if isAdded then
+            for _, v in pairs(GLOBAL.Ents) do
+                if v.prefab == ent.prefab then
+                    AddColor(v)
+                end
+            end
+        else
+            for _, v in pairs(GLOBAL.Ents) do
+                if v.prefab == ent.prefab then
+                    RemoveColor(v)
+                end
+            end
+        end
+
         Say(
             string.format(
-                AddToFilter(ent) and MOD_EQUIPMENT_CONTROL.STRINGS.ATTACK_FILTER.ADD
-                or MOD_EQUIPMENT_CONTROL.STRINGS.ATTACK_FILTER.REMOVE,
+                isAdded and MOD_EQUIPMENT_CONTROL.STRINGS.ATTACK_FILTER.ADD or MOD_EQUIPMENT_CONTROL.STRINGS.ATTACK_FILTER.REMOVE,
                 ent.name
             )
         )
