@@ -8,6 +8,9 @@ local KeybindService = MOD_EQUIPMENT_CONTROL.KEYBINDSERVICE
 local EQUIPSLOTS = GLOBAL.EQUIPSLOTS
 local ACTIONS = GLOBAL.ACTIONS
 local FindEntity = GLOBAL.FindEntity
+local CanEntitySeeTarget = GLOBAL.CanEntitySeeTarget
+local TOOLACTIONS = GLOBAL.TOOLACTIONS
+local BufferedAction = GLOBAL.BufferedAction
 
 -- 
 -- Config
