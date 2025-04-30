@@ -17,6 +17,8 @@ local Namemap = require "util/blueprint_namemap"
 
 -- Config
 local AUTO_EQUIP_TOOL = GetModConfigData("AUTO_EQUIP_TOOL", MOD_EQUIPMENT_CONTROL.MODNAME)
+local PRIORITIZE_VALUABLE = GetModConfigData("PRIOTIZE_VALUABLE_ITEMS", MOD_EQUIPMENT_CONTROL.MODNAME)
+local MEAT_MODE = (GetModConfigData("MEAT_PRIORITIZATION_MODE", MOD_EQUIPMENT_CONTROL.MODNAME) or "NONE"):upper()
 local Filter_File = "mod_equipment_control_pickup_filter.txt"
 local PriotizedPickups = {
     greengem = .5,
@@ -149,6 +151,8 @@ local function GetBlueprintRecipeId(bp)
     end
 end
 
+local function IsMeat(ent) return ent:HasTag("meat") end
+
 local function KnowsBlueprint(bp)
     if not (bp and bp.prefab == "blueprint") then
         return false
@@ -168,51 +172,55 @@ local function KnowsBlueprint(bp)
 end
 
 local function GetPriority(ent)
-    local priority
-    if ent.prefab == "blueprint" then
-        if KnowsBlueprint(ent) then
-            priority = -1
-        else
-            priority = PriotizedPickups[ent.name] or 1
-        end
-    else
-        priority = PriotizedPickups[ent.prefab] or 0
+    if ent.prefab == "blueprint" and KnowsBlueprint(ent) then
+        return -1
     end
 
-    DebugPriority("Scored %-28s (%s)  ->  %d", ent.name or ent.prefab, ent.prefab, priority)
+    if IsMeat(ent) then
+        if MEAT_MODE == "IGNORE" then
+            return 0
+        elseif MEAT_MODE == "FIRST" then
+            return  99
+        elseif MEAT_MODE == "LAST" then
+            return -99
+        end
+    end
 
-    return priority
+    if PRIORITIZE_VALUABLE then
+        return PriotizedPickups[ent.name]
+            or PriotizedPickups[ent.prefab] or 0
+    end
+
+    return 0
 end
 
 local function GetModifiedEnts(inst, exclude, tags)
     local x, y, z = inst.Transform:GetWorldPosition()
-    local ents = TheSim:FindEntities(x, y, z, 6, nil, exclude, tags)
-    local prioritized = {}
-    for i, ent in ipairs(ents) do
-        if
-            not IsFiltered(ent) and
-                not (ent.prefab == "blueprint" and KnowsBlueprint(ent) and
-                    GetModConfigData("IGNORE_KNOWN_BLUEPRINT", MOD_EQUIPMENT_CONTROL.MODNAME))
-         then
-            table.insert(prioritized, {ent = ent, priority = GetPriority(ent)})
+    local raw = TheSim:FindEntities(x, y, z, 6, nil, exclude, tags)
+
+    local scored = {}
+    for _, ent in ipairs(raw) do
+        if not (MEAT_MODE == "IGNORE" and IsMeat(ent))
+        and not IsFiltered(ent)
+        and not ( ent.prefab == "blueprint"
+                   and KnowsBlueprint(ent)
+                   and GetModConfigData("IGNORE_KNOWN_BLUEPRINT",
+                                        MOD_EQUIPMENT_CONTROL.MODNAME) ) then
+            table.insert(scored, { ent = ent, priority = GetPriority(ent) })
         end
-    end
-    table.sort(
-        prioritized,
-        function(a, b)
-            return a.priority > b.priority
-        end
-    )
-    local result = {}
-    for i, v in ipairs(prioritized) do
-        result[i] = v.ent
     end
 
-    for i, v in ipairs(prioritized) do
-        DebugPriority("  #%d  %-25s  priority %d", i, v.ent.name or v.ent.prefab, v.priority)
+    table.sort(scored, function(a, b) return a.priority > b.priority end)
+
+    local result = {}
+    for i, v in ipairs(scored) do
+        result[i] = v.ent
+        DebugPriority("  #%d  %-25s  priority %d",
+                      i, v.ent.name or v.ent.prefab, v.priority)
     end
     return result
 end
+
 
 local function GetToolsFromInventory(self, excludeTool)
     local ret = {}
@@ -360,3 +368,22 @@ KeybindService:AddKey(
         end
     end
 )
+
+local meatModes = { "NONE", "FIRST", "LAST", "IGNORE" }
+
+local currentMeatPrioritizationMode = 1
+for i, m in ipairs(meatModes) do
+    if m == MEAT_MODE then currentMeatPrioritizationMode = i break end
+end
+
+local function SetMeatModeByIndex(idx)
+    currentMeatPrioritizationMode = idx
+    MEAT_MODE = meatModes[idx]
+end
+
+KeybindService:AddKey("MEAT_PRIORITIZATION_MODE", function()
+    local nextIdx = currentMeatPrioritizationMode % #meatModes + 1
+    SetMeatModeByIndex(nextIdx)
+
+    Say(string.format("Current meat pickup mode is: %s.", MEAT_MODE))
+end)
