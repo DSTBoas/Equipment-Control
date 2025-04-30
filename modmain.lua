@@ -13,7 +13,7 @@ _G.MOD_EQUIPMENT_CONTROL = MOD_EQUIPMENT_CONTROL
 require("categories")
 
 local function EntityScriptPostConstruct(self)
-    local OldRegisterComponentActions = self.RegisterComponentActions 
+    local OldRegisterComponentActions = self.RegisterComponentActions
     function self:RegisterComponentActions(...)
         if _G.MOD_EQUIPMENT_CONTROL.SPAWNING then
             return
@@ -27,65 +27,56 @@ AddGlobalClassPostConstruct("entityscript", "EntityScript", EntityScriptPostCons
 if GetModConfigData("BUTTON_SHOW") then
     local Buttons = require "widgets/buttons"
 
-    AddClassPostConstruct("widgets/inventorybar", function(self)
-        self.buttons = self.root:AddChild(Buttons(self.owner, self))
-    end)
+    AddClassPostConstruct(
+        "widgets/inventorybar",
+        function(self)
+            self.buttons = self.root:AddChild(Buttons(self.owner, self))
+        end
+    )
 end
 
 -- Don't do this, it's error prone
 -- Each file should have its own config check table at the top of the file
 -- This determines if we should include the file to be more efficient with our resources
-local Overrides =
-{
-    autocane =
-    {
+local Overrides = {
+    autocane = {
         "TOGGLE_AUTO_EQUIP_CANE",
-        "AUTO_EQUIP_CANE",
+        "AUTO_EQUIP_CANE"
     },
-    autolight =
-    {
-        "AUTO_EQUIP_LIGHTSOURCE",
+    autolight = {
+        "AUTO_EQUIP_LIGHTSOURCE"
     },
-    autoweapon =
-    {
+    autoweapon = {
         "TOGGLE_AUTO_EQUIP",
         "AUTO_EQUIP_WEAPON",
-        "AUTO_EQUIP_GLASSCUTTER",
+        "AUTO_EQUIP_GLASSCUTTER"
     },
-    autotool =
-    {
+    autotool = {
         "AUTO_EQUIP_TOOL",
-        "AUTO_REPEAT_ACTIONS",
+        "AUTO_REPEAT_ACTIONS"
     },
-    mousethrough =
-    {
+    mousethrough = {
         "AUTO_EQUIP_TOOL",
         "FLYING_BIRDS_MOUSETHROUGH",
         "ORANGESTAFF_MOUSETHROUGH",
-        "YELLOWSTAFF_MOUSETHROUGH",
+        "YELLOWSTAFF_MOUSETHROUGH"
     },
-    woodieregear =
-    {
-        "WOODIE_WEREITEM_UNEQUIP",
+    woodieregear = {
+        "WOODIE_WEREITEM_UNEQUIP"
     },
-    eatconfirmation =
-    {
-        "CONFIRM_TO_EAT",
+    eatconfirmation = {
+        "CONFIRM_TO_EAT"
     },
-    telepoof =
-    {
+    telepoof = {
         "TOGGLE_TELEPOOF",
         "TELEPOOF_DISABLED",
         "TELEPOOF_HOVER",
-        "TELEPOOF_DOUBLECLICK",
+        "TELEPOOF_DOUBLECLICK"
     },
-    filterattack =
-    {
-        "ATTACK_FILTER",
+    filterattack = {
+        "ATTACK_FILTER"
     },
-    filterpickup =
-    {
-        "AUTO_EQUIP_TOOL",
+    filterpickup = {
         "PICKUP_FILTER",
         "IGNORE_KNOWN_BLUEPRINT",
         "PRIOTIZE_VALUABLE_ITEMS",
@@ -93,10 +84,9 @@ local Overrides =
         "PICKUP_IGNORE_FERNS",
         "PICKUP_IGNORE_SUCCULENTS",
         "PICKUP_IGNORE_MARSH_BUSH",
-        "MEAT_PRIORITIZATION_MODE",
+        "MEAT_PRIORITIZATION_MODE"
     },
-    quickactions =
-    {
+    quickactions = {
         "QUICK_ACTION_CAMPFIRE",
         "QUICK_ACTION_TRAP",
         "QUICK_ACTION_BEEFALO",
@@ -114,20 +104,17 @@ local Overrides =
         "QUICK_ACTION_ATRIUM_GATE",
         "QUICK_ACTION_REPAIR_BOAT",
         "QUICK_ACTION_PIG_KING",
-        "QUICK_ACTION_DIRTPILE",
+        "QUICK_ACTION_DIRTPILE"
     },
-    autocandybag =
-    {
-        "AUTO_CANDYBAG",
+    autocandybag = {
+        "AUTO_CANDYBAG"
     },
-    autohelm =
-    {
-        "AUTO_EQUIP_HELM",
+    autohelm = {
+        "AUTO_EQUIP_HELM"
     },
-    autoeat = 
-    {
-        "AUTO_EAT_FOOD",
-    },
+    autoeat = {
+        "AUTO_EAT_FOOD"
+    }
 }
 
 for name, confs in pairs(Overrides) do
@@ -141,10 +128,10 @@ for name, confs in pairs(Overrides) do
 
     if enabled then
         if name == "filterpickup" or name == "filterattack" or name == "mousethrough" then
-            modimport("scripts/overrides/"..name)
+            modimport("scripts/overrides/" .. name)
             Overrides[name] = nil
         else
-            Overrides[name] = require("overrides/"..name)
+            Overrides[name] = require("overrides/" .. name)
         end
     else
         Overrides[name] = nil

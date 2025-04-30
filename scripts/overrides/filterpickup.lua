@@ -16,7 +16,6 @@ local CONTROL_ACTION = GLOBAL.CONTROL_ACTION
 local Namemap = require "util/blueprint_namemap"
 
 -- Config
-local AUTO_EQUIP_TOOL = GetModConfigData("AUTO_EQUIP_TOOL", MOD_EQUIPMENT_CONTROL.MODNAME)
 local PRIORITIZE_VALUABLE = GetModConfigData("PRIOTIZE_VALUABLE_ITEMS", MOD_EQUIPMENT_CONTROL.MODNAME)
 local MEAT_MODE = (GetModConfigData("MEAT_PRIORITIZATION_MODE", MOD_EQUIPMENT_CONTROL.MODNAME) or "NONE"):upper()
 local Filter_File = "mod_equipment_control_pickup_filter.txt"
@@ -151,7 +150,9 @@ local function GetBlueprintRecipeId(bp)
     end
 end
 
-local function IsMeat(ent) return ent:HasTag("meat") end
+local function IsMeat(ent)
+    return ent:HasTag("meat")
+end
 
 local function KnowsBlueprint(bp)
     if not (bp and bp.prefab == "blueprint") then
@@ -180,15 +181,14 @@ local function GetPriority(ent)
         if MEAT_MODE == "IGNORE" then
             return 0
         elseif MEAT_MODE == "FIRST" then
-            return  99
+            return 99
         elseif MEAT_MODE == "LAST" then
             return -99
         end
     end
 
     if PRIORITIZE_VALUABLE then
-        return PriotizedPickups[ent.name]
-            or PriotizedPickups[ent.prefab] or 0
+        return PriotizedPickups[ent.name] or PriotizedPickups[ent.prefab] or 0
     end
 
     return 0
@@ -200,51 +200,28 @@ local function GetModifiedEnts(inst, exclude, tags)
 
     local scored = {}
     for _, ent in ipairs(raw) do
-        if not (MEAT_MODE == "IGNORE" and IsMeat(ent))
-        and not IsFiltered(ent)
-        and not ( ent.prefab == "blueprint"
-                   and KnowsBlueprint(ent)
-                   and GetModConfigData("IGNORE_KNOWN_BLUEPRINT",
-                                        MOD_EQUIPMENT_CONTROL.MODNAME) ) then
-            table.insert(scored, { ent = ent, priority = GetPriority(ent) })
+        if
+            not (MEAT_MODE == "IGNORE" and IsMeat(ent)) and not IsFiltered(ent) and
+                not (ent.prefab == "blueprint" and KnowsBlueprint(ent) and
+                    GetModConfigData("IGNORE_KNOWN_BLUEPRINT", MOD_EQUIPMENT_CONTROL.MODNAME))
+         then
+            table.insert(scored, {ent = ent, priority = GetPriority(ent)})
         end
     end
 
-    table.sort(scored, function(a, b) return a.priority > b.priority end)
+    table.sort(
+        scored,
+        function(a, b)
+            return a.priority > b.priority
+        end
+    )
 
     local result = {}
     for i, v in ipairs(scored) do
         result[i] = v.ent
-        DebugPriority("  #%d  %-25s  priority %d",
-                      i, v.ent.name or v.ent.prefab, v.priority)
+        DebugPriority("  #%d  %-25s  priority %d", i, v.ent.name or v.ent.prefab, v.priority)
     end
     return result
-end
-
-
-local function GetToolsFromInventory(self, excludeTool)
-    local ret = {}
-    if AUTO_EQUIP_TOOL then
-        local toolCategories = {
-            AXE = "CHOP",
-            PICKAXE = "MINE"
-        }
-        if excludeTool then
-            for category, tag in pairs(toolCategories) do
-                if excludeTool:HasTag(tag .. "_tool") then
-                    toolCategories[category] = nil
-                end
-            end
-        end
-        local tool
-        for category, tag in pairs(toolCategories) do
-            tool = self.inst.components.actioncontroller:GetItemFromCategory(category)
-            if tool then
-                ret[tag] = tool
-            end
-        end
-    end
-    return ret
 end
 
 local function tintIfFiltered(inst)
@@ -256,70 +233,42 @@ end
 AddPrefabPostInitAny(tintIfFiltered)
 
 local function ActionButtonOverride(inst, force_target)
-    local tool = inst.replica.inventory:GetEquippedItem(EQUIPSLOTS.HANDS)
-
-    if force_target and AUTO_EQUIP_TOOL then
-        -- Existing logic remains unchanged
-        for k, v in pairs(TOOLACTIONS) do
-            if force_target:HasTag(k .. "_workable") then
-                local tools = GetToolsFromInventory(inst, tool)
-                local mod_tool = tools[k]
-                if mod_tool then
-                    InventoryFunctions:Equip(mod_tool)
-                    return BufferedAction(inst, force_target, ACTIONS[k])
-                end
-            end
-        end
-        if force_target:HasTag("saddled") then
-            local unsaddler = inst.components.inventory:GetItemWithTag("unsaddler")
-            if unsaddler then
-                inst.components.inventory:Equip(unsaddler)
-                return BufferedAction(inst, force_target, ACTIONS.UNSADDLE)
-            end
-        end
-        if force_target:HasTag("brushable") then
-            local brush = inst.components.inventory:GetItemWithTag("brush")
-            if brush then
-                inst.components.inventory:Equip(brush)
-                return BufferedAction(inst, force_target, ACTIONS.BRUSH)
-            end
-        end
-        return nil, true
-    else
-        local pc = inst.components.playercontroller
-        if pc ~= nil and pc:IsDoingOrWorking() then
-            return nil, true
-        end
-
-        local exclude_tags = {"FX", "NOCLICK", "DECOR", "INLIMBO", "catchable", "mineactive", "intense"}
-        local tags = {
-            "_inventoryitem",
-            "pickable",
-            "harvestable",
-            "trapsprung",
-            "minesprung",
-            "inactive",
-            "smolder",
-            "tapped_harvestable",
-            "dried",
-            "donecooking",
-            "corpse"
-        }
-        local ents = GetModifiedEnts(inst, exclude_tags, tags)
-
-        for _, ent in ipairs(ents) do
-            DebugPriority("Picking up %s with priority %d", ent.name or ent.prefab, GetPriority(ent))
-            if CanEntitySeeTarget(inst, ent) then
-                local action = inst.components.playeractionpicker:GetLeftClickActions(ent:GetPosition(), ent)[1]
-                if action then
-                    return action
-                end
-            end
-        end
-
-        -- If no prioritized entity is visible or interactable, defer to default logic.
+    if force_target then
         return nil, true
     end
+
+    local pc = inst.components.playercontroller
+    if pc ~= nil and pc:IsDoingOrWorking() then
+        return nil, true
+    end
+
+    local exclude_tags = {"FX", "NOCLICK", "DECOR", "INLIMBO", "catchable", "mineactive", "intense"}
+    local tags = {
+        "_inventoryitem",
+        "pickable",
+        "harvestable",
+        "trapsprung",
+        "minesprung",
+        "inactive",
+        "smolder",
+        "tapped_harvestable",
+        "dried",
+        "donecooking",
+        "corpse"
+    }
+
+    local ents = GetModifiedEnts(inst, exclude_tags, tags)
+    for _, ent in ipairs(ents) do
+        DebugPriority("Picking up %s with priority %d", ent.name or ent.prefab, GetPriority(ent))
+        if CanEntitySeeTarget(inst, ent) then
+            local action = inst.components.playeractionpicker:GetLeftClickActions(ent:GetPosition(), ent)[1]
+            if action then
+                return action
+            end
+        end
+    end
+
+    return nil, true
 end
 
 local function Init(_, player)
@@ -347,8 +296,8 @@ end
 AddPrefabPostInit("world", OnWorldPostInit)
 
 local function CanBePickedUp(ent)
-    return ent and ent.replica.inventoryitem and ent.replica.inventoryitem:CanBePickedUp()
-            or ent and ent:HasTag("pickable")
+    return ent and ent.replica.inventoryitem and ent.replica.inventoryitem:CanBePickedUp() or
+        ent and ent:HasTag("pickable")
 end
 
 KeybindService:AddKey(
@@ -374,11 +323,14 @@ KeybindService:AddKey(
     end
 )
 
-local meatModes = { "NONE", "FIRST", "LAST", "IGNORE" }
+local meatModes = {"NONE", "FIRST", "LAST", "IGNORE"}
 
 local currentMeatPrioritizationMode = 1
 for i, m in ipairs(meatModes) do
-    if m == MEAT_MODE then currentMeatPrioritizationMode = i break end
+    if m == MEAT_MODE then
+        currentMeatPrioritizationMode = i
+        break
+    end
 end
 
 local function SetMeatModeByIndex(idx)
@@ -386,9 +338,12 @@ local function SetMeatModeByIndex(idx)
     MEAT_MODE = meatModes[idx]
 end
 
-KeybindService:AddKey("MEAT_PRIORITIZATION_MODE", function()
-    local nextIdx = currentMeatPrioritizationMode % #meatModes + 1
-    SetMeatModeByIndex(nextIdx)
+KeybindService:AddKey(
+    "MEAT_PRIORITIZATION_MODE",
+    function()
+        local nextIdx = currentMeatPrioritizationMode % #meatModes + 1
+        SetMeatModeByIndex(nextIdx)
 
-    Say(string.format("Current meat pickup mode is: %s.", MEAT_MODE))
-end)
+        Say(string.format("Current meat pickup mode is: %s.", MEAT_MODE))
+    end
+)
