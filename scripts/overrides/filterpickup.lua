@@ -47,7 +47,11 @@ local PriotizedPickups = {
 }
 
 -- Logic
-local PickupFilter = {tags = {}, prefabs = {}}
+local PickupFilter = {prefabs = {}}
+
+local function AddFilteredPrefab(prefab)
+    PickupFilter.prefabs[prefab] = true
+end
 
 local function AddFilteredTag(tag)
     PickupFilter.tags[tag] = true
@@ -81,14 +85,25 @@ if GetModConfigData("PICKUP_IGNORE_MARSH_BUSH", MOD_EQUIPMENT_CONTROL.MODNAME) t
 end
 
 local function SavePickupFilter()
-    local data = {prefabs = {}, tags = {}}
+    local list = {}
     for p in pairs(PickupFilter.prefabs) do
-        table.insert(data.prefabs, p)
+        table.insert(list, p)
     end
-    for tag in pairs(PickupFilter.tags) do
-        table.insert(data.tags, tag)
-    end
-    FileSystem:SaveTableToFile(Filter_File, data)
+    FileSystem:SaveTableToFile(Filter_File, list)
+end
+
+local function LoadPickupFilter(onLoaded)
+    FileSystem:LoadTableFromFile(
+        Filter_File,
+        function(list)
+            for _, p in ipairs(list or {}) do
+                PickupFilter.prefabs[p] = true
+            end
+            if onLoaded then
+                onLoaded()
+            end
+        end
+    )
 end
 
 local function AddColor(ent)
@@ -108,11 +123,6 @@ local function SafeHasTag(ent, tag)
 end
 
 local function IsFiltered(ent)
-    for tag in pairs(PickupFilter.tags) do
-        if SafeHasTag(ent, tag) then
-            return true
-        end
-    end
     return PickupFilter.prefabs[ent.prefab] or false
 end
 
@@ -122,26 +132,6 @@ local function AddToFilter(ent)
     return PickupFilter.prefabs[ent.prefab]
 end
 
-local function LoadPickupFilter(onLoaded)
-    FileSystem:LoadTableFromFile(
-        Filter_File,
-        function(data)
-            -- old format: { "twigs", "cutgrass", … }
-            if data and not data.prefabs then
-                data = {prefabs = data, tags = {}}
-            end
-            for _, p in ipairs(data.prefabs or {}) do
-                PickupFilter.prefabs[p] = true
-            end
-            for _, tag in ipairs(data.tags or {}) do
-                PickupFilter.tags[tag] = true
-            end
-            if onLoaded then
-                onLoaded()
-            end
-        end
-    )
-end
 local DEBUG_PICKUP_PRIORITY = true
 
 local function DebugPriority(fmt, ...)
@@ -241,7 +231,7 @@ local function GetModifiedEnts(inst, exclude, tags)
 end
 
 local function tintIfFiltered(inst)
-    if inst and inst.prefab and PickupFilter.prefabs[inst.prefab] and inst.AnimState then
+    if inst and inst.AnimState and PickupFilter.prefabs[inst.prefab] then
         AddColor(inst)
     end
 end
@@ -316,20 +306,17 @@ local function CanBePickedUp(ent)
         ent and ent:HasTag("pickable")
 end
 
-local function ToggleFilter(ent)
-    local kind, key = GetFilterKey(ent)
-    local dict = (kind == "tag") and PickupFilter.tags or PickupFilter.prefabs
-
+local function ToggleFilter(prefab)
     local added
-    if dict[key] then
-        dict[key] = nil
+    if PickupFilter.prefabs[prefab] then
+        PickupFilter.prefabs[prefab] = nil
         added = false
     else
-        dict[key] = true
+        PickupFilter.prefabs[prefab] = true
         added = true
     end
     SavePickupFilter()
-    return added, kind, key
+    return added
 end
 
 KeybindService:AddKey(
@@ -341,7 +328,7 @@ KeybindService:AddKey(
             return
         end
 
-        local added = ToggleFilter(ent)
+        local added = ToggleFilter(ent.prefab)
         local label = ent.name or ent.prefab
 
         Say(
@@ -349,10 +336,8 @@ KeybindService:AddKey(
                 string.format("Got it! I’ll pick up “%s” again.", label)
         )
 
-        local kind, key = GetFilterKey(ent)
         for _, v in pairs(GLOBAL.Ents) do
-            local match = kind == "tag" and SafeHasTag(v, key) or kind == "prefab" and v.prefab == key
-            if match then
+            if v.prefab == ent.prefab then
                 if added then
                     AddColor(v)
                 else
