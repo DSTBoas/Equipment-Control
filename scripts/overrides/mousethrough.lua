@@ -86,21 +86,29 @@ local function buildPriorityTables()
 end
 
 local function attachPlayerListeners()
-    if not GLOBAL.ThePlayer then return end
+    if not GLOBAL.ThePlayer then
+        return
+    end
     refreshEquip()
     GLOBAL.ThePlayer:ListenForEvent("equip", refreshEquip)
     GLOBAL.ThePlayer:ListenForEvent("unequip", refreshEquip)
 end
 
 local function InputPostInit(input)
-    if input.equipctrl_inited then return end
+    if input.equipctrl_inited then
+        return
+    end
     input.equipctrl_inited = true
-    if TheNet:IsDedicated() then return end
+    if TheNet:IsDedicated() then 
+        return
+    end
 
     local oldUpdate = input.OnUpdate
     input.OnUpdate = function(self, ...)
         oldUpdate(self, ...)
-        if not self.mouse_enabled then return end
+        if not self.mouse_enabled then
+            return
+        end
         local inst = chooseHoverInst(self.entitiesundermouse or {})
         if inst ~= self.hoverinst then
             if inst and inst.Transform then inst:PushEvent("mouseover") end
@@ -113,7 +121,6 @@ local function InputPostInit(input)
 end
 
 local function WorldPostInit(world)
-    buildPriorityTables()
     if GLOBAL.ThePlayer then 
         attachPlayerListeners()
     end
@@ -131,3 +138,5 @@ AddPrefabPostInit("world", WorldPostInit)
 if TheInput and not TheInput.equipctrl_inited then
     InputPostInit(TheInput)
 end
+
+buildPriorityTables()
