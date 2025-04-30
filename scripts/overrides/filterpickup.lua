@@ -335,6 +335,7 @@ AddPrefabPostInit("world", OnWorldPostInit)
 
 local function CanBePickedUp(ent)
     return ent and ent.replica.inventoryitem and ent.replica.inventoryitem:CanBePickedUp()
+            or ent and ent:HasTag("pickable")
 end
 
 KeybindService:AddKey(
