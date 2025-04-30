@@ -286,6 +286,11 @@ local function ActionButtonOverride(inst, force_target)
         end
         return nil, true
     else
+        local pc = inst.components.playercontroller
+        if pc ~= nil and pc:IsDoingOrWorking() then
+            return nil, true
+        end
+
         local exclude_tags = {"FX", "NOCLICK", "DECOR", "INLIMBO", "catchable", "mineactive", "intense"}
         local tags = {
             "_inventoryitem",
