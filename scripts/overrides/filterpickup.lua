@@ -42,13 +42,13 @@ local PriotizedPickups = {
     ["Winged Sail Kit Blueprint"] = 3,
     ["Feathery Canvas Blueprint"] = 3,
     ["The Lazy Deserter Blueprint"] = 1,
-    ["Strident Trident Blueprint"] = 3,
+    ["Strident Trident Blueprint"] = 3
 }
 
 -- Logic
 local PickupFilter = {
     tags = {},
-    prefabs = {},
+    prefabs = {}
 }
 
 local function AddFilteredPrefab(prefab)
@@ -112,37 +112,40 @@ local function AddToFilter(ent)
 end
 
 local function LoadPickupFilter(onLoaded)
-    FileSystem:LoadTableFromFile(Filter_File, function(filterList)
-        for _, prefab in ipairs(filterList) do
-            PickupFilter.prefabs[prefab] = true
+    FileSystem:LoadTableFromFile(
+        Filter_File,
+        function(filterList)
+            for _, prefab in ipairs(filterList) do
+                PickupFilter.prefabs[prefab] = true
+            end
+            if onLoaded then
+                onLoaded()
+            end
         end
-        if onLoaded then
-            onLoaded()
-        end
-    end)
-end    
+    )
+end
 
 local DEBUG_PICKUP_PRIORITY = true
 
 local function DebugPriority(fmt, ...)
     if DEBUG_PICKUP_PRIORITY then
-        print(("[Pickup-Priority]  "..fmt):format(...))
+        print(("[Pickup-Priority]  " .. fmt):format(...))
     end
 end
 
 local function GetBlueprintRecipeId(bp)
-    if bp == nil then return nil end
+    if bp == nil then
+        return nil
+    end
 
     if bp.components and bp.components.blueprint then
-        return bp.components.blueprint.recipename
-               or (bp.components.blueprint.GetRecipeName
-                   and bp.components.blueprint:GetRecipeName())
+        return bp.components.blueprint.recipename or
+            (bp.components.blueprint.GetRecipeName and bp.components.blueprint:GetRecipeName())
     end
 
     if bp.replica and bp.replica.blueprint then
         local rb = bp.replica.blueprint
-        return rb.recipename and rb.recipename:value()
-               or (rb.GetRecipeName and rb:GetRecipeName())
+        return rb.recipename and rb.recipename:value() or (rb.GetRecipeName and rb:GetRecipeName())
     end
 end
 
@@ -153,7 +156,7 @@ local function KnowsBlueprint(bp)
 
     local id = GetBlueprintRecipeId(bp) or Namemap.DisplayToId(bp.name)
 
-    DebugPriority("Blueprint %-24s  -> recipe id \"%s\"", bp.name, tostring(id))
+    DebugPriority('Blueprint %-24s  -> recipe id "%s"', bp.name, tostring(id))
 
     if not id then
         return false
@@ -163,7 +166,6 @@ local function KnowsBlueprint(bp)
     DebugPriority("Player knows recipe '%s'?  %s", id, tostring(knows))
     return knows
 end
-
 
 local function GetPriority(ent)
     local priority
@@ -177,10 +179,7 @@ local function GetPriority(ent)
         priority = PriotizedPickups[ent.prefab] or 0
     end
 
-    DebugPriority("Scored %-28s (%s)  ->  %d",
-        ent.name or ent.prefab,
-        ent.prefab,
-        priority)
+    DebugPriority("Scored %-28s (%s)  ->  %d", ent.name or ent.prefab, ent.prefab, priority)
 
     return priority
 end
@@ -190,19 +189,27 @@ local function GetModifiedEnts(inst, exclude, tags)
     local ents = TheSim:FindEntities(x, y, z, 6, nil, exclude, tags)
     local prioritized = {}
     for i, ent in ipairs(ents) do
-        if not IsFiltered(ent) and not (ent.prefab == "blueprint" and KnowsBlueprint(ent) and GetModConfigData("IGNORE_KNOWN_BLUEPRINT", MOD_EQUIPMENT_CONTROL.MODNAME)) then
+        if
+            not IsFiltered(ent) and
+                not (ent.prefab == "blueprint" and KnowsBlueprint(ent) and
+                    GetModConfigData("IGNORE_KNOWN_BLUEPRINT", MOD_EQUIPMENT_CONTROL.MODNAME))
+         then
             table.insert(prioritized, {ent = ent, priority = GetPriority(ent)})
         end
     end
-    table.sort(prioritized, function(a, b) return a.priority > b.priority end)
+    table.sort(
+        prioritized,
+        function(a, b)
+            return a.priority > b.priority
+        end
+    )
     local result = {}
-    for i, v in ipairs(prioritized) do result[i] = v.ent end
+    for i, v in ipairs(prioritized) do
+        result[i] = v.ent
+    end
 
     for i, v in ipairs(prioritized) do
-        DebugPriority("  #%d  %-25s  priority %d",
-            i,
-            v.ent.name or v.ent.prefab,
-            v.priority)
+        DebugPriority("  #%d  %-25s  priority %d", i, v.ent.name or v.ent.prefab, v.priority)
     end
     return result
 end
@@ -212,7 +219,7 @@ local function GetToolsFromInventory(self, excludeTool)
     if AUTO_EQUIP_TOOL then
         local toolCategories = {
             AXE = "CHOP",
-            PICKAXE = "MINE",
+            PICKAXE = "MINE"
         }
         if excludeTool then
             for category, tag in pairs(toolCategories) do
@@ -272,13 +279,23 @@ local function ActionButtonOverride(inst, force_target)
         return nil, true
     else
         local exclude_tags = {"FX", "NOCLICK", "DECOR", "INLIMBO", "catchable", "mineactive", "intense"}
-        local tags = {"_inventoryitem", "pickable", "harvestable", "trapsprung", "minesprung", "inactive", "smolder", "tapped_harvestable", "dried", "donecooking", "corpse"}
+        local tags = {
+            "_inventoryitem",
+            "pickable",
+            "harvestable",
+            "trapsprung",
+            "minesprung",
+            "inactive",
+            "smolder",
+            "tapped_harvestable",
+            "dried",
+            "donecooking",
+            "corpse"
+        }
         local ents = GetModifiedEnts(inst, exclude_tags, tags)
 
         for _, ent in ipairs(ents) do
-            DebugPriority("Picking up %s with priority %d",
-            ent.name or ent.prefab,
-            GetPriority(ent))
+            DebugPriority("Picking up %s with priority %d", ent.name or ent.prefab, GetPriority(ent))
             if CanEntitySeeTarget(inst, ent) then
                 local action = inst.components.playeractionpicker:GetLeftClickActions(ent:GetPosition(), ent)[1]
                 if action then
@@ -298,13 +315,15 @@ local function Init(_, player)
         return
     end
     if GetModConfigData("PICKUP_FILTER", MOD_EQUIPMENT_CONTROL.MODNAME) then
-        LoadPickupFilter(function()
-            for _, ent in pairs(GLOBAL.Ents) do
-                if PickupFilter.prefabs[ent.prefab] then
-                    AddColor(ent)
+        LoadPickupFilter(
+            function()
+                for _, ent in pairs(GLOBAL.Ents) do
+                    if PickupFilter.prefabs[ent.prefab] then
+                        AddColor(ent)
+                    end
                 end
             end
-        end)
+        )
     end
     PlayerController.actionbuttonoverride = ActionButtonOverride
 end
@@ -318,22 +337,25 @@ local function CanBePickedUp(ent)
     return ent and ent.replica.inventoryitem and ent.replica.inventoryitem:CanBePickedUp()
 end
 
-KeybindService:AddKey("PICKUP_FILTER", function()
-    local ent = TheInput:GetWorldEntityUnderMouse()
-    if CanBePickedUp(ent) then
-        local added = AddToFilter(ent)
-        local message = added and "Added '%s' to pickup filter" or "Removed '%s' from pickup filter"
-        Say(string.format(message, ent.name or ent.prefab))
-        for _, v in pairs(GLOBAL.Ents) do
-            if v.prefab == ent.prefab then
-                if added then
-                    AddColor(v)
-                else
-                    RemoveColor(v)
+KeybindService:AddKey(
+    "PICKUP_FILTER",
+    function()
+        local ent = TheInput:GetWorldEntityUnderMouse()
+        if CanBePickedUp(ent) then
+            local added = AddToFilter(ent)
+            local message = added and "Added '%s' to pickup filter" or "Removed '%s' from pickup filter"
+            Say(string.format(message, ent.name or ent.prefab))
+            for _, v in pairs(GLOBAL.Ents) do
+                if v.prefab == ent.prefab then
+                    if added then
+                        AddColor(v)
+                    else
+                        RemoveColor(v)
+                    end
                 end
             end
-        end        
-    else
-        Say("Cannot filter this entity.")
+        else
+            Say("Cannot filter this entity.")
+        end
     end
-end)
+)
