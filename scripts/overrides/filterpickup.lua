@@ -13,6 +13,7 @@ local BufferedAction = GLOBAL.BufferedAction
 local STRINGS = GLOBAL.STRINGS
 local TheSim = GLOBAL.TheSim
 local CONTROL_ACTION = GLOBAL.CONTROL_ACTION
+local Namemap = require "util/blueprint_namemap"
 
 -- Config
 local AUTO_EQUIP_TOOL = GetModConfigData("AUTO_EQUIP_TOOL", MOD_EQUIPMENT_CONTROL.MODNAME)
@@ -121,15 +122,67 @@ local function LoadPickupFilter(onLoaded)
     end)
 end    
 
-local function KnowsBlueprint(blueprint)
-    return blueprint and blueprint.components.blueprint and CraftFunctions:KnowsRecipe(blueprint.components.blueprint:GetRecipe().name)
+local DEBUG_PICKUP_PRIORITY = true
+
+local function DebugPriority(fmt, ...)
+    if DEBUG_PICKUP_PRIORITY then
+        print(("[Pickup-Priority]  "..fmt):format(...))
+    end
 end
 
-local function GetPriority(ent)
-    if ent.prefab == "blueprint" then
-        return KnowsBlueprint(ent) and -1 or (PriotizedPickups[ent.name] or 1)
+local function GetBlueprintRecipeId(bp)
+    if bp == nil then return nil end
+
+    if bp.components and bp.components.blueprint then
+        return bp.components.blueprint.recipename
+               or (bp.components.blueprint.GetRecipeName
+                   and bp.components.blueprint:GetRecipeName())
     end
-    return PriotizedPickups[ent.prefab] or 0
+
+    if bp.replica and bp.replica.blueprint then
+        local rb = bp.replica.blueprint
+        return rb.recipename and rb.recipename:value()
+               or (rb.GetRecipeName and rb:GetRecipeName())
+    end
+end
+
+local function KnowsBlueprint(bp)
+    if not (bp and bp.prefab == "blueprint") then
+        return false
+    end
+
+    local id = GetBlueprintRecipeId(bp) or Namemap.DisplayToId(bp.name)
+
+    DebugPriority("Blueprint %-24s  -> recipe id \"%s\"", bp.name, tostring(id))
+
+    if not id then
+        return false
+    end
+
+    local knows = CraftFunctions:KnowsRecipe(id)
+    DebugPriority("Player knows recipe '%s'?  %s", id, tostring(knows))
+    return knows
+end
+
+
+local function GetPriority(ent)
+    local priority
+    if ent.prefab == "blueprint" then
+        if KnowsBlueprint(ent) then
+            priority = -1
+        else
+            priority = PriotizedPickups[ent.name] or 1
+        end
+    else
+        priority = PriotizedPickups[ent.prefab] or 0
+    end
+
+    DebugPriority("Scored %-28s (%s)  ->  %d",
+        ent.name or ent.prefab,
+        ent.prefab,
+        priority)
+
+    return priority
 end
 
 local function GetModifiedEnts(inst, exclude, tags)
@@ -144,6 +197,13 @@ local function GetModifiedEnts(inst, exclude, tags)
     table.sort(prioritized, function(a, b) return a.priority > b.priority end)
     local result = {}
     for i, v in ipairs(prioritized) do result[i] = v.ent end
+
+    for i, v in ipairs(prioritized) do
+        DebugPriority("  #%d  %-25s  priority %d",
+            i,
+            v.ent.name or v.ent.prefab,
+            v.priority)
+    end
     return result
 end
 
@@ -216,6 +276,9 @@ local function ActionButtonOverride(inst, force_target)
         local ents = GetModifiedEnts(inst, exclude_tags, tags)
 
         for _, ent in ipairs(ents) do
+            DebugPriority("Picking up %s with priority %d",
+            ent.name or ent.prefab,
+            GetPriority(ent))
             if CanEntitySeeTarget(inst, ent) then
                 local action = inst.components.playeractionpicker:GetLeftClickActions(ent:GetPosition(), ent)[1]
                 if action then
