@@ -368,15 +368,6 @@ local CONFIG_STRUCTURE = {
         },
     },
     {
-        title = "Picking",
-        default_hover = "Set to your liking",
-        items = {
-            {"Never pick Succulents","PICKUP_IGNORE_SUCCULENTS", "YESNO", true},
-            {"Never pick Ferns","PICKUP_IGNORE_FERNS", "YESNO", true},
-            {"Never pick Spiky Bush","PICKUP_IGNORE_MARSH_BUSH", "YESNO", false},
-        },
-    },
-    {
         title = "Telepoof",
         default_hover = "Set to your liking",
         items = {

@@ -71,19 +71,6 @@ local function GetFilterKey(ent)
     return "prefab", ent.prefab
 end
 
-if GetModConfigData("PICKUP_IGNORE_FERNS", MOD_EQUIPMENT_CONTROL.MODNAME) then
-    AddFilteredPrefab("cave_fern")
-    AddFilteredPrefab("stalker_fern")
-end
-
-if GetModConfigData("PICKUP_IGNORE_SUCCULENTS", MOD_EQUIPMENT_CONTROL.MODNAME) then
-    AddFilteredPrefab("succulent_plant")
-end
-
-if GetModConfigData("PICKUP_IGNORE_MARSH_BUSH", MOD_EQUIPMENT_CONTROL.MODNAME) then
-    AddFilteredPrefab("marsh_bush")
-end
-
 local function SavePickupFilter()
     local list = {}
     for p in pairs(PickupFilter.prefabs) do
