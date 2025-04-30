@@ -119,7 +119,7 @@ local function AddToFilter(ent)
     return PickupFilter.prefabs[ent.prefab]
 end
 
-local DEBUG_PICKUP_PRIORITY = true
+local DEBUG_PICKUP_PRIORITY = false
 
 local function DebugPriority(fmt, ...)
     if DEBUG_PICKUP_PRIORITY then
