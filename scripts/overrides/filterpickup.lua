@@ -47,21 +47,24 @@ local PriotizedPickups = {
 }
 
 -- Logic
-local PickupFilter = {
-    tags = {},
-    prefabs = {}
-}
+local PickupFilter = {tags = {}, prefabs = {}}
 
+local function AddFilteredTag(tag)
+    PickupFilter.tags[tag] = true
+end
 local function AddFilteredPrefab(prefab)
     PickupFilter.prefabs[prefab] = true
 end
 
-local function AddFilteredTag(tag)
-    table.insert(PickupFilter.tags, tag)
-end
+local TagCandidates = {"flower"}
 
-if GetModConfigData("PICKUP_IGNORE_FLOWERS", MOD_EQUIPMENT_CONTROL.MODNAME) then
-    AddFilteredTag("flower")
+local function GetFilterKey(ent)
+    for _, tag in ipairs(TagCandidates) do
+        if ent:HasTag(tag) then
+            return "tag", tag
+        end
+    end
+    return "prefab", ent.prefab
 end
 
 if GetModConfigData("PICKUP_IGNORE_FERNS", MOD_EQUIPMENT_CONTROL.MODNAME) then
@@ -78,11 +81,14 @@ if GetModConfigData("PICKUP_IGNORE_MARSH_BUSH", MOD_EQUIPMENT_CONTROL.MODNAME) t
 end
 
 local function SavePickupFilter()
-    local t = {}
-    for prefab in pairs(PickupFilter.prefabs) do
-        t[#t + 1] = prefab
+    local data = {prefabs = {}, tags = {}}
+    for p in pairs(PickupFilter.prefabs) do
+        table.insert(data.prefabs, p)
     end
-    FileSystem:SaveTableToFile(Filter_File, t)
+    for tag in pairs(PickupFilter.tags) do
+        table.insert(data.tags, tag)
+    end
+    FileSystem:SaveTableToFile(Filter_File, data)
 end
 
 local function AddColor(ent)
@@ -97,13 +103,17 @@ local function RemoveColor(ent)
     end
 end
 
+local function SafeHasTag(ent, tag)
+    return ent and ent.HasTag and ent:HasTag(tag)
+end
+
 local function IsFiltered(ent)
-    for i = 1, #PickupFilter.tags do
-        if ent:HasTag(PickupFilter.tags[i]) then
+    for tag in pairs(PickupFilter.tags) do
+        if SafeHasTag(ent, tag) then
             return true
         end
     end
-    return PickupFilter.prefabs[ent.prefab]
+    return PickupFilter.prefabs[ent.prefab] or false
 end
 
 local function AddToFilter(ent)
@@ -115,9 +125,16 @@ end
 local function LoadPickupFilter(onLoaded)
     FileSystem:LoadTableFromFile(
         Filter_File,
-        function(filterList)
-            for _, prefab in ipairs(filterList) do
-                PickupFilter.prefabs[prefab] = true
+        function(data)
+            -- old format: { "twigs", "cutgrass", … }
+            if data and not data.prefabs then
+                data = {prefabs = data, tags = {}}
+            end
+            for _, p in ipairs(data.prefabs or {}) do
+                PickupFilter.prefabs[p] = true
+            end
+            for _, tag in ipairs(data.tags or {}) do
+                PickupFilter.tags[tag] = true
             end
             if onLoaded then
                 onLoaded()
@@ -125,7 +142,6 @@ local function LoadPickupFilter(onLoaded)
         end
     )
 end
-
 local DEBUG_PICKUP_PRIORITY = true
 
 local function DebugPriority(fmt, ...)
@@ -300,25 +316,49 @@ local function CanBePickedUp(ent)
         ent and ent:HasTag("pickable")
 end
 
+local function ToggleFilter(ent)
+    local kind, key = GetFilterKey(ent)
+    local dict = (kind == "tag") and PickupFilter.tags or PickupFilter.prefabs
+
+    local added
+    if dict[key] then
+        dict[key] = nil
+        added = false
+    else
+        dict[key] = true
+        added = true
+    end
+    SavePickupFilter()
+    return added, kind, key
+end
+
 KeybindService:AddKey(
     "PICKUP_FILTER",
     function()
         local ent = TheInput:GetWorldEntityUnderMouse()
-        if CanBePickedUp(ent) then
-            local added = AddToFilter(ent)
-            local message = added and "Added '%s' to pickup filter" or "Removed '%s' from pickup filter"
-            Say(string.format(message, ent.name or ent.prefab))
-            for _, v in pairs(GLOBAL.Ents) do
-                if v.prefab == ent.prefab then
-                    if added then
-                        AddColor(v)
-                    else
-                        RemoveColor(v)
-                    end
+        if not CanBePickedUp(ent) then
+            Say("Hm… I can’t filter that.")
+            return
+        end
+
+        local added = ToggleFilter(ent)
+        local label = ent.name or ent.prefab
+
+        Say(
+            added and string.format("Okay! I’ll leave “%s” on the ground from now on.", label) or
+                string.format("Got it! I’ll pick up “%s” again.", label)
+        )
+
+        local kind, key = GetFilterKey(ent)
+        for _, v in pairs(GLOBAL.Ents) do
+            local match = kind == "tag" and SafeHasTag(v, key) or kind == "prefab" and v.prefab == key
+            if match then
+                if added then
+                    AddColor(v)
+                else
+                    RemoveColor(v)
                 end
             end
-        else
-            Say("Cannot filter this entity.")
         end
     end
 )
