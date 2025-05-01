@@ -227,14 +227,14 @@ local function ActionButtonOverride(inst, force_target)
     }
 
     local ents = GetModifiedEnts(inst, exclude, include)
-    for _, ent in ipairs(ents) do
+    for i, ent in ipairs(ents) do
         DebugPriority("  #%d  %-24s  prio %3d", i, ent.name or ent.prefab, GetPriority(ent))
 
         if CanEntitySeeTarget(inst, ent) then
             local actions = inst.components.playeractionpicker:GetLeftClickActions(ent:GetPosition(), ent)
             local action = actions and actions[1] or nil
             if action then
-                return act
+                return action
             end
         end
     end
