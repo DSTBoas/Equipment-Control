@@ -200,11 +200,19 @@ local function ActionButtonOverride(inst, force_target)
 
     local pc = inst.components.playercontroller
     if pc ~= nil and pc:IsDoingOrWorking() then
-        return nil, true
+        return nil
     end
 
-    local exclude_tags = {"FX", "NOCLICK", "DECOR", "INLIMBO", "catchable", "mineactive", "intense"}
-    local tags = {
+    local exclude = {
+        "FX",
+        "NOCLICK",
+        "DECOR",
+        "INLIMBO",
+        "catchable",
+        "mineactive",
+        "intense"
+    }
+    local include = {
         "_inventoryitem",
         "pickable",
         "harvestable",
@@ -218,18 +226,21 @@ local function ActionButtonOverride(inst, force_target)
         "corpse"
     }
 
-    local ents = GetModifiedEnts(inst, exclude_tags, tags)
+    local ents = GetModifiedEnts(inst, exclude, include)
     for _, ent in ipairs(ents) do
-        DebugPriority("Picking up %s with priority %d", ent.name or ent.prefab, GetPriority(ent))
+        DebugPriority("  #%d  %-24s  prio %3d", i, ent.name or ent.prefab, GetPriority(ent))
+
         if CanEntitySeeTarget(inst, ent) then
-            local action = inst.components.playeractionpicker:GetLeftClickActions(ent:GetPosition(), ent)[1]
+            local actions = inst.components.playeractionpicker:GetLeftClickActions(ent:GetPosition(), ent)
+            local action = actions and actions[1] or nil
             if action then
-                return action
+                return act
             end
         end
     end
 
-    return nil, false
+    DebugPriority("No suitable action found.")
+    return nil
 end
 
 local function Init(_, player)
