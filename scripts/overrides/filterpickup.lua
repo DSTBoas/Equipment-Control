@@ -19,7 +19,7 @@ local Namemap = require "util/blueprint_namemap"
 local PRIORITIZE_VALUABLE = GetModConfigData("PRIOTIZE_VALUABLE_ITEMS", MOD_EQUIPMENT_CONTROL.MODNAME)
 local MEAT_MODE = (GetModConfigData("MEAT_PRIORITIZATION_MODE", MOD_EQUIPMENT_CONTROL.MODNAME) or "NONE"):upper()
 local Filter_File = "mod_equipment_control_pickup_filter.txt"
-local PriotizedPickups = {
+local PrioritizedPickups = {
     greengem = .5,
     yellowgem = .45,
     orangegem = .4,
@@ -48,28 +48,6 @@ local PriotizedPickups = {
 
 -- Logic
 local PickupFilter = {prefabs = {}}
-
-local function AddFilteredPrefab(prefab)
-    PickupFilter.prefabs[prefab] = true
-end
-
-local function AddFilteredTag(tag)
-    PickupFilter.tags[tag] = true
-end
-local function AddFilteredPrefab(prefab)
-    PickupFilter.prefabs[prefab] = true
-end
-
-local TagCandidates = {"flower"}
-
-local function GetFilterKey(ent)
-    for _, tag in ipairs(TagCandidates) do
-        if ent:HasTag(tag) then
-            return "tag", tag
-        end
-    end
-    return "prefab", ent.prefab
-end
 
 local function SavePickupFilter()
     local list = {}
@@ -105,18 +83,8 @@ local function RemoveColor(ent)
     end
 end
 
-local function SafeHasTag(ent, tag)
-    return ent and ent.HasTag and ent:HasTag(tag)
-end
-
 local function IsFiltered(ent)
     return PickupFilter.prefabs[ent.prefab] or false
-end
-
-local function AddToFilter(ent)
-    PickupFilter.prefabs[ent.prefab] = not IsFiltered(ent) or nil
-    SavePickupFilter()
-    return PickupFilter.prefabs[ent.prefab]
 end
 
 local DEBUG_PICKUP_PRIORITY = false
@@ -181,7 +149,7 @@ local function GetPriority(ent)
     end
 
     if PRIORITIZE_VALUABLE then
-        return PriotizedPickups[ent.name] or PriotizedPickups[ent.prefab] or 0
+        return PrioritizedPickups[ent.name] or PrioritizedPickups[ent.prefab] or 0
     end
 
     return 0
@@ -227,7 +195,7 @@ AddPrefabPostInitAny(tintIfFiltered)
 
 local function ActionButtonOverride(inst, force_target)
     if force_target then
-        return nil, true
+        return nil
     end
 
     local pc = inst.components.playercontroller
@@ -261,7 +229,7 @@ local function ActionButtonOverride(inst, force_target)
         end
     end
 
-    return nil, true
+    return nil, false
 end
 
 local function Init(_, player)
@@ -293,17 +261,10 @@ local function CanBePickedUp(ent)
         ent and ent:HasTag("pickable")
 end
 
-local function ToggleFilter(prefab)
-    local added
-    if PickupFilter.prefabs[prefab] then
-        PickupFilter.prefabs[prefab] = nil
-        added = false
-    else
-        PickupFilter.prefabs[prefab] = true
-        added = true
-    end
+local function AddToFilter(prefab)
+    PickupFilter.prefabs[prefab] = not PickupFilter.prefabs[prefab] or nil
     SavePickupFilter()
-    return added
+    return PickupFilter.prefabs[prefab]
 end
 
 KeybindService:AddKey(
@@ -315,7 +276,7 @@ KeybindService:AddKey(
             return
         end
 
-        local added = ToggleFilter(ent.prefab)
+        local added = AddToFilter(ent.prefab)
         local label = ent.name or ent.prefab
 
         Say(
