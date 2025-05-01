@@ -1,183 +1,142 @@
 local InventoryFunctions = require "util/inventoryfunctions"
+local MOD_EQUIPMENT_CONTROL = GLOBAL.MOD_EQUIPMENT_CONTROL
+local TheInput = GLOBAL.TheInput
+local EQUIPSLOTS = GLOBAL.EQUIPSLOTS
+local TheNet = GLOBAL.TheNet
 
-local TrackedEquips =
-{
-    orangestaff = true,
-    yellowstaff = true,
-}
-
-local CurrentEquip = nil
-
-local function IsEquipped(prefab)
-    return CurrentEquip == prefab
+local function tagList(ent)
+    if not ent or not ent.tags then
+        return ""
+    end
+    local t = {}
+    for tag in pairs(ent.tags) do t[#t + 1] = tag end
+    return table.concat(t, ",")
 end
 
-local FuncToPriority = {}
-local TagToPriority =
-{
-    player = 0,
-}
+local trackedEquips = { orangestaff = true, yellowstaff = true }
+local currentEquip
+local funcToPriority = {}
+local tagToPriority = { player = 0 }
 
-local function GetFilterPriority(ent)
-    for tag, func in pairs(FuncToPriority) do
-        if ent and ent.HasTag and ent:HasTag(tag) then
-            return func(ent)
+local function isEquipped(prefab)
+    return currentEquip == prefab
+end
+
+local function getFilterPriority(ent)
+    if ent == nil then return 1 end
+    for tag, fn in pairs(funcToPriority) do
+        if ent:HasTag(tag) then
+            return fn(ent)
         end
     end
-
-    for tag, priority in pairs(TagToPriority) do
-        if ent and ent.HasTag and ent:HasTag(tag) then
-            return priority
+    for tag, p in pairs(tagToPriority) do
+        if ent:HasTag(tag) then
+            return p
         end
     end
-
     return 1
 end
 
-local function GetHoverPriorityTable(ents)
-    local ret = {}
-
+local function chooseHoverInst(ents)
+    local best, bestp = nil, -math.huge
     for i = 1, #ents do
-        ret[#ret + 1] =
-        {
-            ent = ents[i],
-            priority = GetFilterPriority(ents[i])
-        }
+        local p = getFilterPriority(ents[i])
+        if p > bestp then best, bestp = ents[i], p end
     end
-
-    return ret
+    if bestp < 0 then return nil end
+    return best
 end
 
-local function OrderByPriority(l, r)
-    return l.priority > r.priority
-end
-
-local function GetHoverInst(ents)
-    -- if InventoryFunctions:GetActiveItem() then
-    --     return ents[1]
-    -- end
-
-    local hoverPriorityTable = GetHoverPriorityTable(ents)
-    table.sort(hoverPriorityTable, OrderByPriority)
-
-    if hoverPriorityTable[1] and hoverPriorityTable[1].priority < 0 then
-        return nil
-    end
-
-    return hoverPriorityTable[1] and hoverPriorityTable[1].ent
-end
-
-local function DoUnequip()
-    CurrentEquip = nil
-end
-
-local function DoEquip(item)
-    if item and TrackedEquips[item.prefab] then
-        CurrentEquip = item.prefab
-    end
-end
-
-local function Init()
-    if not ThePlayer then
+local function refreshEquip()
+    if not GLOBAL.ThePlayer or not GLOBAL.ThePlayer.replica or not GLOBAL.ThePlayer.replica.inventory then
+        currentEquip = nil
         return
     end
+    local item = GLOBAL.ThePlayer.replica.inventory:GetEquippedItem(EQUIPSLOTS.HANDS)
+    currentEquip = item and trackedEquips[item.prefab] and item.prefab or nil
+end
+
+local function buildPriorityTables()
+    funcToPriority = {}
+    tagToPriority = { player = 0 }
 
     if GetModConfigData("FORCE_INSPECT_PLAYERS", MOD_EQUIPMENT_CONTROL.MODNAME) then
-        FuncToPriority.player = function()
-            return ThePlayer.components.playercontroller:IsControlPressed(CONTROL_FORCE_INSPECT) and 1
-                or -1
+        funcToPriority.player = function()
+            return GLOBAL.ThePlayer and GLOBAL.ThePlayer.components.playercontroller:IsControlPressed(CONTROL_FORCE_INSPECT) and 1 or -1
         end
     end
 
     if GetModConfigData("ORANGESTAFF_MOUSETHROUGH", MOD_EQUIPMENT_CONTROL.MODNAME) then
-        FuncToPriority.wall = function()
-            return IsEquipped("orangestaff") and -1
-                or 1
+        funcToPriority.wall = function()
+            return isEquipped("orangestaff") and -1 or 1
         end
     end
 
     if GetModConfigData("YELLOWSTAFF_MOUSETHROUGH", MOD_EQUIPMENT_CONTROL.MODNAME) then
-        local func = function()
-            return IsEquipped("yellowstaff") and -1
-                or 1
-        end   
-        FuncToPriority.daylight = func
-        FuncToPriority.blocker = func
+        local f = function()
+            return isEquipped("yellowstaff") and -1 or 1
+        end
+        funcToPriority.daylight = f
+        funcToPriority.blocker = f
     end
 
     if GetModConfigData("FLYING_BIRDS_MOUSETHROUGH", MOD_EQUIPMENT_CONTROL.MODNAME) then
-        TagToPriority.flight = -1
+        tagToPriority.flight = -1
+    end
+end
+
+local function attachPlayerListeners()
+    if not GLOBAL.ThePlayer then
+        return
+    end
+    refreshEquip()
+    GLOBAL.ThePlayer:ListenForEvent("equip", refreshEquip)
+    GLOBAL.ThePlayer:ListenForEvent("unequip", refreshEquip)
+end
+
+local function InputPostInit(input)
+    if input.equipctrl_inited then
+        return
+    end
+    input.equipctrl_inited = true
+    if TheNet:IsDedicated() then 
+        return
     end
 
-    local oldOnUpdate = TheInput.OnUpdate
-
-    function TheInput:OnUpdate(...)
-        if self.mouse_enabled then
-            self.entitiesundermouse = TheSim:GetEntitiesAtScreenPoint(TheSim:GetPosition())
-            local inst = GetHoverInst(self.entitiesundermouse)
-
-            if ( inst ~= nil and #self.entitiesundermouse == 1) then
-                return oldOnUpdate(self, ...)
+    local oldUpdate = input.OnUpdate
+    input.OnUpdate = function(self, ...)
+        oldUpdate(self, ...)
+        if not self.mouse_enabled then
+            return
+        end
+        local inst = chooseHoverInst(self.entitiesundermouse or {})
+        if inst ~= self.hoverinst then
+            if inst and inst.Transform then inst:PushEvent("mouseover") end
+            if self.hoverinst and self.hoverinst.Transform then
+                self.hoverinst:PushEvent("mouseout")
             end
-            
-            if inst ~= nil and inst.CanMouseThrough ~= nil then
-                local mousethrough, keepnone = inst:CanMouseThrough()
-                if mousethrough then
-                    for i = 2, #self.entitiesundermouse do
-                        local nextinst = self.entitiesundermouse[i]
-                        if nextinst == nil or
-                            nextinst:HasTag("player") or
-                            (nextinst.Transform ~= nil) ~= (inst.Transform ~= nil) then
-                            if keepnone then
-                                inst = nextinst
-                                mousethrough, keepnone = false, false
-                            end
-                            break
-                        end
-                        inst = nextinst
-                        if nextinst.CanMouseThrough == nil then
-                            mousethrough, keepnone = false, false
-                        else
-                            mousethrough, keepnone = nextinst:CanMouseThrough()
-                        end
-                        if not mousethrough then
-                            break
-                        end
-                    end
-                    if mousethrough and keepnone then
-                        inst = nil
-                    end
-                end
-            end
-
-            if inst ~= self.hoverinst then
-                if inst ~= nil and inst.Transform ~= nil then
-                    inst:PushEvent("mouseover")
-                end
-
-                if self.hoverinst ~= nil and self.hoverinst.Transform ~= nil then
-                    self.hoverinst:PushEvent("mouseout")
-                end
-
-                self.hoverinst = inst
-            end
+            self.hoverinst = inst
         end
     end
+end
 
-    if ThePlayer.replica.inventory then
-        DoEquip(ThePlayer.replica.inventory:GetEquippedItem(_G.EQUIPSLOTS.HANDS))
+local function WorldPostInit(world)
+    if GLOBAL.ThePlayer then 
+        attachPlayerListeners()
     end
 
-    ThePlayer:ListenForEvent("equip", function(_, data)
-        DoUnequip()
-        if data then
-            DoEquip(data.item)
+    world:ListenForEvent("playeractivated", function(_, player)
+        if player == GLOBAL.ThePlayer then
+            attachPlayerListeners()
         end
-    end)
-
-    ThePlayer:ListenForEvent("unequip", function(_, data)
-        DoUnequip()
     end)
 end
 
-return Init
+AddClassPostConstruct("input", InputPostInit)
+AddPrefabPostInit("world", WorldPostInit)
+
+if TheInput and not TheInput.equipctrl_inited then
+    InputPostInit(TheInput)
+end
+
+buildPriorityTables()

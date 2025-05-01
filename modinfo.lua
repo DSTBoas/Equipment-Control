@@ -3,7 +3,7 @@ description = "If you have suggestions/ideas/bugs let me know in this mod's comm
 icon_atlas = "modicon.xml"
 icon = "modicon.tex"
 author = "Boas"
-version = "7.30"
+version = "8.01"
 forumthread = ""
 dont_starve_compatible = false
 reign_of_giants_compatible = false
@@ -365,16 +365,6 @@ local CONFIG_STRUCTURE = {
             {"Pickup valuables first","PRIOTIZE_VALUABLE_ITEMS", "YESNO", true},
             {"Pickup resurrection item first","PRIOTIZE_RESURRECTION", "YESNO", true, "As ghost prioritise resurrection items"},
             {"Ignore known blueprints","IGNORE_KNOWN_BLUEPRINT", "YESNO", true, "Filter known blueprints from pickup"},
-        },
-    },
-    {
-        title = "Picking",
-        default_hover = "Set to your liking",
-        items = {
-            {"Never pick Flowers","PICKUP_IGNORE_FLOWERS", "YESNO", true},
-            {"Never pick Succulents","PICKUP_IGNORE_SUCCULENTS", "YESNO", true},
-            {"Never pick Ferns","PICKUP_IGNORE_FERNS", "YESNO", true},
-            {"Never pick Spiky Bush","PICKUP_IGNORE_MARSH_BUSH", "YESNO", false},
         },
     },
     {

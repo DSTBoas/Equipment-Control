@@ -2,39 +2,45 @@ local InventoryFunctions = require "util/inventoryfunctions"
 local ConfigFunctions = require "util/configfunctions"
 local KeybindService = MOD_EQUIPMENT_CONTROL.KEYBINDSERVICE
 
--- TODO: Would be nice to automatically fetch these actions
-local CanWalkTo =
-{
-    [ACTIONS.RUMMAGE] = true,
-    [ACTIONS.DRY] = true,
-    [ACTIONS.BAIT] = true,
-    [ACTIONS.ADDFUEL] = true,
-    [ACTIONS.ADDWETFUEL] = true,
-    [ACTIONS.PICK] = true,
-    [ACTIONS.GIVE] = true,
-    [ACTIONS.GIVETOPLAYER] = true,
-    [ACTIONS.GIVEALLTOPLAYER] = true,
-    [ACTIONS.FEEDPLAYER] = true,
-    [ACTIONS.COOK] = true,
-    [ACTIONS.SLEEPIN] = true,
-    [ACTIONS.PLANT] = true,
-    [ACTIONS.HARVEST] = true,
-    [ACTIONS.SMOTHER] = true,
-    [ACTIONS.PICKUP] = true,
-    [ACTIONS.JUMPIN] = true,
-    [ACTIONS.MIGRATE] = true,
-    [ACTIONS.STEER_BOAT] = true,
-    [ACTIONS.MOUNT_PLANK] = true,
-}
+local function CanWalkTo(action, doer, bufferedaction)
+    if not action or action.instant then
+        return false
+    end
+
+    local maxAllowedDistance = 3.0
+    local actionDistance = action.distance or 0
+
+    local extraDistance = action.extra_arrive_dist or 0
+    if type(extraDistance) == "function" then
+        local dest
+        if bufferedaction.pos then
+            dest = bufferedaction.pos
+        elseif bufferedaction.target and bufferedaction.target.GetPosition then
+            dest = bufferedaction.target:GetPosition()
+        end
+
+        if dest then
+            extraDistance = extraDistance(doer, { GetPoint = function() return dest:Get() end }) or 0
+        else
+            extraDistance = 0
+        end
+    end
+
+    return (actionDistance + extraDistance) <= maxAllowedDistance
+end
 
 local function IsCompatibleLeftClickAction()
-    local buffaction = ThePlayer.components.playercontroller:GetLeftMouseAction()
+    local pc = ThePlayer and ThePlayer.components.playercontroller
+    if not pc or not pc.GetLeftMouseAction then
+        return true
+    end
 
+    local buffaction = pc:GetLeftMouseAction()
     if not buffaction then
         return true
     end
 
-    return CanWalkTo[buffaction.action]
+    return CanWalkTo(buffaction.action, ThePlayer, buffaction)
 end
 
 local AUTO_EQUIP_CANE = GetModConfigData("AUTO_EQUIP_CANE", MOD_EQUIPMENT_CONTROL.MODNAME)
@@ -79,21 +85,23 @@ local function Init()
         return
     end
 
-    local PlayerControllerOnLeftClick = PlayerController.OnLeftClick
-    function PlayerController:OnLeftClick(down)
+    local OldOnLeftClick = PlayerController.OnLeftClick
+
+    function PlayerController:OnLeftClick(down, ...)
+        local args = { ... } 
+    
         if down and CanEquipCane() and ValidateCaneClick() then
             EquipCane()
-
-            -- Avoid action interference
+    
             self.inst:DoTaskInTime(GetTickTime(), function()
-                PlayerControllerOnLeftClick(self, down)
+                OldOnLeftClick(self, down, unpack(args))
             end)
             return
         end
-
-        PlayerControllerOnLeftClick(self, down)
+    
+        OldOnLeftClick(self, down, unpack(args))
     end
-
+    
     local PlayerControllerDoDragWalking = PlayerController.DoDragWalking
     function PlayerController:DoDragWalking(...)
         local isDragWalking = PlayerControllerDoDragWalking(self, ...)
