@@ -259,7 +259,18 @@ local function Init(_, player)
             end
         )
     end
-    PlayerController.actionbuttonoverride = ActionButtonOverride
+
+    local old_override = PlayerController.actionbuttonoverride
+    PlayerController.actionbuttonoverride = function(inst, force_target)
+        if old_override then
+            local act, usedefault = old_override(inst, force_target)
+            if not usedefault or act ~= nil then
+                return act, usedefault
+            end
+        end
+    
+        return ActionButtonOverride(inst, force_target)
+    end
 end
 
 local function OnWorldPostInit(inst)
