@@ -193,6 +193,29 @@ end
 
 AddPrefabPostInitAny(tintIfFiltered)
 
+local exclude = {
+    "FX",
+    "NOCLICK",
+    "DECOR",
+    "INLIMBO",
+    "catchable",
+    "mineactive",
+    "intense"
+}
+local include = {
+    "_inventoryitem",
+    "pickable",
+    "harvestable",
+    "trapsprung",
+    "minesprung",
+    "inactive",
+    "smolder",
+    "tapped_harvestable",
+    "dried",
+    "donecooking",
+    "corpse"
+}
+
 local function ActionButtonOverride(inst, force_target)
     if force_target then
         return nil
@@ -202,29 +225,6 @@ local function ActionButtonOverride(inst, force_target)
     if pc ~= nil and pc:IsDoingOrWorking() then
         return nil
     end
-
-    local exclude = {
-        "FX",
-        "NOCLICK",
-        "DECOR",
-        "INLIMBO",
-        "catchable",
-        "mineactive",
-        "intense"
-    }
-    local include = {
-        "_inventoryitem",
-        "pickable",
-        "harvestable",
-        "trapsprung",
-        "minesprung",
-        "inactive",
-        "smolder",
-        "tapped_harvestable",
-        "dried",
-        "donecooking",
-        "corpse"
-    }
 
     local ents = GetModifiedEnts(inst, exclude, include)
     for i, ent in ipairs(ents) do
