@@ -155,9 +155,9 @@ local function GetPriority(ent)
     return 0
 end
 
-local function GetModifiedEnts(inst, exclude, tags)
+local function GetModifiedEnts(inst, exclude_tags, pickup_tags)
     local x, y, z = inst.Transform:GetWorldPosition()
-    local raw = TheSim:FindEntities(x, y, z, 6, nil, exclude, tags)
+    local raw = TheSim:FindEntities(x, y, z, inst.components.playercontroller.directwalking and 3 or 6, nil, exclude_tags, pickup_tags)
 
     local scored = {}
     for _, ent in ipairs(raw) do
