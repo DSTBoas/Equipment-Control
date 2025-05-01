@@ -85,21 +85,23 @@ local function Init()
         return
     end
 
-    local PlayerControllerOnLeftClick = PlayerController.OnLeftClick
-    function PlayerController:OnLeftClick(down)
+    local OldOnLeftClick = PlayerController.OnLeftClick
+
+    function PlayerController:OnLeftClick(down, ...)
+        local args = { ... } 
+    
         if down and CanEquipCane() and ValidateCaneClick() then
             EquipCane()
-
-            -- Avoid action interference
+    
             self.inst:DoTaskInTime(GetTickTime(), function()
-                PlayerControllerOnLeftClick(self, down)
+                OldOnLeftClick(self, down, unpack(args))
             end)
             return
         end
-
-        PlayerControllerOnLeftClick(self, down)
+    
+        OldOnLeftClick(self, down, unpack(args))
     end
-
+    
     local PlayerControllerDoDragWalking = PlayerController.DoDragWalking
     function PlayerController:DoDragWalking(...)
         local isDragWalking = PlayerControllerDoDragWalking(self, ...)
