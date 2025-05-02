@@ -258,11 +258,9 @@ local function ActionButtonOverride(inst, force_target)
     return nil
 end
 
-local function Init(_, player)
-    local PlayerController = player and player.components.playercontroller
-    if not PlayerController then
-        return
-    end
+AddClassPostConstruct("components/playercontroller", function(self)
+    if self.inst ~= GLOBAL.ThePlayer then return end
+    if self._equip_ctrl_patched then return end
     if GetModConfigData("PICKUP_FILTER", MOD_EQUIPMENT_CONTROL.MODNAME) then
         LoadPickupFilter(
             function()
@@ -275,13 +273,9 @@ local function Init(_, player)
         )
     end
 
-    PlayerController.actionbuttonoverride = ActionButtonOverride
-end
-
-local function OnWorldPostInit(inst)
-    inst:ListenForEvent("playeractivated", Init, GLOBAL.TheWorld)
-end
-AddPrefabPostInit("world", OnWorldPostInit)
+    self._equip_ctrl_patched = true
+    self.actionbuttonoverride = ActionButtonOverride
+end)
 
 local function CanBePickedUp(ent)
     return ent and ent.replica.inventoryitem and ent.replica.inventoryitem:CanBePickedUp() or
