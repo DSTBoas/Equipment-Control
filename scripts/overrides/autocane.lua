@@ -12,18 +12,7 @@ local function CanWalkTo(action, doer, bufferedaction)
 
     local extraDistance = action.extra_arrive_dist or 0
     if type(extraDistance) == "function" then
-        local dest
-        if bufferedaction.pos then
-            dest = bufferedaction.pos
-        elseif bufferedaction.target and bufferedaction.target.GetPosition then
-            dest = bufferedaction.target:GetPosition()
-        end
-
-        if dest then
-            extraDistance = extraDistance(doer, { GetPoint = function() return dest:Get() end }) or 0
-        else
-            extraDistance = 0
-        end
+        extraDistance = 0
     end
 
     return (actionDistance + extraDistance) <= maxAllowedDistance
