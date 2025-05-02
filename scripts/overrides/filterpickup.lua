@@ -259,8 +259,12 @@ local function ActionButtonOverride(inst, force_target)
 end
 
 AddClassPostConstruct("components/playercontroller", function(self)
-    if self.inst ~= GLOBAL.ThePlayer then return end
-    if self._equip_ctrl_patched then return end
+    print("[Equipment-Control] Starting to patch")
+    if self.inst ~= GLOBAL.ThePlayer then
+        print("[Equipment-Control] Failed to patch code [0]")
+        return 
+    end
+    
     if GetModConfigData("PICKUP_FILTER", MOD_EQUIPMENT_CONTROL.MODNAME) then
         LoadPickupFilter(
             function()
@@ -273,8 +277,8 @@ AddClassPostConstruct("components/playercontroller", function(self)
         )
     end
 
-    self._equip_ctrl_patched = true
     self.actionbuttonoverride = ActionButtonOverride
+    print("[Equipment-Control] Finished patching")
 end)
 
 local function CanBePickedUp(ent)
