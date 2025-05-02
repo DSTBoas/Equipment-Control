@@ -216,25 +216,40 @@ local include = {
     "corpse"
 }
 
+local function is_tool_action(action)
+    return TOOLACTIONS[action.id] ~= nil
+end
+
+local function pick_first_tool(list)
+    for _, a in ipairs(list or emptytable) do
+        if a.action and is_tool_action(a.action) then
+            return a
+        end
+    end
+end
+
 local function ActionButtonOverride(inst, force_target)
     if force_target then
         return nil
     end
 
     local pc = inst.components.playercontroller
-    if pc ~= nil and pc:IsDoingOrWorking() then
+    if pc and pc:IsDoingOrWorking() then
         return nil
     end
 
     local ents = GetModifiedEnts(inst, exclude, include)
-    for i, ent in ipairs(ents) do
-        DebugPriority("  #%d  %-24s  prio %3d", i, ent.name or ent.prefab, GetPriority(ent))
+    local picker = inst.components.playeractionpicker
 
+    for i, ent in ipairs(ents) do
         if CanEntitySeeTarget(inst, ent) then
-            local actions = inst.components.playeractionpicker:GetLeftClickActions(ent:GetPosition(), ent)
-            local action = actions and actions[1] or nil
-            if action then
-                return action
+            local r = picker:GetRightClickActions(ent:GetPosition(), ent)
+            local l = picker:GetLeftClickActions(ent:GetPosition(), ent)
+
+            local act = pick_first_tool(r) or (l and l[1])
+
+            if act then
+                return act
             end
         end
     end
@@ -268,7 +283,7 @@ local function Init(_, player)
                 return act, usedefault
             end
         end
-    
+
         return ActionButtonOverride(inst, force_target)
     end
 end
