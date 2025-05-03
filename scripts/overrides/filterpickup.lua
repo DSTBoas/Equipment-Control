@@ -13,6 +13,7 @@ local BufferedAction = GLOBAL.BufferedAction
 local STRINGS = GLOBAL.STRINGS
 local TheSim = GLOBAL.TheSim
 local CONTROL_ACTION = GLOBAL.CONTROL_ACTION
+local FindEntity = GLOBAL.FindEntity
 local Namemap = require "util/blueprint_namemap"
 
 -- Config
@@ -238,36 +239,6 @@ local function pick_first_tool(list)
     end
 end
 
-local function ActionButtonOverride(inst, force_target)
-    if force_target then
-        return nil
-    end
-
-    local pc = inst.components.playercontroller
-    if pc and pc:IsDoingOrWorking() then
-        return nil
-    end
-
-    local ents = GetModifiedEnts(inst, exclude, include)
-    local picker = inst.components.playeractionpicker
-
-    for i, ent in ipairs(ents) do
-        if CanEntitySeeTarget(inst, ent) then
-            local r = picker:GetRightClickActions(ent:GetPosition(), ent)
-            local l = picker:GetLeftClickActions(ent:GetPosition(), ent)
-
-            local act = pick_first_tool(r) or (l and l[1])
-
-            if act then
-                return act
-            end
-        end
-    end
-
-    DebugPriority("No suitable action found.")
-    return nil
-end
-
 --
 -- Carbon copy of the /components/playercontroller func
 --
@@ -330,6 +301,21 @@ local function GetPickupAction(self, target, tool)
     --no action found
 end
 
+
+local TARGET_EXCLUDE_TAGS = { "FX", "NOCLICK", "DECOR", "INLIMBO", "stealth" }
+local REGISTERED_CONTROLLER_ATTACK_TARGET_TAGS = TheSim:RegisterFindTags({ "_combat" }, TARGET_EXCLUDE_TAGS)
+
+local PICKUP_TARGET_EXCLUDE_TAGS = { "catchable", "mineactive", "intense", "paired" }
+local HAUNT_TARGET_EXCLUDE_TAGS = { "haunted", "catchable" }
+for i, v in ipairs(TARGET_EXCLUDE_TAGS) do
+    table.insert(PICKUP_TARGET_EXCLUDE_TAGS, v)
+    table.insert(HAUNT_TARGET_EXCLUDE_TAGS, v)
+end
+
+local CATCHABLE_TAGS = { "catchable" }
+local PINNED_TAGS = { "pinned" }
+local CORPSE_TAGS = { "corpse" }
+
 AddClassPostConstruct("components/playercontroller", function(self)
     if self.inst ~= GLOBAL.ThePlayer then
         return
@@ -341,10 +327,10 @@ AddClassPostConstruct("components/playercontroller", function(self)
         if (not self.ismastersim and (self.remote_controls[CONTROL_ACTION] or 0) > 0)
             or (not isenabled and not ishudblocking)
             or self:IsBusy()
-            or (   force_target ~= nil
-               and (   not force_target.entity:IsVisible()
-                    or force_target:HasTag("INLIMBO")
-                    or force_target:HasTag("NOCLICK"))) then
+            or (force_target ~= nil
+                and (not force_target.entity:IsVisible()
+                     or force_target:HasTag("INLIMBO")
+                     or force_target:HasTag("NOCLICK"))) then
             return
         end
 
@@ -356,56 +342,125 @@ AddClassPostConstruct("components/playercontroller", function(self)
         end
 
         if self.inst.replica.inventory:IsHeavyLifting()
-            and not (self.inst.replica.rider ~= nil and self.inst.replica.rider:IsRiding()) then
+           and not (self.inst.replica.rider ~= nil and self.inst.replica.rider:IsRiding()) then
             return
         end
 
         if not self:IsDoingOrWorking() then
+            local force_target_distsq = force_target and self.inst:GetDistanceSqToInst(force_target) or nil
+
+            if self.inst:HasTag("playerghost") then
+                if force_target == nil then
+                    local target = FindEntity(self.inst, self.directwalking and 3 or 6,
+                                              ValidateHaunt,
+                                              nil, HAUNT_TARGET_EXCLUDE_TAGS)
+                    if CanEntitySeeTarget(self.inst, target) then
+                        return BufferedAction(self.inst, target, ACTIONS.HAUNT)
+                    end
+                elseif force_target_distsq <= (self.directwalking and 9 or 36)
+                       and not (force_target:HasTag("haunted") or force_target:HasTag("catchable"))
+                       and ValidateHaunt(force_target) then
+                    return BufferedAction(self.inst, force_target, ACTIONS.HAUNT)
+                end
+                return
+            end
+
             local tool = self.inst.replica.inventory:GetEquippedItem(EQUIPSLOTS.HANDS)
+
+            if tool ~= nil and tool:HasTag(ACTIONS.NET.id.."_tool") then
+                if force_target == nil then
+                    local target = FindEntity(self.inst, 5,
+                                              ValidateBugNet,
+                                              { "_health", ACTIONS.NET.id.."_workable" },
+                                              TARGET_EXCLUDE_TAGS)
+                    if CanEntitySeeTarget(self.inst, target) then
+                        return BufferedAction(self.inst, target, ACTIONS.NET, tool)
+                    end
+                elseif force_target_distsq <= 25
+                       and force_target.replica.health ~= nil
+                       and ValidateBugNet(force_target)
+                       and force_target:HasTag(ACTIONS.NET.id.."_workable") then
+                    return BufferedAction(self.inst, force_target, ACTIONS.NET, tool)
+                end
+            end
+
+            if self.inst:HasTag("cancatch") then
+                if force_target == nil then
+                    local target = FindEntity(self.inst, 10,
+                                              nil,
+                                              CATCHABLE_TAGS,
+                                              TARGET_EXCLUDE_TAGS)
+                    if CanEntitySeeTarget(self.inst, target) then
+                        return BufferedAction(self.inst, target, ACTIONS.CATCH)
+                    end
+                elseif force_target_distsq <= 100
+                       and force_target:HasTag("catchable") then
+                    return BufferedAction(self.inst, force_target, ACTIONS.CATCH)
+                end
+            end
+
+            if force_target == nil then
+                local target = FindEntity(self.inst, self.directwalking and 3 or 6,
+                                          nil,
+                                          PINNED_TAGS,
+                                          TARGET_EXCLUDE_TAGS)
+                if CanEntitySeeTarget(self.inst, target) then
+                    return BufferedAction(self.inst, target, ACTIONS.UNPIN)
+                end
+            elseif force_target_distsq <= (self.directwalking and 9 or 36)
+                   and force_target:HasTag("pinned") then
+                return BufferedAction(self.inst, force_target, ACTIONS.UNPIN)
+            end
+
+            if self.inst.components.revivablecorpse ~= nil then
+                if force_target == nil then
+                    local target = FindEntity(self.inst, 3,
+                                              ValidateCorpseReviver,
+                                              CORPSE_TAGS,
+                                              TARGET_EXCLUDE_TAGS)
+                    if CanEntitySeeTarget(self.inst, target) then
+                        return BufferedAction(self.inst, target, ACTIONS.REVIVE_CORPSE)
+                    end
+                elseif force_target_distsq <= 9
+                       and force_target:HasTag("corpse")
+                       and ValidateCorpseReviver(force_target, self.inst) then
+                    return BufferedAction(self.inst, force_target, ACTIONS.REVIVE_CORPSE)
+                end
+            end
 
             local pickup_tags =
             {
-                "_inventoryitem","pickable","donecooking","readyforharvest",
-                "notreadyforharvest","harvestable","trapsprung","minesprung",
-                "dried","inactive","smolder","saddled","brushable",
-                "tapped_harvestable","tendable_farmplant",
-                "inventoryitemholder_take","client_forward_action_target",
+                "_inventoryitem", "pickable", "donecooking", "readyforharvest",
+                "notreadyforharvest", "harvestable", "trapsprung", "minesprung", "dried",
+                "inactive", "smolder", "saddled", "brushable", "tapped_harvestable",
+                "tendable_farmplant", "inventoryitemholder_take", "client_forward_action_target"
             }
-            if tool ~= nil then
-                for k in pairs(TOOLACTIONS) do
-                    if tool:HasTag(k .. "_tool") then
-                        table.insert(pickup_tags, k .. "_workable")
+
+            if tool then
+                for action_name in pairs(TOOLACTIONS) do
+                    if tool:HasTag(action_name.."_tool") then
+                        table.insert(pickup_tags, action_name.."_workable")
                     end
                 end
             end
-            if self.inst.components.revivablecorpse ~= nil then
+            if self.inst.components.revivablecorpse then
                 table.insert(pickup_tags, "corpse")
             end
 
             if force_target == nil then
-                local ents = GetModifiedEnts(self.inst, PICKUP_EXCLUDE, pickup_tags)
-
-                for _, v in ipairs(ents) do
-                    v = v.client_forward_target or v
-                    if v ~= self.inst and v.entity:IsVisible()
-                        and CanEntitySeeTarget(self.inst, v) then
-                        local act = GetPickupAction(self, v, tool)
-                        if act ~= nil then
-                            return BufferedAction(self.inst, v, act,
-                                act ~= ACTIONS.SMOTHER and tool or nil)
-                        end
+                local ents = GetModifiedEnts(self.inst, PICKUP_TARGET_EXCLUDE_TAGS, pickup_tags)
+                for i, v in ipairs(ents or {}) do
+                    local act = GetPickupAction(self, v, tool)
+                    if act then
+                        return BufferedAction(self.inst, v, act, act~=ACTIONS.SMOTHER and tool or nil)
                     end
                 end
             else
-                local dist2 = self.inst:GetDistanceSqToInst(force_target)
-                if dist2 <= (self.directwalking and 9 or 36) then
-                    if not GetModifiedEnts(self.inst, PICKUP_EXCLUDE, { "_inventoryitem" })[force_target] then
-                        return
-                    end
+                local allowed = GetModifiedEnts(self.inst, PICKUP_TARGET_EXCLUDE_TAGS, { "_inventoryitem" })[force_target]
+                if force_target_distsq <= (self.directwalking and 9 or 36) and allowed then
                     local act = GetPickupAction(self, force_target, tool)
-                    if act ~= nil then
-                        return BufferedAction(self.inst, force_target, act,
-                            act ~= ACTIONS.SMOTHER and tool or nil)
+                    if act then
+                        return BufferedAction(self.inst, force_target, act, act~=ACTIONS.SMOTHER and tool or nil)
                     end
                 end
             end
