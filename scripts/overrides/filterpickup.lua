@@ -204,41 +204,6 @@ end
 
 AddPrefabPostInitAny(tintIfFiltered)
 
-local exclude = {
-    "FX",
-    "NOCLICK",
-    "DECOR",
-    "INLIMBO",
-    "catchable",
-    "mineactive",
-    "intense"
-}
-local include = {
-    "_inventoryitem",
-    "pickable",
-    "harvestable",
-    "trapsprung",
-    "minesprung",
-    "inactive",
-    "smolder",
-    "tapped_harvestable",
-    "dried",
-    "donecooking",
-    "corpse"
-}
-
-local function is_tool_action(action)
-    return TOOLACTIONS[action.id] ~= nil
-end
-
-local function pick_first_tool(list)
-    for _, a in ipairs(list or emptytable) do
-        if a.action and is_tool_action(a.action) then
-            return a
-        end
-    end
-end
-
 --
 -- Carbon copy of the /components/playercontroller func
 --
@@ -300,7 +265,6 @@ local function GetPickupAction(self, target, tool)
     end
     --no action found
 end
-
 
 local TARGET_EXCLUDE_TAGS = { "FX", "NOCLICK", "DECOR", "INLIMBO", "stealth" }
 local REGISTERED_CONTROLLER_ATTACK_TARGET_TAGS = TheSim:RegisterFindTags({ "_combat" }, TARGET_EXCLUDE_TAGS)
