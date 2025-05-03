@@ -191,6 +191,16 @@ local function tintIfFiltered(inst)
     end
 end
 
+if GetModConfigData("PICKUP_FILTER", MOD_EQUIPMENT_CONTROL.MODNAME) then
+    LoadPickupFilter(function()
+        for _, ent in pairs(GLOBAL.Ents) do
+            if PickupFilter.prefabs[ent.prefab] then
+                AddColor(ent)
+            end
+        end
+    end)
+end
+
 AddPrefabPostInitAny(tintIfFiltered)
 
 local exclude = {
@@ -258,27 +268,151 @@ local function ActionButtonOverride(inst, force_target)
     return nil
 end
 
-AddClassPostConstruct("components/playercontroller", function(self)
-    print("[Equipment-Control] Starting to patch")
-    if self.inst ~= GLOBAL.ThePlayer then
-        print("[Equipment-Control] Failed to patch code [0]")
-        return 
+--
+-- Carbon copy of the /components/playercontroller func
+--
+local function GetPickupAction(self, target, tool)
+    if target:HasTag("smolder") then
+        return ACTIONS.SMOTHER
+    elseif tool ~= nil then
+        for k, v in pairs(TOOLACTIONS) do
+            if target:HasTag(k.."_workable") then
+                if tool:HasTag(k.."_tool") then
+                    return ACTIONS[k]
+                end
+                break
+            end
+        end
     end
-    
-    if GetModConfigData("PICKUP_FILTER", MOD_EQUIPMENT_CONTROL.MODNAME) then
-        LoadPickupFilter(
-            function()
-                for _, ent in pairs(GLOBAL.Ents) do
-                    if PickupFilter.prefabs[ent.prefab] then
-                        AddColor(ent)
+
+    if target:HasTag("quagmireharvestabletree") and not target:HasTag("fire") then
+        return ACTIONS.HARVEST_TREE
+    elseif target:HasTag("trapsprung") then
+        return ACTIONS.CHECKTRAP
+    elseif target:HasTag("minesprung") and not target:HasTag("mine_not_reusable") then
+        return ACTIONS.RESETMINE
+    elseif target:HasTag("inactive") and not target:HasTag("activatable_forcenopickup") and target.replica.inventoryitem == nil then
+		return (not target:HasTag("wall") or self.inst:IsNear(target, 2.5))
+			and ACTIONS.ACTIVATE
+			or nil
+    elseif target.replica.inventoryitem ~= nil and
+        target.replica.inventoryitem:CanBePickedUp(self.inst) and
+		not (target:HasTag("heavy") or (target:HasTag("fire") and not target:HasTag("lighter")) or target:HasTag("catchable")) and
+        not target:HasTag("spider") then
+        if self:HasItemSlots() or target.replica.equippable ~= nil then
+            return ACTIONS.PICKUP
+        end
+        return nil
+    elseif target:HasTag("pickable") and not target:HasTag("fire") then
+        return ACTIONS.PICK
+    elseif target:HasTag("harvestable") then
+        return ACTIONS.HARVEST
+    elseif target:HasTag("readyforharvest") or
+        (target:HasTag("notreadyforharvest") and target:HasTag("withered")) then
+        return ACTIONS.HARVEST
+    elseif target:HasTag("tapped_harvestable") and not target:HasTag("fire") then
+        return ACTIONS.HARVEST
+    elseif target:HasTag("tendable_farmplant") and not self.inst:HasTag("mime") and not target:HasTag("fire") then
+        return ACTIONS.INTERACT_WITH
+    elseif target:HasTag("dried") and not target:HasTag("burnt") then
+        return ACTIONS.HARVEST
+    elseif target:HasTag("donecooking") and not target:HasTag("burnt") then
+        return ACTIONS.HARVEST
+    elseif target:HasTag("inventoryitemholder_take") and not target:HasTag("fire") then
+        return ACTIONS.TAKEITEM
+    elseif tool ~= nil and tool:HasTag("unsaddler") and target:HasTag("saddled") and not IsEntityDead(target) then
+        return ACTIONS.UNSADDLE
+    elseif tool ~= nil and tool:HasTag("brush") and target:HasTag("brushable") and not IsEntityDead(target) then
+        return ACTIONS.BRUSH
+    elseif self.inst.components.revivablecorpse ~= nil and target:HasTag("corpse") and ValidateCorpseReviver(target, self.inst) then
+        return ACTIONS.REVIVE_CORPSE
+    end
+    --no action found
+end
+
+AddClassPostConstruct("components/playercontroller", function(self)
+    if self.inst ~= GLOBAL.ThePlayer then
+        return
+    end
+
+    function self:GetActionButtonAction(force_target)
+        local isenabled, ishudblocking = self:IsEnabled()
+
+        if (not self.ismastersim and (self.remote_controls[CONTROL_ACTION] or 0) > 0)
+            or (not isenabled and not ishudblocking)
+            or self:IsBusy()
+            or (   force_target ~= nil
+               and (   not force_target.entity:IsVisible()
+                    or force_target:HasTag("INLIMBO")
+                    or force_target:HasTag("NOCLICK"))) then
+            return
+        end
+
+        if self.actionbuttonoverride ~= nil then
+            local buffaction, usedefault = self.actionbuttonoverride(self.inst, force_target)
+            if not usedefault or buffaction ~= nil then
+                return buffaction
+            end
+        end
+
+        if self.inst.replica.inventory:IsHeavyLifting()
+            and not (self.inst.replica.rider ~= nil and self.inst.replica.rider:IsRiding()) then
+            return
+        end
+
+        if not self:IsDoingOrWorking() then
+            local tool = self.inst.replica.inventory:GetEquippedItem(EQUIPSLOTS.HANDS)
+
+            local pickup_tags =
+            {
+                "_inventoryitem","pickable","donecooking","readyforharvest",
+                "notreadyforharvest","harvestable","trapsprung","minesprung",
+                "dried","inactive","smolder","saddled","brushable",
+                "tapped_harvestable","tendable_farmplant",
+                "inventoryitemholder_take","client_forward_action_target",
+            }
+            if tool ~= nil then
+                for k in pairs(TOOLACTIONS) do
+                    if tool:HasTag(k .. "_tool") then
+                        table.insert(pickup_tags, k .. "_workable")
                     end
                 end
             end
-        )
-    end
+            if self.inst.components.revivablecorpse ~= nil then
+                table.insert(pickup_tags, "corpse")
+            end
 
-    self.actionbuttonoverride = ActionButtonOverride
-    print("[Equipment-Control] Finished patching")
+            if force_target == nil then
+                local ents = GetModifiedEnts(self.inst, PICKUP_EXCLUDE, pickup_tags)
+
+                for _, v in ipairs(ents) do
+                    v = v.client_forward_target or v
+                    if v ~= self.inst and v.entity:IsVisible()
+                        and CanEntitySeeTarget(self.inst, v) then
+                        local act = GetPickupAction(self, v, tool)
+                        if act ~= nil then
+                            return BufferedAction(self.inst, v, act,
+                                act ~= ACTIONS.SMOTHER and tool or nil)
+                        end
+                    end
+                end
+            else
+                local dist2 = self.inst:GetDistanceSqToInst(force_target)
+                if dist2 <= (self.directwalking and 9 or 36) then
+                    if not GetModifiedEnts(self.inst, PICKUP_EXCLUDE, { "_inventoryitem" })[force_target] then
+                        return
+                    end
+                    local act = GetPickupAction(self, force_target, tool)
+                    if act ~= nil then
+                        return BufferedAction(self.inst, force_target, act,
+                            act ~= ACTIONS.SMOTHER and tool or nil)
+                    end
+                end
+            end
+        end
+
+        return
+    end
 end)
 
 local function CanBePickedUp(ent)
