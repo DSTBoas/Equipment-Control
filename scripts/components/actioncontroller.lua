@@ -164,7 +164,7 @@ end
 
 function ActionController:GetItemsFromCategory(category)
     local ret = {}
-    
+
     for _, t in pairs(GetItemPriorityTable(category)) do
         ret[#ret + 1] = t.item
     end
@@ -174,7 +174,7 @@ end
 
 KeybindService:AddKey("DROPKEY", function()
     for _, item in pairs(InventoryFunctions:GetPlayerInventory(true, true)) do
-        if item.prefab == "lantern" and not item:HasTag("fueldepleted") then
+        if item and item.prefab == "lantern" and not item:HasTag("fueldepleted") then
             InventoryFunctions:DropItemFromInvTile(item)
             return
         end

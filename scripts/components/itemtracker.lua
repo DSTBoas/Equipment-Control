@@ -375,10 +375,6 @@ local function IsWeapon(item)
     return item:HasTag("weapon")
 end
 
-local function IsSlingshot(item)
-    return item:HasTag("slingshot")
-end
-
 local function IsBoneArmor(item)
     return item.prefab == "armorskeleton"
 end
