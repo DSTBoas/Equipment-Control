@@ -1,17 +1,7 @@
-local InventoryFunctions = require "util/inventoryfunctions"
 local MOD_EQUIPMENT_CONTROL = GLOBAL.MOD_EQUIPMENT_CONTROL
 local TheInput = GLOBAL.TheInput
 local EQUIPSLOTS = GLOBAL.EQUIPSLOTS
 local TheNet = GLOBAL.TheNet
-
-local function tagList(ent)
-    if not ent or not ent.tags then
-        return ""
-    end
-    local t = {}
-    for tag in pairs(ent.tags) do t[#t + 1] = tag end
-    return table.concat(t, ",")
-end
 
 local trackedEquips = { orangestaff = true, yellowstaff = true }
 local currentEquip
@@ -62,7 +52,7 @@ local function buildPriorityTables()
 
     if GetModConfigData("FORCE_INSPECT_PLAYERS", MOD_EQUIPMENT_CONTROL.MODNAME) then
         funcToPriority.player = function()
-            return GLOBAL.ThePlayer and GLOBAL.ThePlayer.components.playercontroller:IsControlPressed(CONTROL_FORCE_INSPECT) and 1 or -1
+            return GLOBAL.ThePlayer and GLOBAL.ThePlayer.components.playercontroller:IsControlPressed(GLOBAL.CONTROL_FORCE_INSPECT) and 1 or -1
         end
     end
 
@@ -99,7 +89,7 @@ local function InputPostInit(input)
         return
     end
     input.equipctrl_inited = true
-    if TheNet:IsDedicated() then 
+    if TheNet:IsDedicated() then
         return
     end
 
@@ -121,7 +111,7 @@ local function InputPostInit(input)
 end
 
 local function WorldPostInit(world)
-    if GLOBAL.ThePlayer then 
+    if GLOBAL.ThePlayer then
         attachPlayerListeners()
     end
 
