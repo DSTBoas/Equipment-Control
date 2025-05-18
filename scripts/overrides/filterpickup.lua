@@ -121,10 +121,6 @@ local function Score(ent)
         end
     end
 
-    if ent.prefab == "blueprint" and KnowsBlueprint(ent) then
-        return -1
-    end
-
     if PRIORITIZE_VALUABLE then
         return PrioritizedPickups[ent.name] or PrioritizedPickups[ent.prefab] or 0
     end
