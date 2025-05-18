@@ -166,8 +166,7 @@ AddClassPostConstruct(
 
         function self:GetActionButtonAction(force_target, ...)
             local act = _orig(self, force_target, ...)
-            if
-                act and (act.action == ACTIONS.PICK or act.action == ACTIONS.PICKUP) and
+            if act and (act.action == ACTIONS.PICK or act.action == ACTIONS.PICKUP) and
                     ((PickupFilter.prefabs[act.target.prefab]) or (IsMeat(act.target) and MEAT_MODE == "IGNORE"))
              then
                 act = nil
