@@ -155,7 +155,7 @@ local function Init()
                 end
             end
 
-            PlayerControllerIsAnyOfControlsPressed(self, ...)
+            return PlayerControllerIsAnyOfControlsPressed(self, ...)
         end
     else
         local PlayerControllerOnUpdate = PlayerController.OnUpdate
