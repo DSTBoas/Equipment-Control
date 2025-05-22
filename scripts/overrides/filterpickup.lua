@@ -157,72 +157,36 @@ AddClassPostConstruct(
         if self.inst ~= GLOBAL.ThePlayer then
             return
         end
-        local _orig = self.GetActionButtonAction
 
+        local _orig = self.GetActionButtonAction
         function self:GetActionButtonAction(force_target, ...)
             local act = _orig(self, force_target, ...)
             if act and (act.action == ACTIONS.PICK or act.action == ACTIONS.PICKUP) and
-                    ((PickupFilter.prefabs[act.target.prefab]) or (IsMeat(act.target) and MEAT_MODE == "IGNORE"))
-             then
-                act = nil
-            end
+                    ((PickupFilter.prefabs[act.target.prefab]) or (IsMeat(act.target) and MEAT_MODE == "IGNORE")) then
+                local tool = self.inst.replica.inventory:GetEquippedItem(EQUIPSLOTS.HANDS)
 
-            local tool = self.inst.replica.inventory:GetEquippedItem(EQUIPSLOTS.HANDS)
+                local pickup_tags = {
+                    "_inventoryitem",
+                    "pickable",
+                }
 
-            local pickup_tags = {
-                "_inventoryitem",
-                "pickable",
-                "donecooking",
-                "readyforharvest",
-                "notreadyforharvest",
-                "harvestable",
-                "trapsprung",
-                "minesprung",
-                "dried",
-                "inactive",
-                "smolder",
-                "saddled",
-                "brushable",
-                "tapped_harvestable",
-                "tendable_farmplant",
-                "inventoryitemholder_take",
-                "client_forward_action_target"
-            }
+                local x, y, z = self.inst.Transform:GetWorldPosition()
+                local ents = TheSim:FindEntities(x, y, z, self.directwalking and 3 or 6, nil, PICKUP_EXCLUDE_TAGS, pickup_tags)
 
-            if tool then
-                for tag, _ in pairs(TOOLACTIONS) do
-                    if tool:HasTag(tag .. "_tool") then
-                        pickup_tags[#pickup_tags + 1] = tag .. "_workable"
-                    end
-                end
-            end
-            if self.inst.components.revivablecorpse then
-                pickup_tags[#pickup_tags + 1] = "corpse"
-            end
+                table.sort(ents, function(a, b) return Score(a) > Score(b) end)
 
-            local x, y, z = self.inst.Transform:GetWorldPosition()
-            local ents =
-                TheSim:FindEntities(x, y, z, self.directwalking and 3 or 6, nil, PICKUP_EXCLUDE_TAGS, pickup_tags)
-
-            table.sort(
-                ents,
-                function(a, b)
-                    return Score(a) > Score(b)
-                end
-            )
-
-            for _, e in ipairs(ents) do
-                if Score(e) ~= -math.huge and not PickupFilter.prefabs[e.prefab] and CanEntitySeeTarget(self.inst, e) then
-                    local a = GetPickupAction(self, e, tool)
-                    if a then
-                        if act and act.target == e then
-                            return act
+                for i, e in ipairs(ents) do
+                    local score = Score(e)
+                    if score ~= -math.huge and not PickupFilter.prefabs[e.prefab] and CanEntitySeeTarget(self.inst, e) then
+                        local a = GetPickupAction(self, e, tool)
+                        if a and (a == ACTIONS.PICK or a == ACTIONS.PICKUP) then
+                            local newact = BufferedAction(self.inst, e, a, tool)
+                            return newact
                         end
-                        return BufferedAction(self.inst, e, a, a ~= ACTIONS.SMOTHER and tool or nil)
                     end
                 end
+                return nil
             end
-
             return act
         end
     end
