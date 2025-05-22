@@ -126,7 +126,7 @@ for name, confs in pairs(Overrides) do
     end
 
     if enabled then
-        if name == "filterpickup" or name == "filterattack" or name == "mousethrough" then
+        if name == "filterpickup" or name == "filterattack" or name == "mousethrough" or name == "autotool" then
             modimport("scripts/overrides/" .. name)
             Overrides[name] = nil
         else

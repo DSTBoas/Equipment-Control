@@ -1,8 +1,8 @@
 local InventoryFunctions = require "util/inventoryfunctions"
 local CraftFunctions = require "util/craftfunctions"
 
-local CRAFTING_ALLOWED = GetModConfigData("AUTO_EQUIP_TOOL", MOD_EQUIPMENT_CONTROL.MODNAME) == 2
-local AUTO_REPEAT_ACTIONS = GetModConfigData("AUTO_REPEAT_ACTIONS", MOD_EQUIPMENT_CONTROL.MODNAME)
+local CRAFTING_ALLOWED = GetModConfigData("AUTO_EQUIP_TOOL", GLOBAL.MOD_EQUIPMENT_CONTROL.MODNAME) == 2
+local AUTO_REPEAT_ACTIONS = GetModConfigData("AUTO_REPEAT_ACTIONS", GLOBAL.MOD_EQUIPMENT_CONTROL.MODNAME)
 
 local CRAFTABLE_TOOLS = {
     CHOP = { "goldenaxe", "axe" },
@@ -17,6 +17,11 @@ local WORK_ANIMATIONS = {
     "pickaxe_pre",
     "pickaxe_loop",
 }
+
+-- Create a custom action for crafting display
+local ModCraftAction = GLOBAL.Action({ priority = 10 })
+ModCraftAction.id = "MODCRAFT"
+ModCraftAction.str = "Craft"
 
 local function GetToolAction(target)
     for action in pairs(CRAFTABLE_TOOLS) do
@@ -62,52 +67,40 @@ local function IsInWorkAnimation(inst)
     return false
 end
 
--- Create a custom action for crafting display
-local ModCraftAction = Action({ priority = 10 })
-ModCraftAction.id = "MODCRAFT"
-ModCraftAction.str = "Craft"
-
-local function Init()
-    local player = ThePlayer
-    if not player then return end
+-- Add post construct for PlayerActionPicker
+AddClassPostConstruct("components/playeractionpicker", function(self)
+    if self.inst ~= GLOBAL.ThePlayer then
+        return
+    end
     
-    local PlayerActionPicker = player.components.playeractionpicker
-    local PlayerController = player.components.playercontroller
-    if not PlayerActionPicker or not PlayerController then return end
-    
-    -- Store pending action info
-    local pendingAction = nil
-    local workTarget = nil -- Track what we're currently working on
-    
-    -- Override mouse action picking
-    local _DoGetMouseActions = PlayerActionPicker.DoGetMouseActions
-    function PlayerActionPicker:DoGetMouseActions(...)
+    local _DoGetMouseActions = self.DoGetMouseActions
+    function self:DoGetMouseActions(...)
         local lmb, rmb = _DoGetMouseActions(self, ...)
         
         -- Only override if no active item and current action is replaceable
         if not InventoryFunctions:GetActiveItem() and 
            not InventoryFunctions:IsHeavyLifting() and
-           (not lmb or lmb.action == ACTIONS.WALKTO or lmb.action == ACTIONS.LOOKAT) then
+           (not lmb or lmb.action == GLOBAL.ACTIONS.WALKTO or lmb.action == GLOBAL.ACTIONS.LOOKAT) then
             
-            local target = TheInput:GetWorldEntityUnderMouse()
-            if target and CanEntitySeeTarget(self.inst, target) then
+            local target = GLOBAL.TheInput:GetWorldEntityUnderMouse()
+            if target and GLOBAL.CanEntitySeeTarget(self.inst, target) then
                 local toolAction = GetToolAction(target)
                 if toolAction then
                     local tool, needsCraft = FindTool(toolAction)
                     if tool then
                         if needsCraft then
                             -- For crafting, use our custom action
-                            lmb = BufferedAction(self.inst, target, ModCraftAction)
+                            lmb = GLOBAL.BufferedAction(self.inst, target, ModCraftAction)
                             lmb.CRAFT = tool
-                            lmb.DOACTION = ACTIONS[toolAction]
+                            lmb.DOACTION = GLOBAL.ACTIONS[toolAction]
                             -- Override the string function to show "Craft [item]"
                             lmb.GetActionString = function()
-                                local itemname = STRINGS.NAMES[string.upper(tool)] or tool
+                                local itemname = GLOBAL.STRINGS.NAMES[string.upper(tool)] or tool
                                 return "Craft " .. itemname
                             end
                         else
                             -- For equipping, use the actual tool action
-                            lmb = BufferedAction(self.inst, target, ACTIONS[toolAction], tool)
+                            lmb = GLOBAL.BufferedAction(self.inst, target, GLOBAL.ACTIONS[toolAction], tool)
                             lmb.AUTOEQUIP = tool
                         end
                     end
@@ -117,24 +110,35 @@ local function Init()
         
         return lmb, rmb
     end
+end)
+
+-- Add post construct for PlayerController
+AddClassPostConstruct("components/playercontroller", function(self)
+    if self.inst ~= GLOBAL.ThePlayer then
+        return
+    end
     
-    -- Handle our custom actions
-    local _OnLeftClick = PlayerController.OnLeftClick
-    function PlayerController:OnLeftClick(down)
+    -- Store state
+    self.autotool_workTarget = nil
+    self.autotool_pendingAction = nil
+    
+    -- Override OnLeftClick
+    local _OnLeftClick = self.OnLeftClick
+    function self:OnLeftClick(down)
         if down then
             -- Clear work target when clicking something new
-            workTarget = nil
+            self.autotool_workTarget = nil
             
             local act = self:GetLeftMouseAction()
             if act then
                 -- Track work targets
-                if act.action == ACTIONS.CHOP or act.action == ACTIONS.MINE then
-                    workTarget = act.target
+                if act.action == GLOBAL.ACTIONS.CHOP or act.action == GLOBAL.ACTIONS.MINE then
+                    self.autotool_workTarget = act.target
                 end
                 
                 if act.AUTOEQUIP then
                     -- Store action info for after equip
-                    pendingAction = {
+                    self.autotool_pendingAction = {
                         target = act.target,
                         action = act.action,
                         tool = act.invobject
@@ -144,14 +148,14 @@ local function Init()
                     return
                 elseif act.CRAFT then
                     -- Store action info for after craft
-                    pendingAction = {
+                    self.autotool_pendingAction = {
                         target = act.target,
                         action = act.DOACTION,
                         crafting = act.CRAFT
                     }
                     -- Clear buffered action and craft
-                    if player.sg then
-                        player:ClearBufferedAction()
+                    if self.inst.sg then
+                        self.inst:ClearBufferedAction()
                     end
                     CraftFunctions:Craft(act.CRAFT)
                     return
@@ -162,103 +166,102 @@ local function Init()
         _OnLeftClick(self, down)
     end
     
-    -- Function to perform the pending action
-    local function PerformPendingAction(item)
-        if pendingAction and pendingAction.target and pendingAction.target:IsValid() then
-            local target = pendingAction.target
-            local action = pendingAction.action
-            local position = target:GetPosition()
+    -- Set up the equip event listener
+    self.inst:ListenForEvent("equip", function(inst, data)
+        if self.autotool_pendingAction and data and data.item then
+            local pendingAction = self.autotool_pendingAction
             
-            -- Set work target for auto-repeat
-            if action == ACTIONS.CHOP or action == ACTIONS.MINE then
-                workTarget = target
-            end
+            -- Check if this is the tool we were waiting for
+            local isCorrectTool = (pendingAction.tool and data.item == pendingAction.tool) or
+                                 (pendingAction.crafting and data.item.prefab == pendingAction.crafting)
             
-            pendingAction = nil
-            
-            -- Send the action to server
-            player:DoTaskInTime(FRAMES * 2, function()
-                if target and target:IsValid() and action then
-                    if player.components.locomotor == nil then
-                        SendRPCToServer(
-                            RPC.LeftClick,
-                            action.code,
-                            position.x,
-                            position.z,
-                            target
-                        )
-                    else
-                        local act = BufferedAction(player, target, action, item)
-                        act.preview_cb = function()
-                            SendRPCToServer(
-                                RPC.LeftClick,
+            if isCorrectTool then
+                local target = pendingAction.target
+                local action = pendingAction.action
+                
+                -- Clear pending action
+                self.autotool_pendingAction = nil
+                
+                -- Set work target for auto-repeat
+                if action == GLOBAL.ACTIONS.CHOP or action == GLOBAL.ACTIONS.MINE then
+                    self.autotool_workTarget = target
+                end
+                
+                -- Perform action after delay
+                inst:DoTaskInTime(GLOBAL.FRAMES * 4, function()
+                    if target and target:IsValid() and action then
+                        local position = target:GetPosition()
+                        local act = GLOBAL.BufferedAction(inst, target, action, data.item)
+                        
+                        if self.locomotor == nil then
+                            GLOBAL.SendRPCToServer(
+                                GLOBAL.RPC.LeftClick,
                                 action.code,
                                 position.x,
                                 position.z,
                                 target
                             )
+                        else
+                            act.preview_cb = function()
+                                GLOBAL.SendRPCToServer(
+                                    GLOBAL.RPC.LeftClick,
+                                    action.code,
+                                    position.x,
+                                    position.z,
+                                    target
+                                )
+                            end
+                            self:DoAction(act)
                         end
-                        player.components.locomotor:PreviewAction(act, true)
                     end
-                end
-            end)
-        end
-    end
-    
-    -- Listen for equip event to perform the pending action
-    player:ListenForEvent("equip", function(inst, data)
-        if pendingAction and data and data.item then
-            -- Check if this is the tool we were waiting for
-            if (pendingAction.tool and data.item == pendingAction.tool) or
-               (pendingAction.crafting and data.item.prefab == pendingAction.crafting) then
-                PerformPendingAction(data.item)
+                end)
             end
         end
     end)
     
-    -- Add auto-repeat functionality
+    -- Auto-repeat functionality
     if AUTO_REPEAT_ACTIONS then
         -- Override OnControl to detect when player cancels
-        local _OnControl = PlayerController.OnControl
-        function PlayerController:OnControl(control, down)
+        local _OnControl = self.OnControl
+        function self:OnControl(control, down)
             -- Clear work target on any movement or action
-            if down and (control == CONTROL_MOVE_UP or control == CONTROL_MOVE_DOWN or 
-                        control == CONTROL_MOVE_LEFT or control == CONTROL_MOVE_RIGHT or
-                        control == CONTROL_PRIMARY or control == CONTROL_SECONDARY) then
-                workTarget = nil
+            if down and (control == GLOBAL.CONTROL_MOVE_UP or control == GLOBAL.CONTROL_MOVE_DOWN or 
+                        control == GLOBAL.CONTROL_MOVE_LEFT or control == GLOBAL.CONTROL_MOVE_RIGHT or
+                        control == GLOBAL.CONTROL_PRIMARY or control == GLOBAL.CONTROL_SECONDARY) then
+                self.autotool_workTarget = nil
             end
             return _OnControl(self, control, down)
         end
         
         -- Check if we should repeat work action
         local function ShouldRepeatWork()
-            if not workTarget or not workTarget:IsValid() then
+            if not self.autotool_workTarget or not self.autotool_workTarget:IsValid() then
                 return false
             end
             
             -- Only repeat if we're still near the target
-            local dist = player:GetDistanceSqToInst(workTarget)
+            local dist = self.inst:GetDistanceSqToInst(self.autotool_workTarget)
             if dist > 16 then -- 4 units squared
-                workTarget = nil
+                self.autotool_workTarget = nil
                 return false
             end
             
             -- Only repeat if target still needs work
-            if not (workTarget:HasTag("CHOP_workable") or workTarget:HasTag("MINE_workable")) then
-                workTarget = nil
+            if not (self.autotool_workTarget:HasTag("CHOP_workable") or self.autotool_workTarget:HasTag("MINE_workable")) then
+                self.autotool_workTarget = nil
                 return false
             end
             
             return true
         end
         
-        if TheWorld.ismastersim then
+        if GLOBAL.TheWorld.ismastersim then
             -- Server-side: modify IsAnyOfControlsPressed
-            local _IsAnyOfControlsPressed = PlayerController.IsAnyOfControlsPressed
-            function PlayerController:IsAnyOfControlsPressed(...)
+            local _IsAnyOfControlsPressed = self.IsAnyOfControlsPressed
+            function self:IsAnyOfControlsPressed(...)
                 if IsInWorkAnimation(self.inst) and ShouldRepeatWork() then
                     for _, control in ipairs({...}) do
-                        if control == CONTROL_ACTION then
+                        if control == GLOBAL.CONTROL_ACTION then
                             return true
                         end
                     end
@@ -267,20 +270,18 @@ local function Init()
             end
         else
             -- Client-side: trigger action in OnUpdate
-            local _OnUpdate = PlayerController.OnUpdate
-            function PlayerController:OnUpdate(...)
+            local _OnUpdate = self.OnUpdate
+            function self:OnUpdate(...)
                 if IsInWorkAnimation(self.inst) and ShouldRepeatWork() then
                     -- Only repeat work actions on the same target
                     local act = self:GetActionButtonAction()
-                    if act and act.target == workTarget and 
-                       (act.action == ACTIONS.CHOP or act.action == ACTIONS.MINE) then
-                        self:OnControl(CONTROL_ACTION, true)
+                    if act and act.target == self.autotool_workTarget and 
+                       (act.action == GLOBAL.ACTIONS.CHOP or act.action == GLOBAL.ACTIONS.MINE) then
+                        self:OnControl(GLOBAL.CONTROL_ACTION, true)
                     end
                 end
                 _OnUpdate(self, ...)
             end
         end
     end
-end
-
-return Init
+end)
