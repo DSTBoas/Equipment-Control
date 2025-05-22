@@ -22,6 +22,10 @@ local WORK_ANIMATIONS = {
 local ModCraftAction = GLOBAL.Action({ priority = 10 })
 ModCraftAction.id = "MODCRAFT"
 ModCraftAction.str = "Craft"
+ModCraftAction.stroverridefn = function(act)
+    local itemname = GLOBAL.STRINGS.NAMES[string.upper(act.CRAFT)] or act.CRAFT
+    return "Craft " .. itemname
+end
 
 local function GetToolAction(target)
     for action in pairs(CRAFTABLE_TOOLS) do
@@ -93,11 +97,6 @@ AddClassPostConstruct("components/playeractionpicker", function(self)
                             lmb = GLOBAL.BufferedAction(self.inst, target, ModCraftAction)
                             lmb.CRAFT = tool
                             lmb.DOACTION = GLOBAL.ACTIONS[toolAction]
-                            -- Override the string function to show "Craft [item]"
-                            lmb.GetActionString = function()
-                                local itemname = GLOBAL.STRINGS.NAMES[string.upper(tool)] or tool
-                                return "Craft " .. itemname
-                            end
                         else
                             -- For equipping, use the actual tool action
                             lmb = GLOBAL.BufferedAction(self.inst, target, GLOBAL.ACTIONS[toolAction], tool)
