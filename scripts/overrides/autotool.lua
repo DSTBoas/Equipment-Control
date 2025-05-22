@@ -13,6 +13,7 @@ end
 --  CONFIG
 --------------------------------------------------------------------------
 local CRAFTING_ALLOWED = GLOBAL.GetModConfigData("AUTO_EQUIP_TOOL", GLOBAL.MOD_EQUIPMENT_CONTROL.MODNAME) == 2
+local AUTO_REPEAT_ACTIONS = GLOBAL.GetModConfigData("AUTO_REPEAT_ACTIONS", GLOBAL.MOD_EQUIPMENT_CONTROL.MODNAME)
 
 local CRAFTABLE_TOOLS = {
     CHOP = { "goldenaxe", "axe" },
@@ -59,6 +60,33 @@ local function FindTool(act)
         end
     end
     dprint("No tool available for", act)
+end
+
+local WORK_ANIMATIONS = {
+    "woodie_chop_pre",
+    "woodie_chop_loop",
+    "chop_pre",
+    "chop_loop",
+    "pickaxe_pre",
+    "pickaxe_loop",
+}
+
+local function IsInWorkAnimation(inst)
+    if not inst.AnimState then return false end
+    
+    for _, anim in ipairs(WORK_ANIMATIONS) do
+        if inst.AnimState:IsCurrentAnimation(anim) then
+            return true
+        end
+    end
+    
+    -- Special case for beaver form
+    if inst:HasTag("beaver") and not inst:HasTag("attack") and 
+       inst.AnimState:IsCurrentAnimation("atk") then
+        return true
+    end
+    
+    return false
 end
 
 --------------------------------------------------------------------------
@@ -120,16 +148,26 @@ AddClassPostConstruct("components/playercontroller", function(self)
         return
     end
     
-    -- Store state for pending actions
+    -- Store state for pending actions and work tracking
     self.autotool_pendingAction = nil
+    self.autotool_workTarget = nil
     
     local _OnLeftClick = self.OnLeftClick
     function self:OnLeftClick(down)
         if down then
+            -- Clear work target when clicking something new
+            self.autotool_workTarget = nil
+            
             local act = self:GetLeftMouseAction()
             
             if act then
                 dprint("OnLeftClick - Action:", act.action.id, "CRAFT:", act.CRAFT, "AUTOEQUIP:", act.AUTOEQUIP and act.AUTOEQUIP.prefab)
+                
+                -- Track work targets for manual actions
+                if act.action == GLOBAL.ACTIONS.CHOP or act.action == GLOBAL.ACTIONS.MINE then
+                    self.autotool_workTarget = act.target
+                    dprint("Set work target:", act.target and act.target.prefab)
+                end
                 
                 if act.AUTOEQUIP then
                     dprint("Click: Auto-equipping", act.AUTOEQUIP.prefab)
@@ -177,8 +215,15 @@ AddClassPostConstruct("components/playercontroller", function(self)
                 
                 dprint("Equipped", data.item.prefab, "- performing pending action on", target and target.prefab)
                 
+                -- Set work target for auto-repeat
+                if action == GLOBAL.ACTIONS.CHOP or action == GLOBAL.ACTIONS.MINE then
+                    self.autotool_workTarget = target
+                end
+                
                 -- Clear pending action
                 self.autotool_pendingAction = nil
+                
+                -- Perform action immediately
                 if target and target:IsValid() and action then
                     dprint("Executing pending action", action.id, "on", target.prefab)
                     local position = target:GetPosition()
@@ -211,6 +256,73 @@ AddClassPostConstruct("components/playercontroller", function(self)
             end
         end
     end)
+    
+    -- Auto-repeat functionality
+    if AUTO_REPEAT_ACTIONS then
+        -- Override OnControl to detect when player cancels
+        local _OnControl = self.OnControl
+        function self:OnControl(control, down)
+            -- Clear work target on any movement or action
+            if down and (control == GLOBAL.CONTROL_MOVE_UP or control == GLOBAL.CONTROL_MOVE_DOWN or 
+                        control == GLOBAL.CONTROL_MOVE_LEFT or control == GLOBAL.CONTROL_MOVE_RIGHT or
+                        control == GLOBAL.CONTROL_PRIMARY or control == GLOBAL.CONTROL_SECONDARY) then
+                self.autotool_workTarget = nil
+                dprint("Cleared work target due to control:", control)
+            end
+            return _OnControl(self, control, down)
+        end
+        
+        -- Check if we should repeat work action
+        local function ShouldRepeatWork()
+            if not self.autotool_workTarget or not self.autotool_workTarget:IsValid() then
+                return false
+            end
+            
+            -- Only repeat if we're still near the target
+            local dist = self.inst:GetDistanceSqToInst(self.autotool_workTarget)
+            if dist > 16 then -- 4 units squared
+                self.autotool_workTarget = nil
+                return false
+            end
+            
+            -- Only repeat if target still needs work
+            if not (self.autotool_workTarget:HasTag("CHOP_workable") or self.autotool_workTarget:HasTag("MINE_workable")) then
+                self.autotool_workTarget = nil
+                return false
+            end
+            
+            return true
+        end
+        
+        if GLOBAL.TheWorld.ismastersim then
+            -- Server-side: modify IsAnyOfControlsPressed
+            local _IsAnyOfControlsPressed = self.IsAnyOfControlsPressed
+            function self:IsAnyOfControlsPressed(...)
+                if IsInWorkAnimation(self.inst) and ShouldRepeatWork() then
+                    for _, control in ipairs({...}) do
+                        if control == GLOBAL.CONTROL_ACTION then
+                            return true
+                        end
+                    end
+                end
+                return _IsAnyOfControlsPressed(self, ...)
+            end
+        else
+            -- Client-side: trigger action in OnUpdate
+            local _OnUpdate = self.OnUpdate
+            function self:OnUpdate(...)
+                if IsInWorkAnimation(self.inst) and ShouldRepeatWork() then
+                    -- Only repeat work actions on the same target
+                    local act = self:GetActionButtonAction()
+                    if act and act.target == self.autotool_workTarget and 
+                       (act.action == GLOBAL.ACTIONS.CHOP or act.action == GLOBAL.ACTIONS.MINE) then
+                        self:OnControl(GLOBAL.CONTROL_ACTION, true)
+                    end
+                end
+                _OnUpdate(self, ...)
+            end
+        end
+    end
 end)
 
 dprint("AutoTool loaded (debug mode =", DEBUG, ")")
