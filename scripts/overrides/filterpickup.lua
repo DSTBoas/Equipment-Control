@@ -151,6 +151,7 @@ AddPrefabPostInitAny(TintIfFiltered)
 local GetPickupAction = UpvalueHacker.GetUpvalue(PlayerController.GetActionButtonAction, "GetPickupAction")
 local PICKUP_EXCLUDE_TAGS = UpvalueHacker.GetUpvalue(PlayerController.GetActionButtonAction, "PICKUP_TARGET_EXCLUDE_TAGS")
 
+-- Beaver gnaws filtered items might need to fix
 AddClassPostConstruct(
     "components/playercontroller",
     function(self)
