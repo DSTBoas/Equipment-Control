@@ -169,22 +169,45 @@ AddClassPostConstruct("components/playercontroller", function(self)
             local isCorrectTool = (pendingAction.tool and data.item == pendingAction.tool) or
                                  (pendingAction.crafting and data.item.prefab == pendingAction.crafting)
             
+            dprint("Equip event - item:", data.item.prefab, "isCorrectTool:", isCorrectTool)
+            
             if isCorrectTool then
                 local target = pendingAction.target
                 local action = pendingAction.action
                 
-                dprint("Equipped", data.item.prefab, "- performing pending action")
+                dprint("Equipped", data.item.prefab, "- performing pending action on", target and target.prefab)
                 
                 -- Clear pending action
                 self.autotool_pendingAction = nil
-                
-                -- Perform action after delay
-                inst:DoTaskInTime(GLOBAL.FRAMES * 2, function()
-                    if target and target:IsValid() and action then
-                        local act = GLOBAL.BufferedAction(inst, target, action, data.item)
+                if target and target:IsValid() and action then
+                    dprint("Executing pending action", action.id, "on", target.prefab)
+                    local position = target:GetPosition()
+                    local act = GLOBAL.BufferedAction(inst, target, action, data.item)
+                    
+                    -- Use the same RPC method as a regular click
+                    if self.locomotor == nil then
+                        GLOBAL.SendRPCToServer(
+                            GLOBAL.RPC.LeftClick,
+                            action.code,
+                            position.x,
+                            position.z,
+                            target
+                        )
+                    else
+                        act.preview_cb = function()
+                            GLOBAL.SendRPCToServer(
+                                GLOBAL.RPC.LeftClick,
+                                action.code,
+                                position.x,
+                                position.z,
+                                target
+                            )
+                        end
                         self:DoAction(act)
                     end
-                end)
+                else
+                    dprint("Pending action failed - target invalid or action missing")
+                end
             end
         end
     end)
