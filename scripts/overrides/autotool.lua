@@ -41,33 +41,6 @@ local function FindTool(act)
     end
 end
 
-local WORK_ANIMATIONS = {
-    "woodie_chop_pre",
-    "woodie_chop_loop",
-    "chop_pre",
-    "chop_loop",
-    "pickaxe_pre",
-    "pickaxe_loop"
-}
-
-local function IsInWorkAnimation(inst)
-    if not inst.AnimState then
-        return false
-    end
-
-    for _, anim in ipairs(WORK_ANIMATIONS) do
-        if inst.AnimState:IsCurrentAnimation(anim) then
-            return true
-        end
-    end
-
-    if inst:HasTag("beaver") and not inst:HasTag("attack") and inst.AnimState:IsCurrentAnimation("atk") then
-        return true
-    end
-
-    return false
-end
-
 AddClassPostConstruct(
     "components/playeractionpicker",
     function(self)
@@ -128,7 +101,10 @@ AddClassPostConstruct(
                 local act = self:GetLeftMouseAction()
 
                 if act then
-                    if act.action == GLOBAL.ACTIONS.CHOP or act.action == GLOBAL.ACTIONS.MINE then
+                    if
+                        act.action == GLOBAL.ACTIONS.CHOP or act.action == GLOBAL.ACTIONS.MINE or
+                            (act.action == GLOBAL.ACTIONS.ATTACK and self.inst:HasTag("beaver"))
+                     then
                         self.autotool_workTarget = act.target
                     end
 
@@ -208,47 +184,10 @@ AddClassPostConstruct(
         )
 
         if AUTO_REPEAT_ACTIONS then
-            local _OnControl = self.OnControl
-            function self:OnControl(control, down)
-                if
-                    down and
-                        (control == GLOBAL.CONTROL_MOVE_UP or control == GLOBAL.CONTROL_MOVE_DOWN or
-                            control == GLOBAL.CONTROL_MOVE_LEFT or
-                            control == GLOBAL.CONTROL_MOVE_RIGHT or
-                            control == GLOBAL.CONTROL_PRIMARY or
-                            control == GLOBAL.CONTROL_SECONDARY)
-                 then
-                    self.autotool_workTarget = nil
-                end
-                return _OnControl(self, control, down)
-            end
-
-            local function ShouldRepeatWork()
-                if not self.autotool_workTarget or not self.autotool_workTarget:IsValid() then
-                    return false
-                end
-
-                local dist = self.inst:GetDistanceSqToInst(self.autotool_workTarget)
-                if dist > 16 then
-                    self.autotool_workTarget = nil
-                    return false
-                end
-
-                if
-                    not (self.autotool_workTarget:HasTag("CHOP_workable") or
-                        self.autotool_workTarget:HasTag("MINE_workable"))
-                 then
-                    self.autotool_workTarget = nil
-                    return false
-                end
-
-                return true
-            end
-
             if GLOBAL.TheWorld.ismastersim then
                 local _IsAnyOfControlsPressed = self.IsAnyOfControlsPressed
                 function self:IsAnyOfControlsPressed(...)
-                    if IsInWorkAnimation(self.inst) and ShouldRepeatWork() then
+                    if (self.inst:HasTag("working") or (self.inst.sg and self.inst.sg:HasStateTag("working"))) then
                         for _, control in ipairs({...}) do
                             if control == GLOBAL.CONTROL_ACTION then
                                 return true
@@ -260,14 +199,8 @@ AddClassPostConstruct(
             else
                 local _OnUpdate = self.OnUpdate
                 function self:OnUpdate(...)
-                    if IsInWorkAnimation(self.inst) and ShouldRepeatWork() then
-                        local act = self:GetActionButtonAction()
-                        if
-                            act and act.target == self.autotool_workTarget and
-                                (act.action == GLOBAL.ACTIONS.CHOP or act.action == GLOBAL.ACTIONS.MINE)
-                         then
-                            self:OnControl(GLOBAL.CONTROL_ACTION, true)
-                        end
+                    if (self.inst:HasTag("working") or (self.inst.sg and self.inst.sg:HasStateTag("working"))) then
+                        self:OnControl(GLOBAL.CONTROL_ACTION, true)
                     end
                     _OnUpdate(self, ...)
                 end
