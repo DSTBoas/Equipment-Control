@@ -107,16 +107,13 @@ local function InputPostInit(input)
 
     local oldOnUpdate = input.OnUpdate
     input.OnUpdate = function(self)
-        -- Call original update first
         oldOnUpdate(self)
         
         if not self.mouse_enabled then
             return
         end
         
-        -- Check if current hover should be filtered
         if self.hoverinst and shouldFilterOut(self.hoverinst) then
-            -- Find the index of current hover inst
             local currentIdx = 1
             if self.entitiesundermouse then
                 for i = 1, #self.entitiesundermouse do
@@ -129,11 +126,9 @@ local function InputPostInit(input)
                 end
             end
             
-            -- Find next valid entity
             local newinst = findNextValidEntity(self.entitiesundermouse, currentIdx + 1)
             
             if newinst ~= self.hoverinst then
-                -- Trigger mouse events like the game does
                 if newinst and newinst.Transform then
                     newinst:PushEvent("mouseover")
                 end
