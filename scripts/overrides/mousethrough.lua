@@ -27,14 +27,8 @@ local function getFilterPriority(ent)
     return 1
 end
 
-local function chooseHoverInst(ents)
-    local best, bestp = nil, -math.huge
-    for i = 1, #ents do
-        local p = getFilterPriority(ents[i])
-        if p > bestp then best, bestp = ents[i], p end
-    end
-    if bestp < 0 then return nil end
-    return best
+local function shouldFilterOut(ent)
+    return getFilterPriority(ent) < 0
 end
 
 local function refreshEquip()
@@ -84,6 +78,24 @@ local function attachPlayerListeners()
     GLOBAL.ThePlayer:ListenForEvent("unequip", refreshEquip)
 end
 
+local function findNextValidEntity(entities, startIdx)
+    if not entities then return nil end
+    
+    for i = startIdx, #entities do
+        local ent = entities[i]
+        if ent and ent.entity:IsValid() and ent.entity:IsVisible() then
+            -- Apply client_forward_target like the game does
+            ent = ent.client_forward_target or ent
+            
+            if not shouldFilterOut(ent) then
+                return ent, i
+            end
+        end
+    end
+    
+    return nil
+end
+
 local function InputPostInit(input)
     if input.equipctrl_inited then
         return
@@ -93,19 +105,44 @@ local function InputPostInit(input)
         return
     end
 
-    local oldUpdate = input.OnUpdate
-    input.OnUpdate = function(self, ...)
-        oldUpdate(self, ...)
+    local oldOnUpdate = input.OnUpdate
+    input.OnUpdate = function(self)
+        -- Call original update first
+        oldOnUpdate(self)
+        
         if not self.mouse_enabled then
             return
         end
-        local inst = chooseHoverInst(self.entitiesundermouse or {})
-        if inst ~= self.hoverinst then
-            if inst and inst.Transform then inst:PushEvent("mouseover") end
-            if self.hoverinst and self.hoverinst.Transform then
-                self.hoverinst:PushEvent("mouseout")
+        
+        -- Check if current hover should be filtered
+        if self.hoverinst and shouldFilterOut(self.hoverinst) then
+            -- Find the index of current hover inst
+            local currentIdx = 1
+            if self.entitiesundermouse then
+                for i = 1, #self.entitiesundermouse do
+                    local ent = self.entitiesundermouse[i]
+                    ent = ent and ent.client_forward_target or ent
+                    if ent == self.hoverinst then
+                        currentIdx = i
+                        break
+                    end
+                end
             end
-            self.hoverinst = inst
+            
+            -- Find next valid entity
+            local newinst = findNextValidEntity(self.entitiesundermouse, currentIdx + 1)
+            
+            if newinst ~= self.hoverinst then
+                -- Trigger mouse events like the game does
+                if newinst and newinst.Transform then
+                    newinst:PushEvent("mouseover")
+                end
+                if self.hoverinst and self.hoverinst.Transform then
+                    self.hoverinst:PushEvent("mouseout")
+                end
+                
+                self.hoverinst = newinst
+            end
         end
     end
 end
@@ -122,11 +159,11 @@ local function WorldPostInit(world)
     end)
 end
 
+buildPriorityTables()
+
 AddClassPostConstruct("input", InputPostInit)
 AddPrefabPostInit("world", WorldPostInit)
 
 if TheInput and not TheInput.equipctrl_inited then
     InputPostInit(TheInput)
 end
-
-buildPriorityTables()
