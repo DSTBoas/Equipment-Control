@@ -14,12 +14,20 @@ require("categories")
 
 local function EntityScriptPostConstruct(self)
     local OldRegisterComponentActions = self.RegisterComponentActions
+    local OldUnregisterComponentActions = self.UnregisterComponentActions
+    
     function self:RegisterComponentActions(...)
         if _G.MOD_EQUIPMENT_CONTROL.SPAWNING then
             return
         end
-
         OldRegisterComponentActions(self, ...)
+    end
+    
+    function self:UnregisterComponentActions(name, ...)
+        -- Only unregister if we're not in spawning mode or if the component was actually registered
+        if not _G.MOD_EQUIPMENT_CONTROL.SPAWNING or (self.modactioncomponents and self.modactioncomponents[name]) then
+            OldUnregisterComponentActions(self, name, ...)
+        end
     end
 end
 AddGlobalClassPostConstruct("entityscript", "EntityScript", EntityScriptPostConstruct)
