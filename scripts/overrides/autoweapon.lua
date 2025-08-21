@@ -100,9 +100,11 @@ local function EquipRanged()
 end
 
 local function WobyRangedTrigger(_)
+    local target = ThePlayer.components.actioncontroller:GetItemFromCategory("WEAPON")
+    local equipped = InventoryFunctions:GetEquippedItem(EQUIPSLOTS.HANDS)
     return AUTO_EQUIP_WEAPON
         and IsMountedOnBigWoby()
-        and not IsRangeWeaponEquipped()
+        and target ~= equipped
 end
 
 -- 
