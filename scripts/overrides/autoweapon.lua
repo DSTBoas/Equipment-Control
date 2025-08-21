@@ -8,12 +8,16 @@ local KeybindService = MOD_EQUIPMENT_CONTROL.KEYBINDSERVICE
 
 local AutoEquipFns = {}
 
-local function AddAutoEquip(config, trigger, fn)
+local function AddAutoEquip(config, trigger, fn, opts)
+    opts = opts or {}
+    local requires_target = (opts.requires_target ~= false)
+
     if GetModConfigData(config, MOD_EQUIPMENT_CONTROL.MODNAME) then
         AutoEquipFns[#AutoEquipFns + 1] =
         {
             trigger = trigger,
-            fn = fn
+            fn = fn,
+            requires_target = requires_target,
         }
     end
 end
@@ -63,7 +67,6 @@ local function EquipWeapon(target)
         return
     end
 
-
     local weapon = ThePlayer.components.actioncontroller:GetAutoEquipCategoryItem(target)
 
     InventoryFunctions:Equip(weapon, true)
@@ -80,12 +83,35 @@ local function EquipGlasscutter()
     InventoryFunctions:Equip(weapon, true)
 end
 
+local function IsMountedOnBigWoby()
+    return ThePlayer
+        and ThePlayer:HasTag("dogrider")
+        and ThePlayer.replica.rider ~= nil
+        and ThePlayer.replica.rider:GetMount() ~= nil
+        and ThePlayer.replica.rider:GetMount().prefab == "wobybig"
+end
+
+local function EquipRanged()
+    if not ThePlayer or not ThePlayer.components.actioncontroller then return end
+    local ranged = ThePlayer.components.actioncontroller:GetItemFromCategory("WEAPON")
+    if ranged then
+        InventoryFunctions:Equip(ranged, true)
+    end
+end
+
+local function WobyRangedTrigger(_)
+    return AUTO_EQUIP_WEAPON
+        and IsMountedOnBigWoby()
+        and not IsRangeWeaponEquipped()
+end
+
 -- 
 -- Auto equips
 -- 
 
 AddAutoEquip("AUTO_EQUIP_GLASSCUTTER", GlasscutterTrigger, EquipGlasscutter)
 AddAutoEquip("AUTO_EQUIP_WEAPON", WeaponTrigger, EquipWeapon)
+AddAutoEquip("AUTO_EQUIP_WEAPON", WobyRangedTrigger, EquipRanged, { requires_target = false })
 
 local function Init()
     local PlayerController = ThePlayer and ThePlayer.components.playercontroller
@@ -99,10 +125,21 @@ local function Init()
         local force_attack = TheInput:IsControlPressed(CONTROL_FORCE_ATTACK)
         local target = self:GetAttackTarget(force_attack, retarget, retarget ~= nil)
 
-        if target then
+        local handled = false
+        for i = 1, #AutoEquipFns do
+            local rule = AutoEquipFns[i]
+            if rule.requires_target == false and rule.trigger(nil) then
+                rule.fn(nil)
+                handled = true
+                break
+            end
+        end
+
+        if not handled and target then
             for i = 1, #AutoEquipFns do
-                if AutoEquipFns[i].trigger(target) then
-                    AutoEquipFns[i].fn(target)
+                local rule = AutoEquipFns[i]
+                if rule.requires_target ~= false and rule.trigger(target) then
+                    rule.fn(target)
                     break
                 end
             end
@@ -110,22 +147,6 @@ local function Init()
 
         PlayerControllerDoAttackButton(self, retarget)
     end
-
-    -- local OldGetAttackTarget = PlayerController.GetAttackTarget
-    -- function PlayerController:GetAttackTarget(...)
-    --     local force_target = OldGetAttackTarget(self, ...)
-
-    --     if force_target then
-    --         for i = 1, #AutoEquipFns do
-    --             if AutoEquipFns[i].trigger(force_target) then
-    --                 AutoEquipFns[i].fn(force_target)
-    --                 break
-    --             end
-    --         end
-    --     end
-
-    --     return force_target
-    -- end
 end
 
 KeybindService:AddKey("TOGGLE_AUTO_EQUIP", function()
